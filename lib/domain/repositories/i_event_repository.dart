@@ -1,0 +1,1 @@
+//An abstract class specifying required operations (e.g., "get events") without defining the implementation details.

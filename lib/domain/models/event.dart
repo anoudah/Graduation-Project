@@ -1,0 +1,1 @@
+//Defines the properties of an Event (id, title, location, crowdLevel).

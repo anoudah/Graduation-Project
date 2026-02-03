@@ -1,0 +1,1 @@
+//The concrete implementation that fetches data from Firebase and maps it to Domain Event objects.
