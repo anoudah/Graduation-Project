@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Events UI Mock</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="topbar">
+    <div class="left">
+      <button class="icon-btn" aria-label="menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="center">
+      <div class="search-bar" id="searchBar">
+        <input type="text" placeholder="Search" readonly>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="profile">M</div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-left card">
+        <img src="assets/hero.svg" alt="hero image">
+      </div>
+      <div class="hero-right">
+        <h1>WHAT’S HAPPENING</h1>
+      </div>
+    </section>
+
+    <section class="categories-section">
+      <h2>Categories</h2>
+      <div class="categories-row">
+        <div class="cat-card">Libraries</div>
+        <div class="cat-card">Heritage and Tradition</div>
+        <div class="cat-card">Museums</div>
+        <div class="cat-card">Conferences and Forums</div>
+        <div class="cat-card">Cultural Institutions</div>
+        <div class="cat-card">Exhibition and Convention centre</div>
+      </div>
+    </section>
+
+    <section class="nearby">
+      <h2>Near you</h2>
+      <div class="near-row">
+        <div class="near-card">
+          <img src="assets/thumb1.svg" alt="thumb">
+          <div class="near-info">
+            <div class="title">King Abdul Aziz Historical Center</div>
+            <div class="dist">2.3 km</div>
+          </div>
+        </div>
+
+        <div class="near-card">
+          <img src="assets/thumb2.svg" alt="thumb">
+          <div class="near-info">
+            <div class="title">King Fahad Cultural Center</div>
+            <div class="dist">4.1 km</div>
+          </div>
+        </div>
+
+        <div class="near-card">
+          <img src="assets/thumb3.svg" alt="thumb">
+          <div class="near-info">
+            <div class="title">Saudi National Museum</div>
+            <div class="dist">5.2 km</div>
+          </div>
+        </div>
+
+        <div class="see-more-wrap">
+          <button class="see-more">See more</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="recommended">
+      <h2>Recommended</h2>
+      <div class="recommended-empty">No recommendations yet.</div>
+    </section>
+  </main>
+
+  <!-- Search overlay popup -->
+  <div id="searchOverlay" class="overlay hidden">
+    <div class="overlay-backdrop" id="overlayBackdrop"></div>
+    <div class="overlay-card" role="dialog" aria-modal="true">
+      <div class="overlay-top">
+        <input id="overlayInput" placeholder="Search" autofocus>
+        <button id="closeOverlay" class="icon-btn" aria-label="close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="recent">
+        <h3>Recent searches</h3>
+        <ul>
+          <li><img src="assets/clock.svg" alt="clock">Museum</li>
+          <li><img src="assets/clock.svg" alt="clock">Libraries</li>
+          <li><img src="assets/clock.svg" alt="clock">Diriyah season</li>
+        </ul>
+      </div>
+
+      <div class="popup-cats">
+        <div class="popup-cat"><div class="icon">🏛️</div><div class="label">Museums</div></div>
+        <div class="popup-cat"><div class="icon">📚</div><div class="label">Libraries</div></div>
+        <div class="popup-cat"><div class="icon">🏫</div><div class="label">Institutions</div></div>
+        <div class="popup-cat"><div class="icon">🎎</div><div class="label">Heritage & traditions</div></div>
+        <div class="popup-cat"><div class="icon">🎤</div><div class="label">Conferences</div></div>
+        <div class="popup-cat"><div class="icon">🖼️</div><div class="label">Exhibitions</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
