@@ -150,7 +150,9 @@ class EventsHomePage extends StatelessWidget {
   }
 }
 
+//move this to a separate folder for better organization (widgets/)
 // --- REUSABLE COMPONENTS ---
+
 
 class SectionHeader extends StatelessWidget {
   final String title;
