@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'category_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -302,12 +303,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // Categories Section
   Widget _buildCategoriesSection(BuildContext context) {
     final categories = [
-      {'label': 'Libraries', 'icon': Icons.library_books},
-      {'label': 'Heritage and\nTradition', 'icon': Icons.museum},
-      {'label': 'Museums', 'icon': Icons.collections},
-      {'label': 'Conferences\nand Forums', 'icon': Icons.forum},
-      {'label': 'Cultural\nInstitutions', 'icon': Icons.business},
-      {'label': 'Exhibition and\nConvention', 'icon': Icons.storefront},
+      {'label': 'Libraries', 'icon': Icons.library_books, 'fullLabel': 'Libraries'},
+      {'label': 'Heritage and\nTradition', 'icon': Icons.museum, 'fullLabel': 'Heritage and Tradition'},
+      {'label': 'Museums', 'icon': Icons.collections, 'fullLabel': 'Museums'},
+      {'label': 'Conferences\nand Forums', 'icon': Icons.forum, 'fullLabel': 'Conferences and Forums'},
+      {'label': 'Cultural\nInstitutions', 'icon': Icons.business, 'fullLabel': 'Cultural Institutions'},
+      {'label': 'Exhibition and\nConvention', 'icon': Icons.storefront, 'fullLabel': 'Exhibition and Convention Centre'},
     ];
 
     return Container(
@@ -329,45 +330,58 @@ class _HomeScreenState extends State<HomeScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: categories.map((category) {
-                return Container(
-                  margin: const EdgeInsets.only(right: 24),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFFE8DDF5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          category['icon'] as IconData,
-                          color: const Color(0xFF6B4B8A),
-                          size: 44,
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CategoryScreen(
+                          categoryName: category['fullLabel'] as String,
+                          categoryIcon: category['icon'] as IconData,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: 90,
-                        child: Text(
-                          category['label'] as String,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF333333),
-                            fontFamily: 'Poppins',
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 24),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFE8DDF5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            category['icon'] as IconData,
+                            color: const Color(0xFF6B4B8A),
+                            size: 44,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: 90,
+                          child: Text(
+                            category['label'] as String,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF333333),
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }).toList(),
