@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'category_screen.dart';
 import 'smart_tour_screen.dart'; // سمارت تور
+import 'favorites_screen.dart'; // سطر الاستدعاء
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -106,6 +107,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           
           const SizedBox(width: 16),
+
+          // 1. أيقونة المفضلة (هنا مكانها الجديد)
+          IconButton(
+            icon: const Icon(Icons.favorite_border, color: Color(0xFF666666)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+              );
+            },
+          ),
+
+          const SizedBox(width: 8), // مسافة بسيطة بين القلب والبروفايل
           
           // Profile Circle
           Container(
