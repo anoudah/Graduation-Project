@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'category_screen.dart';
+import 'smart_tour_screen.dart'; // سمارت تور
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -677,7 +678,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 28),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SmartTourScreen(),
+                    ),
+                  );},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B4B8A),
                     foregroundColor: Colors.white,
