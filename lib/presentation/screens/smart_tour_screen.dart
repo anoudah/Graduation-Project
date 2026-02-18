@@ -80,7 +80,7 @@ class SmartTourScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(width: 15),
-                    // استخدام الكارد اللي صممتيه
+                    // استخدام الكارد
                     Expanded(
                       child: EventCard(
                         title: step['title'],

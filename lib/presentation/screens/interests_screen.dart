@@ -9,7 +9,7 @@ class InterestsScreen extends StatefulWidget {
 }
 
 class _InterestsScreenState extends State<InterestsScreen> {
-  // قائمة الاهتمامات المتاحة بناءً على مشروعكم
+  // قائمة الاهتمامات المتاحة 
   final List<String> categories = [
     'Museums', 'Libraries', 'Heritage', 'Arts', 
     'Technology', 'Conferences', 'Traditional Food', 'Festivals'

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/event_card.dart'; // تأكدي إن المسار لملف الكارد صح
+import '../widgets/event_card.dart'; // مسار الايفنت كارد
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -7,7 +7,7 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F0F0), // نفس لون خلفية تطبيقكم
+      backgroundColor: const Color(0xFFF6F0F0), // نفس اللون
       appBar: AppBar(
         title: const Text(
           "My Favorites",
