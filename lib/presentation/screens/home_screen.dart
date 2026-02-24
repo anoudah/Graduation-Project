@@ -3,6 +3,7 @@ import 'category_screen.dart';
 import 'smart_tour_screen.dart'; // سمارت تور
 import 'favorites_screen.dart'; // سطر الاستدعاء
 import 'contactus.dart'; // صفحة التواصل معنا
+import 'faq.dart'; // صفحة الأسئلة الشائعة
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -12,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentSlideIndex = 0;
   final List<String> imagePlaceholders = [
     'https://via.placeholder.com/400x300?text=Image+1',
@@ -24,7 +26,30 @@ class _HomeScreenState extends State<HomeScreen> {
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF6F0F0),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFF6B4B8A)),
+              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.question_answer),
+              title: const Text('FAQ'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FAQPage()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -63,7 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
           // Hamburger Menu
           IconButton(
             icon: const Icon(Icons.menu, color: Color(0xFF333333), size: 28),
-            onPressed: () {},
+            onPressed: () {
+              // open drawer via scaffold key
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
           
           const SizedBox(width: 16),
