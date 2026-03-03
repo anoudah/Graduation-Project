@@ -1,13 +1,32 @@
 import 'package:flutter/material.dart';
-import 'interests_screen.dart'; // استدعاء صفحة الاهتمامات
+import 'interests_screen.dart'; // تأكدي أن هذا الملف موجود في مشروعك
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  // 1. تعريف الكنترولرز لإدارة النص المدخل (مثل كود صديقتك)
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    // تنظيف الذاكرة عند إغلاق الصفحة
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F0F0), // نفس لون خلفية الهوم
+      backgroundColor: const Color(0xFFF6F0F0),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(30.0),
@@ -15,7 +34,6 @@ class SignUpScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 80),
-              // Logo أو اسم التطبيق
               const Text(
                 "WASEL",
                 style: TextStyle(
@@ -29,16 +47,14 @@ class SignUpScreen extends StatelessWidget {
               const Text("Create an account to explore Saudi culture"),
               const SizedBox(height: 50),
 
-              // حقل الاسم
-              _buildTextField("Full Name", Icons.person_outline),
+              // 2. استخدام الميثود المعدلة مع الكنترولرز
+              _buildTextField("Full Name", Icons.person_outline, controller: _nameController),
               const SizedBox(height: 20),
 
-              // حقل الإيميل
-              _buildTextField("Email Address", Icons.email_outlined),
+              _buildTextField("Email Address", Icons.email_outlined, controller: _emailController),
               const SizedBox(height: 20),
 
-              // حقل الباسورد
-              _buildTextField("Password", Icons.lock_outline, isPassword: true),
+              _buildTextField("Password", Icons.lock_outline, isPassword: true, controller: _passwordController),
               const SizedBox(height: 40),
 
               // زر التسجيل
@@ -46,13 +62,7 @@ class SignUpScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // بعد التسجيل نوديه لصفحة الاهتمامات
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const InterestsScreen()),
-                    );
-                  },
+                  onPressed: _handleSignUp, // استدعاء دالة التسجيل
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B4B8A),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -72,7 +82,7 @@ class SignUpScreen extends StatelessWidget {
                   const Text("Already have an account?"),
                   TextButton(
                     onPressed: () {
-                      // هنا مفروض يروح لصفحة الـ Login
+                      // Login logic
                     },
                     child: const Text("Login", style: TextStyle(color: Color(0xFF6B4B8A), fontWeight: FontWeight.bold)),
                   ),
@@ -85,9 +95,10 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  // Widget مساعد لبناء الحقول بسرعة
-  Widget _buildTextField(String hint, IconData icon, {bool isPassword = false}) {
+  // 3. تحديث الميثود المساعدة لتستقبل الكنترولر (تطابق كود صديقتك)
+  Widget _buildTextField(String hint, IconData icon, {required TextEditingController controller, bool isPassword = false}) {
     return TextField(
+      controller: controller, // ربط الحقل بالكنترولر
       obscureText: isPassword,
       decoration: InputDecoration(
         hintText: hint,
@@ -100,5 +111,21 @@ class SignUpScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // 4. دالة التعامل مع ضغطة الزر
+  void _handleSignUp() {
+    if (_nameController.text.isNotEmpty && _emailController.text.isNotEmpty) {
+      // إذا البيانات موجودة، ننتقل لصفحة الاهتمامات
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const InterestsScreen()),
+      );
+    } else {
+      // إظهار تنبيه إذا الحقول فارغة (اختياري)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+    }
   }
 }
