@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'category_screen.dart';
-import 'smart_tour_screen.dart'; // سمارت تور
-import 'favorites_screen.dart'; // سطر الاستدعاء
-import 'contactus.dart'; // صفحة التواصل معنا
-import 'faq.dart'; // صفحة الأسئلة الشائعة
+import 'smart_tour_screen.dart';
+import 'favorites_screen.dart';  
+import 'contactus.dart'; 
+import 'faq.dart'; 
 import 'Nearyou.dart'; // Near you screen
+import 'Reminders.dart'; // reminders screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -67,6 +68,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications),
+              title: const Text('Reminders'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RemindersScreen()),
                 );
               },
             ),
