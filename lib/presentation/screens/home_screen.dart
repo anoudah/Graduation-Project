@@ -6,6 +6,7 @@ import 'contactus.dart';
 import 'faq.dart'; 
 import 'Nearyou.dart'; // Near you screen
 import 'Reminders.dart'; // reminders screen
+import 'profile.dart'; // profile page
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -172,26 +173,34 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const SizedBox(width: 16),
 
-          // Profile Circle
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFDDD),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          // Profile Circle (button)
+          IconButton(
+            icon: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFDDD),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Color(0xFF666666),
+                size: 20,
+              ),
             ),
-            child: Icon(
-              Icons.person,
-              color: const Color(0xFF666666),
-              size: 20,
-            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
           ),
         ],
       ),
