@@ -4,6 +4,7 @@ import 'smart_tour_screen.dart'; // سمارت تور
 import 'favorites_screen.dart'; // سطر الاستدعاء
 import 'contactus.dart'; // صفحة التواصل معنا
 import 'faq.dart'; // صفحة الأسئلة الشائعة
+import 'Nearyou.dart'; // Near you screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -471,7 +472,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NearYouScreen()),
+                  );
+                },
                 icon: const Icon(Icons.arrow_forward, size: 18),
                 label: const Text('See more'),
                 style: ElevatedButton.styleFrom(
