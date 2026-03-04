@@ -47,6 +47,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.mail_outline),
+              title: const Text('Contact Us'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ContactUsScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.favorite_border),
+              title: const Text('Favorites'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -137,30 +159,6 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const SizedBox(width: 16),
 
-          // Contact icon
-          IconButton(
-            icon: const Icon(Icons.mail_outline, color: Color(0xFF666666)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ContactUsScreen()),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          // 1. أيقونة المفضلة (هنا مكانها الجديد)
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Color(0xFF666666)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const FavoritesScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(width: 8), // مسافة بسيطة بين القلب والبروفايل
-          
           // Profile Circle
           Container(
             width: 40,
