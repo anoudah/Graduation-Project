@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Color(0xFF6B4B8A)),
-              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Text('Options', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
             ListTile(
               leading: const Icon(Icons.question_answer),
@@ -210,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Hero Section Desktop
   Widget _buildHeroSectionDesktop() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
