@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'category_screen.dart';
-import 'smart_tour_screen.dart'; // سمارت تور
-import 'favorites_screen.dart'; // سطر الاستدعاء
-import 'contactus.dart'; // صفحة التواصل معنا
-import 'faq.dart'; // صفحة الأسئلة الشائعة
+import 'smart_tour_screen.dart';
+import 'favorites_screen.dart';  
+import 'contactus.dart'; 
+import 'faq.dart'; 
+import 'Nearyou.dart'; // Near you screen
+import 'Reminders.dart'; // reminders screen
+import 'profile.dart'; // profile page
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -34,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Color(0xFF6B4B8A)),
-              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Text('Options', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
             ListTile(
               leading: const Icon(Icons.question_answer),
@@ -44,6 +47,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const FAQPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.mail_outline),
+              title: const Text('Contact Us'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ContactUsScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.favorite_border),
+              title: const Text('Favorites'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications),
+              title: const Text('Reminders'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RemindersScreen()),
                 );
               },
             ),
@@ -137,50 +173,34 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const SizedBox(width: 16),
 
-          // Contact icon
+          // Profile Circle (button)
           IconButton(
-            icon: const Icon(Icons.mail_outline, color: Color(0xFF666666)),
+            icon: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFDDD),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Color(0xFF666666),
+                size: 20,
+              ),
+            ),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ContactUsScreen()),
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
               );
             },
-          ),
-          const SizedBox(width: 8),
-          // 1. أيقونة المفضلة (هنا مكانها الجديد)
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Color(0xFF666666)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const FavoritesScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(width: 8), // مسافة بسيطة بين القلب والبروفايل
-          
-          // Profile Circle
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFDDD),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.person,
-              color: const Color(0xFF666666),
-              size: 20,
-            ),
           ),
         ],
       ),
@@ -190,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Hero Section Desktop
   Widget _buildHeroSectionDesktop() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -473,7 +493,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NearYouScreen()),
+                  );
+                },
                 icon: const Icon(Icons.arrow_forward, size: 18),
                 label: const Text('See more'),
                 style: ElevatedButton.styleFrom(
