@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'RouteSuggestionScreen.dart';
 
 class LibraryDetailsScreen extends StatefulWidget {
   const LibraryDetailsScreen({super.key});
@@ -127,7 +128,12 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
         _buildDetailRow("Price:", "Free"),
         const SizedBox(height: 20),
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const RouteSuggestionScreen()),
+    );
+          },
           icon: const Icon(Icons.location_on, color: Colors.white),
           label: const Text("Suggest a route", style: TextStyle(color: Colors.white)),
           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A237E)),
