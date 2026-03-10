@@ -5,7 +5,7 @@ class EventModel {
   final String about;
   final String category;
   final String categoryId;
-  final String crowdPrediction;
+
   final String bookingUrl;
   final String imageUrl;
   final String locationAddress;
@@ -23,7 +23,7 @@ class EventModel {
     required this.about,
     required this.category,
     required this.categoryId,
-    required this.crowdPrediction,
+
     required this.bookingUrl,
     required this.imageUrl,
     required this.locationAddress,
@@ -43,8 +43,7 @@ class EventModel {
       about: data['About'] ?? '',
       category: data['Category'] ?? '',
       categoryId: data['Category_ID'] ?? '',
-      // جعلنا LOW قيمة افتراضية في حال لم يحسب الـ AI الزحام بعد
-      crowdPrediction: data['Crowd_Prediction'] ?? 'LOW',
+
       bookingUrl: data['Booking_Url'] ?? '',
       imageUrl: data['Image_Url'] ?? '',
       locationAddress: data['Location_Address'] ?? '',

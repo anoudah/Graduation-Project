@@ -1,4 +1,4 @@
-//: Contains the specific implementation for connecting to FirebaseFirestore.
+//:    Contains the specific implementation for connecting to FirebaseFirestore.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/models/event.dart';
 

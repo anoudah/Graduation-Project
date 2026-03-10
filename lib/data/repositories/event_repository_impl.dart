@@ -24,7 +24,7 @@ class EventRepositoryImpl implements IEventRepository {
 
   @override
   Future<List<EventModel>> getEventsByCategory(String categoryId) async {
-    // 5. منطق إضافي: نجلب الكل ثم نصفي (Filter) حسب النوع
+    //   5. منطق إضافي: نجلب الكل ثم نصفي (Filter) حسب النوع
     final allEvents = await remoteDataSource.getEvents();
     return allEvents.where((event) => event.categoryId == categoryId).toList();
   }
