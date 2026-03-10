@@ -2,122 +2,90 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Events UI Mock</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wasel Cultural Directory</title>
+
+  <!-- Leaflet CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-sA+e2Y7h6d8KX2oSjR82mQKA59b8qmWEf5p0j0z5uwk=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-o9N1j8Mt8fJjM3Xj1U+Y60G3wDxTjl7RQA7xHnY+TMU=" crossorigin=""></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #f2f2f2; color: #333; }
+    nav { background: white; padding: 10px 20px; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+    .menu { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; font-weight: 600; }
+    .menu a { text-decoration: none; color: #333; }
+    .logo { font-size: 1.5rem; font-weight: bold; margin-right: auto; }
+    .search-container { text-align: center; margin-top: 10px; }
+    .search-container input { width: 60%; max-width: 400px; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; }
+    h1 { text-align: center; margin: 30px 0; font-size: 2.5rem; }
+    #map { width: 90%; max-width: 900px; height: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden; }
+    .cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin: 20px 0; }
+    .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.1); width: 260px; }
+    .card h3 { margin-bottom: 8px; font-size: 1.1rem; }
+    .card p { font-size: 0.9rem; margin-bottom: 6px; }
+    .card button { background: #6b4b8a; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+    @media (max-width: 600px) { .menu { flex-direction: column; align-items: center; } .search-container input { width: 90%; } }
+  </style>
 </head>
 <body>
-  <nav class="topbar">
-    <div class="left">
-      <button class="icon-btn" aria-label="menu">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
+  <nav>
+    <div class="menu">
+      <span class="logo">wasel.com</span>
+      <a href="#">Libraries</a>
+      <a href="#">Heritage and Tradition</a>
+      <a href="#">Museums</a>
+      <a href="#">Conferences and Forums</a>
+      <a href="#">Cultural Institutions</a>
+      <a href="#">Exhibition and Convention Centre</a>
     </div>
-
-    <div class="center">
-      <div class="search-bar" id="searchBar">
-        <input type="text" placeholder="Search" readonly>
-      </div>
-    </div>
-
-    <div class="right">
-      <div class="profile">M</div>
+    <div class="search-container">
+      <input type="text" placeholder="Search">
     </div>
   </nav>
 
-  <main class="container">
-    <section class="hero">
-      <div class="hero-left card">
-        <img src="assets/hero.svg" alt="hero image">
-      </div>
-      <div class="hero-right">
-        <h1>WHAT’S HAPPENING</h1>
-      </div>
-    </section>
+  <h1>Near you</h1>
 
-    <section class="categories-section">
-      <h2>Categories</h2>
-      <div class="categories-row">
-        <div class="cat-card">Libraries</div>
-        <div class="cat-card">Heritage and Tradition</div>
-        <div class="cat-card">Museums</div>
-        <div class="cat-card">Conferences and Forums</div>
-        <div class="cat-card">Cultural Institutions</div>
-        <div class="cat-card">Exhibition and Convention centre</div>
-      </div>
-    </section>
+  <div id="map"></div>
 
-    <section class="nearby">
-      <h2>Near you</h2>
-      <div class="near-row">
-        <div class="near-card">
-          <img src="assets/thumb1.svg" alt="thumb">
-          <div class="near-info">
-            <div class="title">King Abdul Aziz Historical Center</div>
-            <div class="dist">2.3 km</div>
-          </div>
-        </div>
-
-        <div class="near-card">
-          <img src="assets/thumb2.svg" alt="thumb">
-          <div class="near-info">
-            <div class="title">King Fahad Cultural Center</div>
-            <div class="dist">4.1 km</div>
-          </div>
-        </div>
-
-        <div class="near-card">
-          <img src="assets/thumb3.svg" alt="thumb">
-          <div class="near-info">
-            <div class="title">Saudi National Museum</div>
-            <div class="dist">5.2 km</div>
-          </div>
-        </div>
-
-        <div class="see-more-wrap">
-          <button class="see-more">See more</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="recommended">
-      <h2>Recommended</h2>
-      <div class="recommended-empty">No recommendations yet.</div>
-    </section>
-  </main>
-
-  <!-- Search overlay popup -->
-  <div id="searchOverlay" class="overlay hidden">
-    <div class="overlay-backdrop" id="overlayBackdrop"></div>
-    <div class="overlay-card" role="dialog" aria-modal="true">
-      <div class="overlay-top">
-        <input id="overlayInput" placeholder="Search" autofocus>
-        <button id="closeOverlay" class="icon-btn" aria-label="close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-
-      <div class="recent">
-        <h3>Recent searches</h3>
-        <ul>
-          <li><img src="assets/clock.svg" alt="clock">Museum</li>
-          <li><img src="assets/clock.svg" alt="clock">Libraries</li>
-          <li><img src="assets/clock.svg" alt="clock">Diriyah season</li>
-        </ul>
-      </div>
-
-      <div class="popup-cats">
-        <div class="popup-cat"><div class="icon">🏛️</div><div class="label">Museums</div></div>
-        <div class="popup-cat"><div class="icon">📚</div><div class="label">Libraries</div></div>
-        <div class="popup-cat"><div class="icon">🏫</div><div class="label">Institutions</div></div>
-        <div class="popup-cat"><div class="icon">🎎</div><div class="label">Heritage & traditions</div></div>
-        <div class="popup-cat"><div class="icon">🎤</div><div class="label">Conferences</div></div>
-        <div class="popup-cat"><div class="icon">🖼️</div><div class="label">Exhibitions</div></div>
-      </div>
-    </div>
+  <h2 style="text-align:center; margin-top:40px;">Recommended Places</h2>
+  <div class="cards">
+    <div class="card"><h3>King Abdulaziz Historical Center</h3><p>Historical landmark and museum complex.</p><p>Riyadh, Saudi Arabia</p><button data-target="center">View on Map</button></div>
+    <div class="card"><h3>King Fahad Cultural Center</h3><p>Center for cultural events and exhibitions.</p><p>Riyadh, Saudi Arabia</p><button data-target="fahad">View on Map</button></div>
+    <div class="card"><h3>The National Museum of Saudi Arabia</h3><p>National museum showcasing Saudi heritage.</p><p>Riyadh, Saudi Arabia</p><button data-target="museum">View on Map</button></div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    // initialize map
+    const map = L.map('map').setView([24.7136, 46.6753], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const locations = {
+      center: {coords:[24.6760,46.6668], name:'King Abdulaziz Historical Center'},
+      fahad: {coords:[24.7072,46.6907], name:'King Fahad Cultural Center'},
+      museum: {coords:[24.6877,46.7219], name:'The National Museum of Saudi Arabia'}
+    };
+
+    const markers = {};
+    Object.keys(locations).forEach(key => {
+      const loc = locations[key];
+      markers[key] = L.marker(loc.coords, {icon: L.icon({iconUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-red.png', iconSize:[25,41], iconAnchor:[12,41]})})
+        .addTo(map)
+        .bindPopup(loc.name);
+    });
+
+    document.querySelectorAll('.card button').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const key = e.target.getAttribute('data-target');
+        map.setView(locations[key].coords, 16);
+        markers[key].openPopup();
+        document.getElementById('map').scrollIntoView({behavior:'smooth'});
+      });
+    });
+  </script>
 </body>
 </html>
