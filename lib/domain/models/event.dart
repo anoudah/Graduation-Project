@@ -8,16 +8,15 @@ class EventModel {
   final String crowdPrediction;
   final String bookingUrl;
   final String imageUrl;
-  final double latitude;
-  final double longitude;
   final String locationAddress;
   final String phone;
   final String price;
   final double rating;
   final String schedule;
-  final List<String> tags; // مصفوفة الاهتمامات للـ AI
-  final DateTime startTime; // وقت البداية للزحام
-  final DateTime endTime; // وقت النهاية للزحام
+  final List<String> tags;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int venueCapacity; // الحقل الجديد الذي أضفتيه
 
   EventModel({
     required this.title,
@@ -27,8 +26,6 @@ class EventModel {
     required this.crowdPrediction,
     required this.bookingUrl,
     required this.imageUrl,
-    required this.latitude,
-    required this.longitude,
     required this.locationAddress,
     required this.phone,
     required this.price,
@@ -37,30 +34,30 @@ class EventModel {
     required this.tags,
     required this.startTime,
     required this.endTime,
+    required this.venueCapacity,
   });
 
-  // المترجم: يحول الخريطة (Map) القادمة من الفايربيس إلى كائن (Object) في دارت
   factory EventModel.fromFirestore(Map<String, dynamic> data) {
     return EventModel(
-      title: data['Title'] ?? '', // ملاحظة الـ T الكبيرة
+      title: data['Title'] ?? '',
       about: data['About'] ?? '',
       category: data['Category'] ?? '',
       categoryId: data['Category_ID'] ?? '',
+      // جعلنا LOW قيمة افتراضية في حال لم يحسب الـ AI الزحام بعد
       crowdPrediction: data['Crowd_Prediction'] ?? 'LOW',
       bookingUrl: data['Booking_Url'] ?? '',
       imageUrl: data['Image_Url'] ?? '',
-      latitude: (data['Latitude'] as num).toDouble(),
-      longitude: (data['Longitude'] as num).toDouble(),
       locationAddress: data['Location_Address'] ?? '',
       phone: data['Phone'] ?? '',
       price: data['Price'] ?? '',
-      rating: (data['Rating'] as num).toDouble(),
+      rating: (data['Rating'] ?? 0).toDouble(),
       schedule: data['Schedule'] ?? '',
-      // التعامل مع المصفوفة (Array)
       tags: List<String>.from(data['tags'] ?? []),
-      // التعامل مع الوقت (Timestamp)
-      startTime: (data['start_time'] as Timestamp).toDate(),
-      endTime: (data['end_time'] as Timestamp).toDate(),
+      // التأكد من نوع البيانات القادمة للوقت
+      startTime: (data['start_time'] as Timestamp? ?? Timestamp.now()).toDate(),
+      endTime: (data['end_time'] as Timestamp? ?? Timestamp.now()).toDate(),
+      // إضافة الحقل الجديد مع قيمة افتراضية 0
+      venueCapacity: data['venue_capacity'] ?? 0,
     );
   }
 }
