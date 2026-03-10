@@ -7,6 +7,7 @@ import 'faq.dart';
 import 'Nearyou.dart'; // Near you screen
 import 'Reminders.dart'; // reminders screen
 import 'profile.dart'; // profile page
+import 'library_details_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
