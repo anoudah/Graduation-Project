@@ -3,26 +3,25 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-// 1.   استيرادات طبقة البيانات (Data Layer)
+// 1. استيرادات طبقة البيانات
 import 'data/datasources/firebase_remote_source.dart';
 import 'data/repositories/event_repository_impl.dart';
 
-// 2. استيرادات طبقة الدومين (Domain Layer)
+// 2. استيرادات طبقة الدومين
 import 'domain/usecases/get_all_events_usecase.dart';
 
-// 3. استيرادات طبقة التطبيق (Application Layer)
+// 3. استيرادات طبقة التطبيق
 import 'application/providers/event_provider.dart';
 
+// نورة: أضفنا استيراد الشاشة لكي نتمكن من عرضها عند تشغيل التطبيق
+import 'presentation/screens/museums_screen.dart';
+
 void main() async {
-  // السطرين القادمة هي "صمام الأمان" لضمان اتصال الفايربيس قبل تشغيل الشاشات
+  // صمام الأمان لضمان تهيئة إضافات فلاتر والفايربيس
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
   runApp(
-    /* استخدام MultiProvider هنا هو "الاحترافية" بعينها؛ 
-       لأنه يسمح لكِ بإضافة Providers أخرى مستقبلاً (مثل AuthProvider) 
-       دون الحاجة لتغيير هيكلة التطبيق.
-    */
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
@@ -46,22 +45,16 @@ class WaselApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // لإزالة شريط الـ Debug المزعج
+      debugShowCheckedModeBanner: false,
       title: 'Wasel',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // تم تغيير اللون ليناسب هوية التطبيق الكحلية (اختياري)
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1A237E)),
         useMaterial3: true,
-        fontFamily: 'Tajawal', // إذا كنتِ تستخدمين خطاً عربياً، هذا مكانه
+        fontFamily: 'Tajawal',
       ),
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            "Wasel System is Ready!\nData Connection: OK",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
+      // نورة: هنا قمنا بتغيير الشاشة الرئيسية لتفتح على قائمة المتاحف فوراً
+      home: const MuseumsScreen(),
     );
   }
 }
