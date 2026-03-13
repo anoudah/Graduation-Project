@@ -7,7 +7,11 @@ import 'faq.dart';
 import 'Nearyou.dart'; // Near you screen
 import 'Reminders.dart'; // reminders screen
 import 'profile.dart'; // profile page
+<<<<<<< HEAD
 import 'Notifications.dart'; // notifications page
+=======
+import 'library_details_screen.dart'; 
+>>>>>>> 893c38d45d4d446912d00feee5d70a6d7771eb1b
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -608,10 +612,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Recommended Section
+ // Recommended Section
   Widget _buildRecommendedSection(BuildContext context, bool isMobile) {
     final recommendations = [
-      'King AbdulAziz Camel Festival',
+      'King Fahad National Library', // غيرت الاسم هنا عشان يفتح الصفحة المناسبة
       'Diriyah Season',
       'Al Masmak Palace',
     ];
@@ -657,61 +661,74 @@ class _HomeScreenState extends State<HomeScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: recommendations.map((recommendation) {
-                return Container(
-                  width: 220,
-                  margin: const EdgeInsets.only(right: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(
-                        height: 160,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                          ),
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                              'https://via.placeholder.com/220x160?text=Recommended',
+                // --- التعديل يبدأ من هنا ---
+                return GestureDetector(
+                  onTap: () {
+                    // إذا كان النص المكتوب هو المكتبة، انتقلي لصفحتك
+                    if (recommendation == 'King Fahad National Library') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LibraryDetailsScreen()),
+                      );
+                    }
+                  },
+                  child: Container( // هذا Container زميلتك كما هو بدون تغيير
+                    width: 220,
+                    margin: const EdgeInsets.only(right: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          height: 160,
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
                             ),
-                            fit: BoxFit.cover,
+                            image: const DecorationImage(
+                              image: NetworkImage(
+                                'https://via.placeholder.com/220x160?text=Recommended',
+                              ),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(16),
-                            bottomRight: Radius.circular(16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            recommendation,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF333333),
+                              fontFamily: 'Poppins',
+                            ),
                           ),
                         ),
-                        child: Text(
-                          recommendation,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF333333),
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
+                // --- التعديل ينتهي هنا ---
               }).toList(),
             ),
           ),

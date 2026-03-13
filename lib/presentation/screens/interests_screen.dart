@@ -83,20 +83,25 @@ class _InterestsScreenState extends State<InterestsScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 55,
-                child: ElevatedButton(
-                  onPressed: selectedInterests.isEmpty ? null : () {
-                    // الانتقال لصفحة الهوم
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomeScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A237E),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  ),
-                  child: const Text("Continue to Home", style: TextStyle(color: Colors.white, fontSize: 18)),
+             child: ElevatedButton(
+                // الزر يشتغل فقط إذا اختار المستخدم اهتمام واحد على الأقل
+                onPressed: selectedInterests.isEmpty ? null : () {
+                  // هذا السطر هو "الربط": يفتح صفحة الهوم ويحذف صفحة الاهتمامات من الخلفية
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6B4B8A), // غيرت اللون للبنفسجي عشان يطابق الهوم حقتك
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), // شكل بيضاوي أحلى
+                  elevation: 5,
                 ),
+                child: const Text(
+                  "Continue to Home", 
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+                ),
+              ),
               ),
             ],
           ),
