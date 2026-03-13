@@ -7,6 +7,7 @@ import 'faq.dart';
 import 'Nearyou.dart'; // Near you screen
 import 'Reminders.dart'; // reminders screen
 import 'profile.dart'; // profile page
+import 'Notifications.dart'; // notifications page
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -80,6 +81,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const RemindersScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_active),
+              title: const Text('Notifications'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NotificationsScreen()),
                 );
               },
             ),
