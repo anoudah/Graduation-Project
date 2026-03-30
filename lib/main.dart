@@ -3,21 +3,22 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-// 1. استيرادات طبقة البيانات
+// 1. Data Layer Imports
 import 'data/datasources/firebase_remote_source.dart';
 import 'data/repositories/event_repository_impl.dart';
 
-// 2. استيرادات طبقة الدومين
+// 2. Domain Layer Imports
 import 'domain/usecases/get_all_events_usecase.dart';
 
-// 3. استيرادات طبقة التطبيق
+// 3. Application Layer Imports
 import 'application/providers/event_provider.dart';
 
-// نورة: أضفنا استيراد الشاشة لكي نتمكن من عرضها عند تشغيل التطبيق
+// UI Imports
+import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/museums_screen.dart';
 
 void main() async {
-  // صمام الأمان لضمان تهيئة إضافات فلاتر والفايربيس
+  // Ensure Firebase and Flutter are initialized before the app runs
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
@@ -48,13 +49,20 @@ class WaselApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Wasel',
       theme: ThemeData(
-        // تم تغيير اللون ليناسب هوية التطبيق الكحلية (اختياري)
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1A237E)),
+        // TEAM DECISION: Choose your primary color
+        // Purple (Main): const Color(0xFF6B4B8A)
+        // Navy (Database): const Color(0xFF1A237E)
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6B4B8A)), 
+        
         useMaterial3: true,
-        fontFamily: 'Tajawal',
+        
+        // TEAM DECISION: Choose your font
+        // 'Poppins' for English, 'Tajawal' for Arabic
+        fontFamily: 'Tajawal', 
       ),
-      // نورة: هنا قمنا بتغيير الشاشة الرئيسية لتفتح على قائمة المتاحف فوراً
-      home: const MuseumsScreen(),
+      // TEAM DECISION: Choose the starting screen
+      // HomeScreen() or MuseumsScreen()
+      home: const HomeScreen(), 
     );
   }
 }
