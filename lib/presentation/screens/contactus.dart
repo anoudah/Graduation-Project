@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ContactUsScreen extends StatefulWidget {
@@ -47,11 +48,24 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               ),
               const SizedBox(height: 20),
 
-              _buildTextField('Full Name', Icons.person_outline, controller: _nameController),
+              _buildTextField(
+                'Full Name',
+                Icons.person_outline,
+                controller: _nameController,
+              ),
               const SizedBox(height: 20),
-              _buildTextField('Email Address', Icons.email_outlined, controller: _emailController, keyboardType: TextInputType.emailAddress),
+              _buildTextField(
+                'Email Address',
+                Icons.email_outlined,
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+              ),
               const SizedBox(height: 20),
-              _buildMultilineField('Your Message', Icons.message_outlined, controller: _messageController),
+              _buildMultilineField(
+                'Your Message',
+                Icons.message_outlined,
+                controller: _messageController,
+              ),
               const SizedBox(height: 40),
 
               SizedBox(
@@ -60,12 +74,18 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B4B8A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     elevation: 5,
                   ),
                   child: const Text(
                     'Send Message',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -76,8 +96,13 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     );
   }
 
-  Widget _buildTextField(String hint, IconData icon,
-      {TextEditingController? controller, bool isPassword = false, TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(
+    String hint,
+    IconData icon, {
+    TextEditingController? controller,
+    bool isPassword = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
@@ -95,7 +120,11 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     );
   }
 
-  Widget _buildMultilineField(String hint, IconData icon, {TextEditingController? controller}) {
+  Widget _buildMultilineField(
+    String hint,
+    IconData icon, {
+    TextEditingController? controller,
+  }) {
     return TextField(
       controller: controller,
       maxLines: 5,
@@ -112,13 +141,56 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     );
   }
 
-  void _submit() {
-    // You can plug in your submission logic here (e.g., send to API)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Your message has been sent!')),
-    );
-    _nameController.clear();
-    _emailController.clear();
-    _messageController.clear();
+  // void _submit() {
+  // You can plug in your submission logic here (e.g., send to API)
+  //  ScaffoldMessenger.of(context).showSnackBar(
+  //    const SnackBar(content: Text('Your message has been sent!')),
+  // );
+  // _nameController.clear();
+  //_emailController.clear();
+  // _messageController.clear();
+  // }
+  // Norah's Update: Logic to send contact messages directly to Firestore
+  Future<void> _submit() async {
+    // 1. Validation to ensure no empty fields are sent to the database
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _messageController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    try {
+      // 2. Sending data to 'Contact Us' collection in Firestore
+      await FirebaseFirestore.instance.collection('Contact Us').add({
+        'Full_Name': _nameController.text, // From Name TextField
+        'Email': _emailController.text, // From Email TextField
+        'Message_Text': _messageController.text, // From Message TextField
+        'Created_At': FieldValue.serverTimestamp(), // Automatic server time
+        'Is_Read': false, // Default status for new messages
+        'User_Id': 'Guest_User', // Can be linked to Auth later
+      });
+
+      // 3. Confirm success to the user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Your message has been sent successfully!'),
+          ),
+        );
+      }
+
+      // 4. Clear form fields after successful submission
+      _nameController.clear();
+      _emailController.clear();
+      _messageController.clear();
+    } catch (e) {
+      // 5. Error handling (e.g., connection issues)
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+    }
   }
 }
