@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; //norah
 // Alanoud added: Import the AI source to talk to Python
-import '../../data/datasources/ai_remote_source.dart'; 
+import '../../data/datasources/ai_remote_source.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
@@ -25,7 +26,15 @@ class _CategoryScreenState extends State<CategoryScreen> {
   void initState() {
     super.initState();
     // Alanoud added: Fetch dynamic data from Python based on the tapped category!
-    _categoryEventsFuture = _aiSource.fetchEventsByCategory(widget.categoryName);
+    _categoryEventsFuture = _aiSource.fetchEventsByCategory(
+      widget.categoryName,
+    );
+    // Norah added: Fetch direct data from Firestore to display manual events and images
+    _categoryEventsFuture = FirebaseFirestore.instance
+        .collection('Events')
+        .where('Category', isEqualTo: widget.categoryName)
+        .get()
+        .then((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   // Alanoud removed: The hardcoded _getCategoryItems map is gone!
@@ -97,7 +106,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF333333), size: 28),
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Color(0xFF333333),
+              size: 28,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 16),
@@ -112,16 +125,30 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             ),
           ),
-          IconButton(icon: const Icon(Icons.search, color: Color(0xFF333333), size: 24), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.search, color: Color(0xFF333333), size: 24),
+            onPressed: () {},
+          ),
           const SizedBox(width: 8),
-          IconButton(icon: const Icon(Icons.filter_list, color: Color(0xFF333333), size: 24), onPressed: () {}),
+          IconButton(
+            icon: const Icon(
+              Icons.filter_list,
+              color: Color(0xFF333333),
+              size: 24,
+            ),
+            onPressed: () {},
+          ),
         ],
       ),
     );
   }
 
   // Alanoud added: Pass the totalItemCount so the header updates dynamically
-  Widget _buildCategoryHeader(BuildContext context, bool isMobile, int totalItemCount) {
+  Widget _buildCategoryHeader(
+    BuildContext context,
+    bool isMobile,
+    int totalItemCount,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
       child: Column(
@@ -136,10 +163,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   shape: BoxShape.circle,
                   color: const Color(0xFFE8DDF5),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
-                child: Icon(widget.categoryIcon, color: const Color(0xFF6B4B8A), size: 40),
+                child: Icon(
+                  widget.categoryIcon,
+                  color: const Color(0xFF6B4B8A),
+                  size: 40,
+                ),
               ),
               const SizedBox(width: 24),
               Expanded(
@@ -148,17 +183,22 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   children: [
                     Text(
                       widget.categoryName,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF333333),
-                        fontFamily: 'Poppins',
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF333333),
+                            fontFamily: 'Poppins',
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '$totalItemCount places available', // Dynamic count!
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF999999), fontFamily: 'Poppins'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF999999),
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ],
                 ),
@@ -171,11 +211,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   // Alanoud added: Pass the dynamic AI list into the builder
-  Widget _buildCategoryItemsList(BuildContext context, bool isMobile, List<dynamic> categoryItems) {
+  Widget _buildCategoryItemsList(
+    BuildContext context,
+    bool isMobile,
+    List<dynamic> categoryItems,
+  ) {
     if (categoryItems.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(40),
-        child: Text("No events found for this category.", style: TextStyle(color: Colors.grey)),
+        child: Text(
+          "No events found for this category.",
+          style: TextStyle(color: Colors.grey),
+        ),
       );
     }
 
@@ -183,7 +230,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         children: categoryItems.map((item) {
-          
           // Alanoud added: AI Crowd Color Logic
           String crowdStatus = item['Live_Crowd_Status'] ?? "LOW";
           Color crowdColor = Colors.green;
@@ -196,7 +242,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4)),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
             child: Row(
@@ -214,9 +264,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
                       // Map to Python Image_Url
-                      item['Image_Url'] ?? 'https://via.placeholder.com/120x120?text=No+Image',
+                      item['Image_Url'] ??
+                          'https://via.placeholder.com/120x120?text=No+Image',
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ),
@@ -224,48 +278,69 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 // Content
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 12,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          item['Title'] ?? 'Unknown Event', // Map to Python Title
+                          item['Title'] ??
+                              'Unknown Event', // Map to Python Title
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: 'Poppins'),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF333333),
+                            fontFamily: 'Poppins',
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          item['About'] ?? item['Category'] ?? '', // Map to Python About/Category
+                          item['About'] ??
+                              item['Category'] ??
+                              '', // Map to Python About/Category
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF999999), fontFamily: 'Poppins'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF999999),
+                            fontFamily: 'Poppins',
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        
+
                         // Distance and AI Crowd Badge
                         Row(
                           children: [
-                            const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF6B4B8A)),
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: Color(0xFF6B4B8A),
+                            ),
                             const SizedBox(width: 4),
-                            
+
                             // Alanoud added: Placeholder for distance calculation
                             const Text(
                               '-- km', // TODO: Replace with real GPS distance math later
                               style: TextStyle(
-                                fontSize: 12, 
-                                color: Color(0xFF6B4B8A), 
-                                fontWeight: FontWeight.w500, 
-                                fontFamily: 'Poppins'
+                                fontSize: 12,
+                                color: Color(0xFF6B4B8A),
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Poppins',
                               ),
                             ),
-                            
+
                             const Spacer(), // Pushes the AI badge to the far right
-                            
                             // Alanoud added: Dynamic AI Crowd Badge!
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: crowdColor.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(4),
@@ -273,13 +348,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               child: Text(
                                 crowdStatus,
                                 style: TextStyle(
-                                  fontSize: 10, 
-                                  fontWeight: FontWeight.bold, 
-                                  color: crowdColor, 
-                                  fontFamily: 'Poppins'
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: crowdColor,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
-                            )
+                            ),
                           ],
                         ),
                       ],
@@ -290,7 +365,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 // Arrow Icon
                 const Padding(
                   padding: EdgeInsets.only(right: 16),
-                  child: Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFF6B4B8A)),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Color(0xFF6B4B8A),
+                  ),
                 ),
               ],
             ),
