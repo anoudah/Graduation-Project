@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart'; // عشان ننتقل للهوم بعد الاختيار
 
@@ -9,10 +11,16 @@ class InterestsScreen extends StatefulWidget {
 }
 
 class _InterestsScreenState extends State<InterestsScreen> {
-  // قائمة الاهتمامات المتاحة 
+  // قائمة الاهتمامات المتاحة
   final List<String> categories = [
-    'Museums', 'Libraries', 'Heritage', 'Arts', 
-    'Technology', 'Conferences', 'Traditional Food', 'Festivals'
+    'Museums',
+    'Libraries',
+    'Heritage',
+    'Arts',
+    'Technology',
+    'Conferences',
+    'Traditional Food',
+    'Festivals',
   ];
 
   // قائمة لحفظ الاهتمامات اللي اختارها المستخدم
@@ -31,7 +39,11 @@ class _InterestsScreenState extends State<InterestsScreen> {
               const SizedBox(height: 40),
               const Text(
                 "Welcome to Wasel!",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A237E),
+                ),
               ),
               const SizedBox(height: 10),
               const Text(
@@ -39,7 +51,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 30),
-              
+
               // عرض الاهتمامات بشكل شبكة مرنة
               Expanded(
                 child: Wrap(
@@ -58,12 +70,19 @@ class _InterestsScreenState extends State<InterestsScreen> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF6B4B8A) : const Color(0xFFF0F2F5),
+                          color: isSelected
+                              ? const Color(0xFF6B4B8A)
+                              : const Color(0xFFF0F2F5),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF6B4B8A) : Colors.transparent,
+                            color: isSelected
+                                ? const Color(0xFF6B4B8A)
+                                : Colors.transparent,
                           ),
                         ),
                         child: Text(
@@ -83,25 +102,69 @@ class _InterestsScreenState extends State<InterestsScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 55,
-             child: ElevatedButton(
-                // الزر يشتغل فقط إذا اختار المستخدم اهتمام واحد على الأقل
-                onPressed: selectedInterests.isEmpty ? null : () {
-                  // هذا السطر هو "الربط": يفتح صفحة الهوم ويحذف صفحة الاهتمامات من الخلفية
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6B4B8A), // غيرت اللون للبنفسجي عشان يطابق الهوم حقتك
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), // شكل بيضاوي أحلى
-                  elevation: 5,
+                child: ElevatedButton(
+                  onPressed: selectedInterests.isEmpty
+                      ? null
+                      : () async {
+                          // 1. التأكد من هوية اليوزر (للحماية)
+                          final user = FirebaseAuth.instance.currentUser;
+
+                          if (user == null) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please login first"),
+                                ),
+                              );
+                            }
+                            return;
+                          }
+
+                          final String uid = user.uid;
+
+                          try {
+                            // 2. حفظ الاهتمامات في Firestore (تأكدي من المسمى المطابق لصورتك)
+                            await FirebaseFirestore.instance
+                                .collection('Users')
+                                .doc(uid)
+                                .set({
+                                  'selected_interests':
+                                      selectedInterests, // الاسم المطابق للداتابيز عندك
+                                  'Selection_Date':
+                                      FieldValue.serverTimestamp(),
+                                }, SetOptions(merge: true));
+
+                            // 3. الانتقال للهوم بعد نجاح الحفظ
+                            if (context.mounted) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const HomeScreen(),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            print("Database Error: $e");
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(
+                      0xFF6B4B8A,
+                    ), // غيرت اللون للبنفسجي عشان يطابق الهوم حقتك
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ), // شكل بيضاوي أحلى
+                    elevation: 5,
+                  ),
+                  child: const Text(
+                    "Continue to Home",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                child: const Text(
-                  "Continue to Home", 
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
-                ),
-              ),
               ),
             ],
           ),
