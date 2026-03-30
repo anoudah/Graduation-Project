@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 // 1. Data Layer Imports
 import 'data/datasources/firebase_remote_source.dart';
@@ -15,12 +16,14 @@ import 'application/providers/event_provider.dart';
 
 // UI Imports
 import 'presentation/screens/home_screen.dart';
-import 'presentation/screens/museums_screen.dart';
+// import 'presentation/screens/museums_screen.dart';
 
 void main() async {
   // Ensure Firebase and Flutter are initialized before the app runs
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(
     MultiProvider(
@@ -58,7 +61,7 @@ class WaselApp extends StatelessWidget {
         
         // TEAM DECISION: Choose your font
         // 'Poppins' for English, 'Tajawal' for Arabic
-        fontFamily: 'Tajawal', 
+        fontFamily: 'Poppins', 
       ),
       // TEAM DECISION: Choose the starting screen
       // HomeScreen() or MuseumsScreen()
