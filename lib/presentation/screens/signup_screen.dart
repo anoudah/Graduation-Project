@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'interests_screen.dart'; // تأكدي أن هذا الملف موجود في مشروعك
+import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -82,7 +83,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const Text("Already have an account?"),
                   TextButton(
                     onPressed: () {
-                      // Login logic
+                      Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const LoginScreen()),
+  );
                     },
                     child: const Text("Login", style: TextStyle(color: Color(0xFF6B4B8A), fontWeight: FontWeight.bold)),
                   ),
