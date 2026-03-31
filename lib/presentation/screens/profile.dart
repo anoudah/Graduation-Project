@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // هذا السطر اللي كان ناقصك
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() {
+void main() async {
+  // 1. ضمان تهيئة Flutter Widgets
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. تهيئة Firebase (هنا كان الخطأ الأحمر لأنه ما كان فيه Import فوق)
+  await Firebase.initializeApp();
+
   runApp(const MyApp());
 }
 
@@ -10,30 +19,56 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Profile Page',
-      theme: ThemeData(
-        primarySwatch: Colors.purple,
-      ),
-      home: const ProfilePage(),
+      theme: ThemeData(primaryColor: Colors.purple, useMaterial3: true),
+      // فحص حالة المستخدم: إذا مسجل دخول نرسل الـ UID لصفحة البروفايل
+      home: ProfilePage(uid: FirebaseAuth.instance.currentUser?.uid),
     );
   }
 }
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  final String? uid; // إضافة متغير لاستقبال المعرف
+  const ProfilePage({Key? key, this.uid}) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final TextEditingController fullNameController =
-      TextEditingController(text: 'Sarah');
-  final TextEditingController lastNameController =
-      TextEditingController(text: 'Ahmed');
-  String? selectedGender = 'Female';
-  final TextEditingController dateOfBirthController =
-      TextEditingController(text: '01/01/2005');
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController dateOfBirthController = TextEditingController();
+  String? selectedGender;
+  String userEmail = ""; // سنخزن الإيميل هنا لعرضه
+  // دالة جلب البيانات من Firestore
+  Future<void> _loadUserData() async {
+    try {
+      // نستخدم الـ uid اللي استلمناه من الـ Widget
+      String? userId = widget.uid ?? FirebaseAuth.instance.currentUser?.uid;
+
+      if (userId != null) {
+        var doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+
+        if (doc.exists) {
+          // هنا السحر! نضع البيانات داخل الـ Controllers عشان تظهر في الـ UI
+          setState(() {
+            fullNameController.text = doc['firstName'] ?? '';
+            lastNameController.text = doc['lastName'] ?? '';
+            dateOfBirthController.text = doc['dob'] ?? '';
+            selectedGender = doc['gender'];
+            userEmail = FirebaseAuth.instance.currentUser?.email ?? "";
+          });
+        }
+      }
+    } catch (e) {
+      print("Error loading data: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +81,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               SizedBox(height: 40),
               Text(
-                'Welcome, Sarah!',
+                'Welcome, ${fullNameController.text}!',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -63,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
                       blurRadius: 10,
-                    )
+                    ),
                   ],
                 ),
                 child: Row(
@@ -85,7 +120,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Sarah Ahmed',
+                              '${fullNameController.text} ${lastNameController.text}',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -94,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             SizedBox(height: 5),
                             Text(
-                              'Sarahahmed11@gmail.com',
+                              userEmail,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -130,7 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
                       blurRadius: 10,
-                    )
+                    ),
                   ],
                 ),
                 child: Column(
@@ -142,11 +177,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Full Name',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[600])),
+                              Text(
+                                'Full Name',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
                               SizedBox(height: 8),
                               TextField(
                                 controller: fullNameController,
@@ -155,7 +193,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -166,11 +206,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Last Name',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[600])),
+                              Text(
+                                'Last Name',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
                               SizedBox(height: 8),
                               TextField(
                                 controller: lastNameController,
@@ -179,7 +222,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -194,19 +239,24 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Gender',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[600])),
+                              Text(
+                                'Gender',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
                               SizedBox(height: 8),
                               DropdownButtonFormField<String>(
                                 value: selectedGender,
                                 items: ['Male', 'Female', 'Other']
-                                    .map((gender) => DropdownMenuItem(
-                                          value: gender,
-                                          child: Text(gender),
-                                        ))
+                                    .map(
+                                      (gender) => DropdownMenuItem(
+                                        value: gender,
+                                        child: Text(gender),
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (value) {
                                   setState(() {
@@ -218,7 +268,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -229,11 +281,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Date of Birth',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[600])),
+                              Text(
+                                'Date of Birth',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
                               SizedBox(height: 8),
                               TextField(
                                 controller: dateOfBirthController,
@@ -242,7 +297,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -266,8 +323,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               SizedBox(height: 15),
-              _buildCommentCard('Sarah Ahmed', '1 month ago',
-                  'kinda crowded but nice'),
+              _buildCommentCard(
+                'Sarah Ahmed',
+                '1 month ago',
+                'kinda crowded but nice',
+              ),
               SizedBox(height: 12),
               _buildCommentCard('Sarah Ahmed', '1 month ago', 'recommended'),
               SizedBox(height: 30),
@@ -280,7 +340,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
                       blurRadius: 10,
-                    )
+                    ),
                   ],
                 ),
                 child: Row(
@@ -326,10 +386,7 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-          )
+          BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8),
         ],
       ),
       child: Column(
@@ -348,20 +405,14 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               Text(
                 time,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
             ],
           ),
           SizedBox(height: 8),
           Text(
             comment,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[700],
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
           ),
         ],
       ),
