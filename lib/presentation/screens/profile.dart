@@ -40,9 +40,17 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController dateOfBirthController = TextEditingController();
-  String? selectedGender;
+
+  String? selectedGender; // هذا المتغير سيخزن القيمة المختارة (Male أو Female)
   String userEmail = ""; // سنخزن الإيميل هنا لعرضه
   // دالة جلب البيانات من Firestore
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // هذا السطر هو الذي سيقوم بتشغيل جلب البيانات فور فتح الصفحة
+  }
+
   Future<void> _loadUserData() async {
     try {
       // نستخدم الـ uid اللي استلمناه من الـ Widget
@@ -50,18 +58,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (userId != null) {
         var doc = await FirebaseFirestore.instance
-            .collection('users')
+            .collection('Users') // *** تأكدي من حرف U الكبير ***
             .doc(userId)
             .get();
 
         if (doc.exists) {
           // هنا السحر! نضع البيانات داخل الـ Controllers عشان تظهر في الـ UI
           setState(() {
-            fullNameController.text = doc['firstName'] ?? '';
-            lastNameController.text = doc['lastName'] ?? '';
-            dateOfBirthController.text = doc['dob'] ?? '';
-            selectedGender = doc['gender'];
-            userEmail = FirebaseAuth.instance.currentUser?.email ?? "";
+            // استخدمي هذه الأسماء بالضبط كما هي في Firestore
+            fullNameController.text =
+                doc.data()?['Full_Name'] ?? ''; // تأكدي من حرف F و N كبير
+            dateOfBirthController.text = doc.data()?['dob'] ?? '';
+            selectedGender = doc.data()?['gender'];
+            userEmail = doc.data()?['Email'] ?? "";
           });
         }
       }
@@ -70,68 +79,141 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _updateProfile() async {
+    try {
+      // 1. الحصول على UID المستخدم الحالي
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+
+      // 2. تنظيف البيانات (إزالة المسافات الزائدة من البداية والنهاية)
+      String fName = fullNameController.text.trim();
+      String lName = lastNameController.text.trim();
+
+      // منطق دمج الاسم: إذا كان الاسم الأخير فارغاً لا تضف مسافة زائدة
+      String combinedName = lName.isEmpty ? fName : '$fName $lName';
+
+      // 3. تحديث الوثيقة في مجموعة 'Users'
+      await FirebaseFirestore.instance.collection('Users').doc(uid).update({
+        'Full_Name': combinedName, // مطابق تماماً لاسم الحقل في Firestore
+        'gender': selectedGender,
+        'dob': dateOfBirthController.text.trim(), // تنظيف تاريخ الميلاد أيضاً
+      });
+
+      // 4. إظهار رسالة نجاح
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Colors.green, // إضافة لون أخضر للنجاح
+          ),
+        );
+      }
+    } catch (e) {
+      // تسجيل الخطأ للمبرمج
+      debugPrint("Error updating profile: $e");
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update profile. Please try again.'),
+            backgroundColor: Colors.red, // إضافة لون أحمر للفشل
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF3E5F5),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
+
           child: Column(
             children: [
               SizedBox(height: 40),
+
               Text(
-                'Welcome, ${fullNameController.text}!',
+                fullNameController.text.isEmpty
+                    ? 'Welcome!'
+                    : 'Welcome, ${fullNameController.text}!',
+
                 style: TextStyle(
                   fontSize: 32,
+
                   fontWeight: FontWeight.bold,
+
                   color: Colors.purple[800],
                 ),
               ),
+
               SizedBox(height: 30),
+
               Container(
                 padding: EdgeInsets.all(20),
+
                 decoration: BoxDecoration(
                   color: Colors.white,
+
                   borderRadius: BorderRadius.circular(15),
+
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
+
                       blurRadius: 10,
                     ),
                   ],
                 ),
+
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                   children: [
                     Row(
                       children: [
                         CircleAvatar(
                           radius: 35,
+
                           backgroundColor: Colors.purple[200],
+
                           child: Icon(
                             Icons.person,
+
                             size: 40,
+
                             color: Colors.purple[800],
                           ),
                         ),
+
                         SizedBox(width: 15),
+
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+
                           children: [
                             Text(
-                              '${fullNameController.text} ${lastNameController.text}',
+                              '${fullNameController.text}',
+
                               style: TextStyle(
                                 fontSize: 18,
+
                                 fontWeight: FontWeight.bold,
+
                                 color: Colors.black,
                               ),
                             ),
+
                             SizedBox(height: 5),
+
                             Text(
                               userEmail,
+
                               style: TextStyle(
                                 fontSize: 14,
+
                                 color: Colors.grey[600],
                               ),
                             ),
@@ -139,136 +221,137 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ],
                     ),
+
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed:
+                          _updateProfile, // استبدلي الأقواس الفارغة باسم دالة التحديث
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.purple[400],
+
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
+
                       child: Text(
                         'Edit',
+
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
                 ),
               ),
+
               SizedBox(height: 30),
+
               Container(
                 padding: EdgeInsets.all(20),
+
                 decoration: BoxDecoration(
                   color: Colors.white,
+
                   borderRadius: BorderRadius.circular(15),
+
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
+
                       blurRadius: 10,
                     ),
                   ],
                 ),
+
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Full Name',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              TextField(
-                                controller: fullNameController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 15),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Last Name',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              TextField(
-                                controller: lastNameController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    // حقل الاسم الكامل الموحد
+                    Text(
+                      'Full Name',
+
+                      style: TextStyle(
+                        fontSize: 12,
+
+                        fontWeight: FontWeight.w600,
+
+                        color: Colors.grey[600],
+                      ),
                     ),
+
+                    SizedBox(height: 8),
+
+                    TextField(
+                      controller: fullNameController,
+
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+
+                    // توقفي هنا.. لا تغلقي الـ Column والـ Container الآن
+
+                    // لأننا سنضيف حقول (الجنس وتاريخ الميلاد) تحت هذا الحقل مباشرة.
                     SizedBox(height: 20),
+
                     Row(
                       children: [
+                        // حقل الجنس (Dropdown)
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+
                             children: [
                               Text(
                                 'Gender',
+
                                 style: TextStyle(
                                   fontSize: 12,
+
                                   fontWeight: FontWeight.w600,
+
                                   color: Colors.grey[600],
                                 ),
                               ),
+
                               SizedBox(height: 8),
+
                               DropdownButtonFormField<String>(
                                 value: selectedGender,
+
                                 items: ['Male', 'Female', 'Other']
                                     .map(
                                       (gender) => DropdownMenuItem(
                                         value: gender,
+
                                         child: Text(gender),
                                       ),
                                     )
                                     .toList(),
+
                                 onChanged: (value) {
                                   setState(() {
                                     selectedGender = value;
                                   });
                                 },
+
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
+
                                   contentPadding: EdgeInsets.symmetric(
                                     horizontal: 12,
+
                                     vertical: 12,
                                   ),
                                 ),
@@ -276,28 +359,40 @@ class _ProfilePageState extends State<ProfilePage> {
                             ],
                           ),
                         ),
+
                         SizedBox(width: 15),
+
+                        // حقل تاريخ الميلاد
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+
                             children: [
                               Text(
                                 'Date of Birth',
+
                                 style: TextStyle(
                                   fontSize: 12,
+
                                   fontWeight: FontWeight.w600,
+
                                   color: Colors.grey[600],
                                 ),
                               ),
+
                               SizedBox(height: 8),
+
                               TextField(
                                 controller: dateOfBirthController,
+
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
+
                                   contentPadding: EdgeInsets.symmetric(
                                     horizontal: 12,
+
                                     vertical: 12,
                                   ),
                                 ),
@@ -307,59 +402,83 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ],
                     ),
-                  ],
+                  ], // نهاية الـ children للـ Column داخل الـ Container الأبيض
                 ),
-              ),
+              ), // نهاية الـ Container الأبيض الخاص بالبيانات
+
               SizedBox(height: 30),
+
               Align(
                 alignment: Alignment.centerLeft,
+
                 child: Text(
                   'Your comments',
+
                   style: TextStyle(
                     fontSize: 18,
+
                     fontWeight: FontWeight.bold,
+
                     color: Colors.purple[800],
                   ),
                 ),
               ),
+
               SizedBox(height: 15),
+
               _buildCommentCard(
                 'Sarah Ahmed',
                 '1 month ago',
                 'kinda crowded but nice',
               ),
+
               SizedBox(height: 12),
+
               _buildCommentCard('Sarah Ahmed', '1 month ago', 'recommended'),
+
               SizedBox(height: 30),
+
               Container(
                 padding: EdgeInsets.all(20),
+
                 decoration: BoxDecoration(
                   color: Colors.white,
+
                   borderRadius: BorderRadius.circular(15),
+
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
+
                       blurRadius: 10,
                     ),
                   ],
                 ),
+
                 child: Row(
                   children: [
                     Icon(Icons.email, color: Colors.purple[400], size: 24),
+
                     SizedBox(width: 12),
+
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+
                       children: [
                         Text(
                           'Email Address',
+
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
                         ),
+
                         SizedBox(height: 4),
+
                         Text(
-                          'Sarahahmed11@gmail.com',
+                          userEmail, // استخدمنا المتغير اللي عرفتيه فوق
+
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -371,22 +490,37 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
+
               SizedBox(height: 30),
-            ],
+            ], // نهاية الـ Column الرئيسية
           ),
-        ),
-      ),
-    );
+        ), // نهاية الـ Padding
+      ), // نهاية الـ SingleChildScrollView
+    ); // نهاية الـ Scaffold
+  } // نهاية الـ build method
+
+  // --- دالة تنظيف الذاكرة (يجب أن تكون داخل الكلاس) ---
+  @override
+  void dispose() {
+    fullNameController.dispose();
+    dateOfBirthController.dispose();
+    // تأكدي من إضافة أي Controller جديد هنا
+    super.dispose();
   }
 
+  // --- دالة بناء كرت التعليقات (يجب أن تكون داخل الكلاس) ---
   Widget _buildCommentCard(String username, String time, String comment) {
     return Container(
-      padding: EdgeInsets.all(15),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8),
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -395,21 +529,26 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                username,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              // حماية الواجهة من الأسماء الطويلة جداً
+              Expanded(
+                child: Text(
+                  username,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
+              const SizedBox(width: 10),
               Text(
                 time,
                 style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             comment,
             style: TextStyle(fontSize: 13, color: Colors.grey[700]),
@@ -418,12 +557,4 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
-  @override
-  void dispose() {
-    fullNameController.dispose();
-    lastNameController.dispose();
-    dateOfBirthController.dispose();
-    super.dispose();
-  }
-}
+} // <--- تأكدي أن هذا هو القوس الوحيد في نهاية الملف لإغلاق الكلاس
