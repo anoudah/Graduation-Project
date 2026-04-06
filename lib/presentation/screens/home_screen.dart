@@ -8,6 +8,7 @@ import 'Nearyou.dart'; // Near you screen
 import 'Reminders.dart'; // reminders screen
 import 'profile.dart'; // profile page
 import 'library_details_screen.dart'; 
+import 'package:wasel/data/datasources/ai_remote_source.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -597,131 +598,149 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
- // Recommended Section
-  Widget _buildRecommendedSection(BuildContext context, bool isMobile) {
-    final recommendations = [
-      'King Fahad National Library', // غيرت الاسم هنا عشان يفتح الصفحة المناسبة
-      'Diriyah Season',
-      'Al Masmak Palace',
-    ];
+// Recommended Section with AI Integration
+Widget _buildRecommendedSection(BuildContext context, bool isMobile) {
+  // 1. Initialize your AI connection
+  final api = AiRemoteSource();
+  final userInterest = "Art"; // You can change this dynamically later based on user profile!
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recommended',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF333333),
-                  fontFamily: 'Poppins',
-                ),
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recommended',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF333333),
+                fontFamily: 'Poppins',
               ),
-              ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.arrow_forward, size: 18),
-                label: const Text('See more'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6B4B8A),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  elevation: 4,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: recommendations.map((recommendation) {
-                // --- التعديل يبدأ من هنا ---
-                return GestureDetector(
-                  onTap: () {
-                    // إذا كان النص المكتوب هو المكتبة، انتقلي لصفحتك
-                    if (recommendation == 'King Fahad National Library') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LibraryDetailsScreen()),
-                      );
-                    }
-                  },
-                  child: Container( // هذا Container زميلتك كما هو بدون تغيير
-                    width: 220,
-                    margin: const EdgeInsets.only(right: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          height: 160,
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                            image: const DecorationImage(
-                              image: NetworkImage(
-                                'https://via.placeholder.com/220x160?text=Recommended',
-                              ),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(16),
-                              bottomRight: Radius.circular(16),
-                            ),
-                          ),
-                          child: Text(
-                            recommendation,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF333333),
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-                // --- التعديل ينتهي هنا ---
-              }).toList(),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.arrow_forward, size: 18),
+              label: const Text('See more'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6B4B8A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                elevation: 4,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
 
+        // --- THE AI INTEGRATION STARTS HERE ---
+        FutureBuilder<List<dynamic>>(
+          future: api.fetchRecommendations(userInterest),
+          builder: (context, snapshot) {
+            // While waiting for Python/ngrok
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF6B4B8A)),
+              );
+            } 
+            // If the server is offline and no cache exists
+            else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } 
+            // If the AI returned an empty list
+            else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No recommendations found.'));
+            }
+
+            // Grab the live AI data!
+            final aiRecommendations = snapshot.data!;
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: aiRecommendations.map((event) {
+                  // Extract the title from the AI JSON
+                  final eventTitle = event['Title'] ?? 'Unknown Event';
+
+                  return GestureDetector(
+                    onTap: () {
+                      // Later, you can pass the specific 'event' data to a details screen!
+                    },
+                    child: Container(
+                      width: 220,
+                      margin: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            height: 160,
+                            decoration: const BoxDecoration(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              ),
+                              image: DecorationImage(
+                                image: NetworkImage(
+                                  // Can use event['Image_Url'] here once you fix CORS!
+                                  'https://via.placeholder.com/220x160?text=Recommended',
+                                ),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(16),
+                              ),
+                            ),
+                            child: Text(
+                              eventTitle, // <-- Showing the live AI Title
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF333333),
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
   // Bottom Banner Section
   Widget _buildBottomBannerSection(BuildContext context) {
     return Container(
