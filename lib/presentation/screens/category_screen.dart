@@ -5,14 +5,17 @@ import '../../data/datasources/ai_remote_source.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
+  final String categoryId;
+
   final IconData categoryIcon;
 
   const CategoryScreen({
-    Key? key,
+    super.key, // تحديث للصيغة المختصرة والحديثة   نوره
     required this.categoryName,
-    required this.categoryIcon,
-  }) : super(key: key);
+    required this.categoryId,
 
+    required this.categoryIcon,
+  });
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
 }
@@ -25,18 +28,32 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   void initState() {
     super.initState();
-    // Alanoud added: Fetch dynamic data from Python based on the tapped category!
-    _categoryEventsFuture = _aiSource.fetchEventsByCategory(
-      widget.categoryName,
-    );
-    // Norah added: Fetch direct data from Firestore to display manual events and images
-    _categoryEventsFuture = FirebaseFirestore.instance
-        .collection('Events')
-        .where('Category', isEqualTo: widget.categoryName)
-        .get()
-        .then((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
 
+    /* FIX: Merged both AI (Alanoud) and Firestore (Norah) data sources using Future.wait.
+      Reason: The previous code was overwriting _categoryEventsFuture, causing one source to be lost.
+      Now, both sources are fetched simultaneously and combined into a single list.
+    */
+    _categoryEventsFuture =
+        Future.wait([
+          _aiSource.fetchEventsByCategory(
+            widget.categoryName,
+          ), // Source 1: AI (Alanoud)
+          FirebaseFirestore.instance
+              .collection('Events')
+              .where(
+                'Category_ID', // الاسم الصحيح للحقل في Firebase عندك
+                isEqualTo:
+                    widget.categoryId, // الـ ID الجديد الذي أضفناه (مثل MUS)
+              ) // Source 2: Firestore (Norah)
+              .get()
+              .then(
+                (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
+              ),
+        ]).then((results) {
+          // Merging both lists into one combined result
+          return [...results[0], ...results[1]];
+        });
+  }
   // Alanoud removed: The hardcoded _getCategoryItems map is gone!
 
   @override

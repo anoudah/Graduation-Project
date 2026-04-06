@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'category_screen.dart';
 import 'smart_tour_screen.dart';
-import 'favorites_screen.dart';  
-import 'contactus.dart'; 
-import 'faq.dart'; 
+import 'favorites_screen.dart';
+import 'contactus.dart';
+import 'faq.dart';
 import 'Nearyou.dart'; // Near you screen
 import 'Reminders.dart'; // reminders screen
 import 'profile.dart'; // profile page
-import 'library_details_screen.dart'; 
+import 'library_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -38,7 +38,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Color(0xFF6B4B8A)),
-              child: Text('Options', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Text(
+                'Options',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.question_answer),
@@ -58,7 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ContactUsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const ContactUsScreen(),
+                  ),
                 );
               },
             ),
@@ -69,7 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesScreen(),
+                  ),
                 );
               },
             ),
@@ -80,7 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const RemindersScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const RemindersScreen(),
+                  ),
                 );
               },
             ),
@@ -92,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Navigation Bar
             _buildNavigationBar(context),
-            
+
             // Hero Section
             if (isMobile)
               _buildHeroSectionMobile()
@@ -130,9 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
               _scaffoldKey.currentState?.openDrawer();
             },
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           // Search Bar
           Expanded(
             child: Container(
@@ -171,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          
+
           const SizedBox(width: 16),
 
           // Profile Circle (button)
@@ -273,9 +282,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(width: 60),
-          
+
           // Right: Hero Text
           Expanded(
             child: Column(
@@ -379,12 +388,32 @@ class _HomeScreenState extends State<HomeScreen> {
   // Categories Section
   Widget _buildCategoriesSection(BuildContext context) {
     final categories = [
-      {'label': 'Libraries', 'icon': Icons.library_books, 'fullLabel': 'Libraries'},
-      {'label': 'Heritage and\nTradition', 'icon': Icons.museum, 'fullLabel': 'Heritage and Tradition'},
+      {
+        'label': 'Libraries',
+        'icon': Icons.library_books,
+        'fullLabel': 'Libraries',
+      },
+      {
+        'label': 'Heritage and\nTradition',
+        'icon': Icons.museum,
+        'fullLabel': 'Heritage and Tradition',
+      },
       {'label': 'Museums', 'icon': Icons.collections, 'fullLabel': 'Museums'},
-      {'label': 'Conferences\nand Forums', 'icon': Icons.forum, 'fullLabel': 'Conferences and Forums'},
-      {'label': 'Cultural\nInstitutions', 'icon': Icons.business, 'fullLabel': 'Cultural Institutions'},
-      {'label': 'Exhibition and\nConvention', 'icon': Icons.storefront, 'fullLabel': 'Exhibition and Convention Centre'},
+      {
+        'label': 'Conferences\nand Forums',
+        'icon': Icons.forum,
+        'fullLabel': 'Conferences and Forums',
+      },
+      {
+        'label': 'Cultural\nInstitutions',
+        'icon': Icons.business,
+        'fullLabel': 'Cultural Institutions',
+      },
+      {
+        'label': 'Exhibition and\nConvention',
+        'icon': Icons.storefront,
+        'fullLabel': 'Exhibition and Convention Centre',
+      },
     ];
 
     return Container(
@@ -413,6 +442,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       MaterialPageRoute(
                         builder: (context) => CategoryScreen(
                           categoryName: category['fullLabel'] as String,
+                          categoryId: category['fullLabel'] as String,
                           categoryIcon: category['icon'] as IconData,
                         ),
                       ),
@@ -497,7 +527,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const NearYouScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const NearYouScreen(),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.arrow_forward, size: 18),
@@ -597,7 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
- // Recommended Section
+  // Recommended Section
   Widget _buildRecommendedSection(BuildContext context, bool isMobile) {
     final recommendations = [
       'King Fahad National Library', // غيرت الاسم هنا عشان يفتح الصفحة المناسبة
@@ -651,13 +683,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {
                     // إذا كان النص المكتوب هو المكتبة، انتقلي لصفحتك
                     if (recommendation == 'King Fahad National Library') {
+                      // التعديل الصحيح في ملف home_screen.dart
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LibraryDetailsScreen()),
+                        MaterialPageRoute(
+                          // احذفي كلمة const التي كانت هنا فوراً
+                          builder: (context) => LibraryDetailsScreen(
+                            eventId: (recommendation['id']).toString(),
+                          ),
+                        ),
                       );
                     }
                   },
-                  child: Container( // هذا Container زميلتك كما هو بدون تغيير
+                  child: Container(
+                    // هذا Container زميلتك كما هو بدون تغيير
                     width: 220,
                     margin: const EdgeInsets.only(right: 16),
                     decoration: BoxDecoration(
@@ -728,11 +767,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
       child: Column(
         children: [
-          Divider(
-            color: const Color(0xFFD0D0D0),
-            thickness: 1,
-            height: 32,
-          ),
+          Divider(color: const Color(0xFFD0D0D0), thickness: 1, height: 32),
           const SizedBox(height: 32),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
@@ -771,12 +806,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 28),
                 ElevatedButton(
-                  onPressed: () {Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SmartTourScreen(),
-                    ),
-                  );},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SmartTourScreen(),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B4B8A),
                     foregroundColor: Colors.white,
