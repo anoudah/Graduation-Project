@@ -632,9 +632,22 @@ class _HomeScreenState extends State<HomeScreen> {
   // Recommended Section
   Widget _buildRecommendedSection(BuildContext context, bool isMobile) {
     final recommendations = [
-      'King Fahad National Library', // غيرت الاسم هنا عشان يفتح الصفحة المناسبة
-      'Diriyah Season',
-      'Al Masmak Palace',
+      {
+        'name': 'King Fahad National Library',
+        'id':
+            'kf_national_library_001', // Replace with your actual Firestore Document ID
+        'image': 'https://via.placeholder.com/220x160?text=Library',
+      },
+      {
+        'name': 'Diriyah Season',
+        'id': 'diriyah_id',
+        'image': 'https://via.placeholder.com/220x160?text=Diriyah',
+      },
+      {
+        'name': 'Al Masmak Palace',
+        'id': 'masmak_id',
+        'image': 'https://via.placeholder.com/220x160?text=Masmak',
+      },
     ];
 
     return Container(
@@ -678,28 +691,23 @@ class _HomeScreenState extends State<HomeScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: recommendations.map((recommendation) {
-                // --- التعديل يبدأ من هنا ---
                 return GestureDetector(
                   onTap: () {
-                    // إذا كان النص المكتوب هو المكتبة، انتقلي لصفحتك
-                    if (recommendation == 'King Fahad National Library') {
-                      // التعديل الصحيح في ملف home_screen.dart
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          // احذفي كلمة const التي كانت هنا فوراً
-                          builder: (context) => LibraryDetailsScreen(
-                            eventId: (recommendation['id']).toString(),
-                          ),
+                    // Navigate to details screen using the ID from the map
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LibraryDetailsScreen(
+                          eventId: recommendation['id']!,
                         ),
-                      );
-                    }
+                      ),
+                    );
                   },
                   child: Container(
-                    // هذا Container زميلتك كما هو بدون تغيير
                     width: 220,
                     margin: const EdgeInsets.only(right: 16),
                     decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -719,25 +727,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               topLeft: Radius.circular(16),
                               topRight: Radius.circular(16),
                             ),
-                            image: const DecorationImage(
-                              image: NetworkImage(
-                                'https://via.placeholder.com/220x160?text=Recommended',
-                              ),
+                            image: DecorationImage(
+                              image: NetworkImage(recommendation['image']!),
                               fit: BoxFit.cover,
                             ),
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(16),
-                              bottomRight: Radius.circular(16),
-                            ),
-                          ),
                           child: Text(
-                            recommendation,
+                            recommendation['name']!,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -752,7 +751,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
-                // --- التعديل ينتهي هنا ---
               }).toList(),
             ),
           ),
