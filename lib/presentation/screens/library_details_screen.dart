@@ -3,9 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'RouteSuggestionScreen.dart';
 
 class LibraryDetailsScreen extends StatefulWidget {
-  final String eventId;
+  final String eventId; // 1. نوع البيانات نصي لاستقبال الـ ID من الفايربيس
 
-  const LibraryDetailsScreen({super.key, required this.eventId});
+  // 2. حذفنا const من هنا لأن الـ eventId يتغير في كل مرة نفتح فيها صفحة مختلفة
+  LibraryDetailsScreen({super.key, required this.eventId});
 
   @override
   State<LibraryDetailsScreen> createState() => _LibraryDetailsScreenState();
