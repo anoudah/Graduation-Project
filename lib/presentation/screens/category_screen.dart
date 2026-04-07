@@ -26,34 +26,36 @@ class _CategoryScreenState extends State<CategoryScreen> {
   final AiRemoteSource _aiSource = AiRemoteSource();
   late Future<List<dynamic>> _categoryEventsFuture;
 
-  @override
+@override
   void initState() {
     super.initState();
 
-    /* FIX: Merged both AI (Alanoud) and Firestore (Norah) data sources using Future.wait.
-      Reason: The previous code was overwriting _categoryEventsFuture, causing one source to be lost.
-      Now, both sources are fetched simultaneously and combined into a single list.
-    */
-    _categoryEventsFuture =
-        Future.wait([
-          _aiSource.fetchEventsByCategory(
-            widget.categoryName,
-          ), // Source 1: AI (Alanoud)
-          FirebaseFirestore.instance
-              .collection('Events')
-              .where(
-                'Category_ID', // الاسم الصحيح للحقل في Firebase عندك
-                isEqualTo:
-                    widget.categoryId, // الـ ID الجديد الذي أضفناه (مثل MUS)
-              ) // Source 2: Firestore (Norah)
-              .get()
-              .then(
-                (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
-              ),
-        ]).then((results) {
-          // Merging both lists into one combined result
-          return [...results[0], ...results[1]];
-        });
+    _categoryEventsFuture = Future.wait([
+      _aiSource.fetchEventsByCategory(
+        widget.categoryName,
+      ), // Source 1: AI (Alanoud)
+      
+      FirebaseFirestore.instance
+          .collection('Events')
+          .where(
+            'Category_ID',
+            isEqualTo: widget.categoryId,
+          ) // Source 2: Firestore (Norah)
+          .get()
+          .then(
+            (snapshot) => snapshot.docs.map((doc) {
+              // 1. Create a modifiable copy of the document data
+              final data = Map<String, dynamic>.from(doc.data());
+              
+              // 2. Inject the actual Firestore document ID into the map!
+              data['id'] = doc.id; 
+              
+              return data;
+            }).toList(),
+          ),
+    ]).then((results) {
+      return [...results[0], ...results[1]];
+    });
   }
   // Alanoud removed: The hardcoded _getCategoryItems map is gone!
 
@@ -273,14 +275,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 16,
               ), // لضمان أن تأثير الضغط لا يخرج عن زوايا البطاقة
               onTap: () {
-                // الانتقال لصفحة التفاصيل وتمرير المعرف
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => LibraryDetailsScreen(
-                      eventId:
-                          item['id'] ??
-                          '', // نمرر الـ ID الخاص بالوثيقة في Firebase
+                      eventData: item as Map<String, dynamic>, // Pass the full map!
                     ),
                   ),
                 );

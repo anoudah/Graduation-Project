@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'RouteSuggestionScreen.dart';
 
 class LibraryDetailsScreen extends StatefulWidget {
-  final String eventId; // 1. نوع البيانات نصي لاستقبال الـ ID من الفايربيس
+  // 1. Changed to expect a full Map of data instead of just an ID
+  final Map<String, dynamic> eventData;
 
-  // 2. حذفنا const من هنا لأن الـ eventId يتغير في كل مرة نفتح فيها صفحة مختلفة
-  LibraryDetailsScreen({super.key, required this.eventId});
+  const LibraryDetailsScreen({super.key, required this.eventData});
 
   @override
   State<LibraryDetailsScreen> createState() => _LibraryDetailsScreenState();
@@ -17,73 +16,46 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // أهم جزء: جلب البيانات بناءً على الـ ID الممرر
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('Events')
-          .doc(widget.eventId)
-          .get(),
-      builder: (context, snapshot) {
-        // حالة التحميل
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(color: Color(0xFF1A237E)),
-            ),
-          );
-        }
+    // 2. Simply read the data passed from the previous screen! No FutureBuilder needed.
+    final data = widget.eventData;
 
-        // حالة الخطأ أو عدم وجود بيانات
-        if (snapshot.hasError || !snapshot.data!.exists) {
-          return const Scaffold(
-            body: Center(child: Text("المعذرة، لم يتم العثور على التفاصيل")),
-          );
-        }
-
-        // تحويل البيانات لقاموس (Map) لسهولة الاستخدام
-        var eventData = snapshot.data!.data() as Map<String, dynamic>;
-
-        return Scaffold(
-          backgroundColor: const Color(0xFFF8F9FE),
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.pop(context),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: _buildTopNav(
+          data['Category'] ?? "تفاصيل",
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            _buildSearchBar(),
+            const SizedBox(height: 40),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 1, child: _buildImageSection(data)),
+                  const SizedBox(width: 40),
+                  Expanded(flex: 1, child: _buildInfoSection(data)),
+                ],
+              ),
             ),
-            title: _buildTopNav(
-              eventData['Category'] ?? "تفاصيل",
-            ), // تصنيف ديناميكي
-            centerTitle: true,
-          ),
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                _buildSearchBar(),
-                const SizedBox(height: 40),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // تمرير البيانات للدوال الفرعية
-                      Expanded(flex: 1, child: _buildImageSection(eventData)),
-                      const SizedBox(width: 40),
-                      Expanded(flex: 1, child: _buildInfoSection(eventData)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  // قسم الصورة صار يستقبل 'data'
   Widget _buildImageSection(Map<String, dynamic> data) {
     return Column(
       children: [

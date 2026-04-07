@@ -630,23 +630,36 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Recommended Section
+// Recommended Section
   Widget _buildRecommendedSection(BuildContext context, bool isMobile) {
+    // Updated to match the fields your LibraryDetailsScreen expects!
     final recommendations = [
       {
-        'name': 'King Fahad National Library',
-        'id':
-            'kf_national_library_001', // Replace with your actual Firestore Document ID
-        'image': 'https://via.placeholder.com/220x160?text=Library',
+        'Title': 'King Fahad National Library',
+        'id': 'lib_01',
+        'Image_Url': 'https://placehold.co/220x160/png?text=Library',
+        'Category': 'Libraries',
+        'About': 'A special viewing of rare historical Islamic manuscripts.',
+        'Location_Address': 'King Fahad National Library',
+        'Price': 'Free'
       },
       {
-        'name': 'Diriyah Season',
-        'id': 'diriyah_id',
-        'image': 'https://via.placeholder.com/220x160?text=Diriyah',
+        'Title': 'Diriyah Historical Tour',
+        'id': 'her_01',
+        'Image_Url': 'https://placehold.co/220x160/png?text=Diriyah',
+        'Category': 'Heritage and Tradition',
+        'About': 'Walk through the birthplace of the Kingdom. A guided evening tour.',
+        'Location_Address': 'At-Turaif, Diriyah',
+        'Price': '150 SAR'
       },
       {
-        'name': 'Al Masmak Palace',
-        'id': 'masmak_id',
-        'image': 'https://via.placeholder.com/220x160?text=Masmak',
+        'Title': 'Al Masmak Palace Exhibition',
+        'id': 'mus_02',
+        'Image_Url': 'https://placehold.co/220x160/png?text=Masmak',
+        'Category': 'Museums',
+        'About': 'Walk through the mud-brick fortress that played a vital role in the Kingdom\'s unification.',
+        'Location_Address': 'Al Diriyah, Riyadh',
+        'Price': 'Free'
       },
     ];
 
@@ -693,12 +706,12 @@ class _HomeScreenState extends State<HomeScreen> {
               children: recommendations.map((recommendation) {
                 return GestureDetector(
                   onTap: () {
-                    // Navigate to details screen using the ID from the map
+                    // Navigate and pass the full map
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => LibraryDetailsScreen(
-                          eventId: recommendation['id']!,
+                          eventData: recommendation,
                         ),
                       ),
                     );
@@ -728,7 +741,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               topRight: Radius.circular(16),
                             ),
                             image: DecorationImage(
-                              image: NetworkImage(recommendation['image']!),
+                              image: NetworkImage(recommendation['Image_Url'] as String), // Updated Key
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -736,7 +749,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           child: Text(
-                            recommendation['name']!,
+                            recommendation['Title'] as String, // Updated Key
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -758,7 +771,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
   // Bottom Banner Section
   Widget _buildBottomBannerSection(BuildContext context) {
     return Container(
