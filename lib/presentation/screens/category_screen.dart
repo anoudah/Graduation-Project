@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; //norah
+import 'library_details_screen.dart'; //norah
 // Alanoud added: Import the AI source to talk to Python
 import '../../data/datasources/ai_remote_source.dart';
 
@@ -266,130 +267,142 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                // Image
-                Container(
-                  width: 120,
-                  height: 120,
-                  margin: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[200], // Fallback background
+            // Wrap with InkWell to handle navigation to the details screen
+            child: InkWell(
+              borderRadius: BorderRadius.circular(
+                16,
+              ), // لضمان أن تأثير الضغط لا يخرج عن زوايا البطاقة
+              onTap: () {
+                // الانتقال لصفحة التفاصيل وتمرير المعرف
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LibraryDetailsScreen(
+                      eventId:
+                          item['id'] ??
+                          '', // نمرر الـ ID الخاص بالوثيقة في Firebase
+                    ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      // Map to Python Image_Url
-                      item['Image_Url'] ??
-                          'https://via.placeholder.com/120x120?text=No+Image',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey,
+                );
+              },
+              child: Row(
+                children: [
+                  // Image
+                  Container(
+                    width: 120,
+                    height: 120,
+                    margin: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[200],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        item['Image_Url'] ??
+                            'https://via.placeholder.com/120x120?text=No+Image',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              Icons.image_not_supported,
+                              color: Colors.grey,
+                            ),
                       ),
                     ),
                   ),
-                ),
 
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 12,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          item['Title'] ??
-                              'Unknown Event', // Map to Python Title
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF333333),
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          item['About'] ??
-                              item['Category'] ??
-                              '', // Map to Python About/Category
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF999999),
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Distance and AI Crowd Badge
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on_outlined,
-                              size: 14,
-                              color: Color(0xFF6B4B8A),
+                  // Content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 12,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            item['Title'] ?? 'Unknown Event',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF333333),
+                              fontFamily: 'Poppins',
                             ),
-                            const SizedBox(width: 4),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            item['About'] ?? item['Category'] ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF999999),
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
 
-                            // Alanoud added: Placeholder for distance calculation
-                            const Text(
-                              '-- km', // TODO: Replace with real GPS distance math later
-                              style: TextStyle(
-                                fontSize: 12,
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 14,
                                 color: Color(0xFF6B4B8A),
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Poppins',
                               ),
-                            ),
-
-                            const Spacer(), // Pushes the AI badge to the far right
-                            // Alanoud added: Dynamic AI Crowd Badge!
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: crowdColor.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                crowdStatus,
+                              const SizedBox(width: 4),
+                              const Text(
+                                '-- km',
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: crowdColor,
+                                  fontSize: 12,
+                                  color: Color(0xFF6B4B8A),
+                                  fontWeight: FontWeight.w500,
                                   fontFamily: 'Poppins',
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: crowdColor.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  crowdStatus,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: crowdColor,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                // Arrow Icon
-                const Padding(
-                  padding: EdgeInsets.only(right: 16),
-                  child: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Color(0xFF6B4B8A),
+                  // Arrow Icon
+                  const Padding(
+                    padding: EdgeInsets.only(right: 16),
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Color(0xFF6B4B8A),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            // --- التعديل ينتهي هنا ---
           );
         }).toList(),
       ),
