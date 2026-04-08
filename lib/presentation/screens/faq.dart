@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class FAQPage extends StatelessWidget {
@@ -6,70 +7,76 @@ class FAQPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F0F0),
       appBar: AppBar(
-        title: const Text('FAQ'),
+        title: const Text(
+          'FAQ',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: const Color(0xFF6B4B8A),
         centerTitle: true,
+        elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          ExpansionTile(
-            title: Text('What does this app do?'),
-            children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text(
-                    'It helps users discover cultural events happening in Riyadh in one place with clear details and AI-based recommendations.'),
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: Text('How do I create an account?'),
-            children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('Click Sign Up on the home page and enter your details.'),
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: Text('How can I find events?'),
-            children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('Browse from the home screen or use the search feature.'),
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: Text('How can I save events I\'m interested in?'),
-            children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('Click the heart icon to add events to favorites.'),
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: Text('How can I give feedback after attending an event?'),
-            children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('Go to your saved events and leave a review or rating.'),
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: Text('Does the app work outside Riyadh?'),
-            children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('Currently, the app focuses only on Riyadh events.'),
-              ),
-            ],
-          ),
-        ],
+      // استخدام StreamBuilder لجلب البيانات بشكل حي من الفايربيس
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('FAQs')
+            .orderBy('Order') // ترتيب الأسئلة حسب رقم Order
+            .snapshots(),
+        builder: (context, snapshot) {
+          // حالة التحميل
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // في حال عدم وجود بيانات
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text("No questions available at the moment."),
+            );
+          }
+
+          // عرض الأسئلة في قائمة
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              var faqData =
+                  snapshot.data!.docs[index].data() as Map<String, dynamic>;
+
+              return Card(
+                elevation: 0,
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: ExpansionTile(
+                  shape: const Border(), // لإزالة الحدود الافتراضية عند الفتح
+                  title: Text(
+                    faqData['Question'] ?? 'No Question Found',
+                    style: const TextStyle(
+                      color: Color(0xFF6B4B8A),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  iconColor: const Color(0xFF6B4B8A),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        faqData['Answer'] ?? 'No Answer Available',
+                        style: const TextStyle(
+                          height: 1.5,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
