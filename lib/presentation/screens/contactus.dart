@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({Key? key}) : super(key: key);
@@ -170,7 +171,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
         'Message_Text': _messageController.text, // From Message TextField
         'Created_At': FieldValue.serverTimestamp(), // Automatic server time
         'Is_Read': false, // Default status for new messages
-        'User_Id': 'Guest_User', // Can be linked to Auth later
+        // بدلاً من 'User_Id': 'Guest_User'
+        'User_Id': FirebaseAuth.instance.currentUser?.uid ?? 'Guest_User',
       });
 
       // 3. Confirm success to the user
