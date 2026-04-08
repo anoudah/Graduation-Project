@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'RouteSuggestionScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LibraryDetailsScreen extends StatefulWidget {
   // 1. Changed to expect a full Map of data instead of just an ID
@@ -13,6 +15,11 @@ class LibraryDetailsScreen extends StatefulWidget {
 
 class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
   bool isFavorite = false;
+  bool isReminder = false;
+  bool isAttending = false;
+  double userRating = 5.0; // للنجوم
+  String selectedCrowd = 'Low'; // لتقرير الزحام
+  TextEditingController commentController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +35,7 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: _buildTopNav(
-          data['Category'] ?? "تفاصيل",
-        ),
+        title: _buildTopNav(data['Category'] ?? "تفاصيل"),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -60,7 +65,7 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
     return Column(
       children: [
         Text(
-          data['Title'] ?? "بدون عنوان",
+          data['Title'] ?? "",
           style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20),
@@ -81,33 +86,75 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
         const SizedBox(height: 20),
         Row(
           children: [
+            // 1. Favorite Button (القلب)
             IconButton(
               icon: Icon(
                 isFavorite ? Icons.favorite : Icons.favorite_border,
                 color: isFavorite ? Colors.red : Colors.black,
               ),
-              onPressed: () => setState(() => isFavorite = !isFavorite),
+              onPressed: () {
+                setState(() => isFavorite = !isFavorite);
+                _updateInteraction('Favorite', isFavorite);
+              },
             ),
+
+            // 2. Reminder Button (الجرس)
             IconButton(
-              icon: const Icon(Icons.notifications_none),
-              onPressed: () {},
+              icon: Icon(
+                isReminder ? Icons.notifications : Icons.notifications_none,
+                color: isReminder ? const Color(0xFF6B4B8A) : Colors.black,
+              ),
+              onPressed: () {
+                setState(() => isReminder = !isReminder);
+                _updateInteraction('Reminder', isReminder);
+
+                if (isReminder) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Reminder added successfully!"),
+                    ),
+                  );
+                }
+              },
             ),
+
+            // 3. Comments Button (الأيقونة موجودة والبرنت للتأكد)
             IconButton(
               icon: const Icon(Icons.chat_bubble_outline),
-              onPressed: () {},
+              onPressed: () {
+                _showCommentsSheet(); // هذا السطر هو اللي بيفتح واجهة النجوم والزحام
+              },
             ),
+
             const Spacer(),
+
+            // 4. I'm attending Button (الزر اللي أضفتي حقله بالفايربيس)
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                setState(() => isAttending = !isAttending);
+                _updateInteraction('Is_Attending', isAttending);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isAttending
+                          ? "Attendance recorded!"
+                          : "Attendance cancelled!",
+                    ),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A237E),
+                backgroundColor: isAttending
+                    ? Colors.green
+                    : const Color(0xFF1A237E),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                "I'm attending",
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                isAttending ? "Attending" : "I'm attending",
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ],
@@ -192,5 +239,183 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
         ],
       ),
     );
+  }
+
+  // دالة إظهار واجهة التعليقات (النجوم والزحام)
+  void _showCommentsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Add Your Feedback",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  5,
+                  (index) => IconButton(
+                    icon: Icon(
+                      index < userRating ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                    ),
+                    onPressed: () =>
+                        setSheetState(() => userRating = index + 1.0),
+                  ),
+                ),
+              ),
+              const Text("Crowd Level"),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: ['Low', 'Medium', 'High']
+                    .map(
+                      (level) => ChoiceChip(
+                        label: Text(level),
+                        selected: selectedCrowd == level,
+                        onSelected: (val) {
+                          if (val) setSheetState(() => selectedCrowd = level);
+                        },
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: commentController,
+                decoration: const InputDecoration(hintText: "Your comment"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  _submitComment();
+                  Navigator.pop(context);
+                },
+                child: const Text("Submit"),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // دالة الحفظ في كولكشن Comment Feedback وتحديث إحصائيات الزحام
+  Future<void> _submitComment() async {
+    // 1. التحقق من هوية المستخدم
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // 2. التأكد من وجود معرف الفعالية
+    final eventId = widget.eventData['id']?.toString() ?? '';
+    if (eventId.isEmpty) return;
+
+    try {
+      // -------------------------------------------------------
+      // أولاً: حفظ سجل التعليق التفصيلي في كولكشن Comment Feedback
+      // -------------------------------------------------------
+      await FirebaseFirestore.instance.collection('Comment Feedback').add({
+        'User_Id': user.uid,
+        'id': eventId,
+        'Rating': userRating,
+        'crowd_report': selectedCrowd, // (Low, Medium, High)
+        'Comment_Text': commentController.text,
+        'Date': Timestamp.now(),
+      });
+
+      // -------------------------------------------------------
+      // ثانياً: تحديث العدادات اللحظية في كولكشن Events (لتحليل الـ AI)
+      // -------------------------------------------------------
+
+      // تحديد الحقل المطلوب تحديثه بناءً على اختيار المستخدم
+      String crowdField = '';
+      if (selectedCrowd == 'Low') crowdField = 'report_low_count';
+      if (selectedCrowd == 'Medium') crowdField = 'report_medium_count';
+      if (selectedCrowd == 'High') crowdField = 'report_high_count';
+
+      if (crowdField.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection('Events') // تأكدي من مطابقة اسم الكولكشن للي عندك
+            .doc(eventId)
+            .update({
+              crowdField: FieldValue.increment(1),
+              'Last_Feedback_Date':
+                  Timestamp.now(), // يفيد في معرفة حداثة البيانات للـ AI
+            });
+      }
+
+      // 3. تنظيف الحقل وإشعار المستخدم بنجاح الإرسال
+      commentController.clear();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Thank you for your feedback!")),
+        );
+      }
+    } catch (e) {
+      // طباعة أي خطأ تقني في الـ Console للمطور
+      print("Detailed Error in _submitComment: $e");
+    }
+  }
+
+  Future<void> _updateInteraction(String field, bool value) async {
+    // 1. التحقق من وجود مستخدم مسجل دخول
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // 2. استخراج معرف الفعالية والتأكد من عدم خلوه
+    final eventId = widget.eventData['id']?.toString() ?? '';
+    if (eventId.isEmpty) return;
+
+    // 3. إنشاء معرف فريد للمستند (يربط اليوزر بالفعالية) لمنع التكرار
+    String docId = "${user.uid}_$eventId";
+
+    try {
+      // -------------------------------------------------------
+      // أولاً: تحديث كولكشن User_Interactions (سجل المستخدم الخاص)
+      // -------------------------------------------------------
+      await FirebaseFirestore.instance
+          .collection('User_Interactions')
+          /* */
+          .doc(docId)
+          .set({
+            'User_Id': user.uid,
+            'id': eventId,
+            field: value, // يحدث Favorite أو Reminder أو Is_Attending
+            'Last_Update': Timestamp.now(),
+          }, SetOptions(merge: true));
+
+      // -------------------------------------------------------
+      // ثانياً: تحديث العداد التلقائي في كولكشن Events (لصديقتك والـ AI)
+      // -------------------------------------------------------
+      if (field == 'Is_Attending') {
+        await FirebaseFirestore.instance
+            .collection('Events') // تأكدي أن هذا اسم الكولكشن في الفايربيس
+            .doc(eventId)
+            .update({
+              // إذا value صحيحة يزيد 1، إذا خاطئة ينقص 1
+              'attendance_count': value
+                  ? FieldValue.increment(1)
+                  : FieldValue.increment(-1),
+            });
+      }
+    } catch (e) {
+      // طباعة الخطأ في حال حدوث مشكلة في الاتصال
+      print("Error updating interaction: $e");
+    }
   }
 }
