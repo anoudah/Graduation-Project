@@ -46,7 +46,7 @@ class FavoritesScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     var interaction = snapshot.data!.docs[index];
                     // نأخذ الـ ID الخاص بالإيفنت من التفاعل (مثل: conf_01)
-                    String eventId = interaction['Event_Id'];
+                    String eventId = interaction['id'];
 
                     // 4. جلب تفاصيل الفعالية المحددة من جدول Events
                     return FutureBuilder<DocumentSnapshot>(

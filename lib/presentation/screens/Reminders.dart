@@ -39,7 +39,7 @@ class RemindersScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final interaction =
                   reminderDocs[index].data() as Map<String, dynamic>;
-              final String eventId = interaction['Event_Id'] ?? '';
+              final String eventId = interaction['id'] ?? '';
 
               // 2. لكل تذكير، نستخدم FutureBuilder لجلب "اسم" الفعالية من جدول Events
               return FutureBuilder<DocumentSnapshot>(
