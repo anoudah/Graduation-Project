@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+// --- Core Imports ---
+import '../../core/theme.dart'; // تأكد من المسار الصحيح لملف الثيم
+
+// --- Screen Imports ---
 import 'interests_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -13,17 +18,13 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // 1. تعريف الكنترولرز لجميع الحقول الموجودة في الصورة
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
 
   bool _isLoading = false;
-
-  // متغيرات لمربعات الاختيار (Checkboxes)
   bool _isDeclared = false;
   bool _isAgreed = false;
 
@@ -37,22 +38,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  // 2. الدالة البرمجية للتسجيل معدلة لتشمل البيانات الجديدة
   Future<void> _handleSignUp() async {
     if (_formKey.currentState!.validate()) {
       if (!_isDeclared || !_isAgreed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please agree to the terms and conditions"),
-          ),
+          const SnackBar(content: Text("Please agree to the terms and conditions")),
         );
         return;
       }
 
       if (_passwordController.text != _confirmPasswordController.text) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Passwords do not match")),
+        );
         return;
       }
 
@@ -65,7 +63,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               password: _passwordController.text.trim(),
             );
 
-        // حفظ البيانات في Firestore (بما في ذلك كود الإحالة)
         await FirebaseFirestore.instance
             .collection('Users')
             .doc(userCredential.user!.uid)
@@ -83,9 +80,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
           );
         }
       } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message ?? "Error occurred")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Error occurred")),
+        );
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -95,10 +92,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F0F0),
+      // استخدام الثيم للخلفية
+      backgroundColor: AppColors.background,
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6B4B8A)),
+              // استخدام الثيم للون التحميل
+              child: CircularProgressIndicator(color: AppColors.primary),
             )
           : SingleChildScrollView(
               child: Padding(
@@ -108,23 +107,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: Column(
                     children: [
                       const SizedBox(height: 60),
+                      // استخدام الثيم للعنوان الرئيسي
                       const Text(
                         "WASEL",
                         style: TextStyle(
                           fontSize: 40,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF6B4B8A),
+                          color: AppColors.primary,
                           letterSpacing: 2,
                         ),
                       ),
-                      const Text("Step One"),
+                      const Text(
+                        "Step One",
+                        style: TextStyle(color: AppColors.textMain),
+                      ),
                       const Text(
                         "Fill in your information",
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 30),
 
-                      // استخدام الميثود المساعدة لكل الحقول
                       _buildTextField(
                         "Full Name",
                         Icons.person_outline,
@@ -162,7 +164,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // 3. إضافة الـ Checkboxes كما في الصورة
                       _buildCheckboxRow(
                         "I declare that the information provided is true and correct",
                         _isDeclared,
@@ -176,14 +177,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       const SizedBox(height: 30),
 
-                      // زر التسجيل (Next)
+                      // استخدام الثيم لزر التسجيل
                       SizedBox(
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
                           onPressed: _handleSignUp,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6B4B8A),
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
@@ -191,11 +193,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           child: const Text(
                             "Next",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: AppTextStyles.buttonText, 
                           ),
                         ),
                       ),
@@ -207,7 +205,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // الميثود المساعدة للحقول (TextFormField)
   Widget _buildTextField(
     String hint,
     IconData icon,
@@ -217,6 +214,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return TextFormField(
       controller: controller,
       obscureText: isPassword,
+      style: const TextStyle(color: AppColors.textMain),
       validator: (value) {
         if (!hint.contains("Optional") && (value == null || value.isEmpty)) {
           return "Required field";
@@ -225,9 +223,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       },
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF6B4B8A)),
+        hintStyle: const TextStyle(color: AppColors.textHint),
+        // استخدام الثيم للأيقونات
+        prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -236,16 +236,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // ميثود مساعدة لإنشاء أسطر الاختيار (Checkbox Rows)
   Widget _buildCheckboxRow(String text, bool value, Function(bool?) onChanged) {
     return Row(
       children: [
         Checkbox(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF6B4B8A),
+          // استخدام الثيم لعلامة الصح
+          activeColor: AppColors.primary,
+          checkColor: AppColors.white,
         ),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 12))),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: AppColors.textMain),
+          ),
+        ),
       ],
     );
   }
