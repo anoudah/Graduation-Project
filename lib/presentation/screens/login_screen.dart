@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // --- Core Imports ---
-import '../../core/theme.dart'; 
+import '../../core/theme.dart';
 
 // --- Screen Imports ---
 import 'home_screen.dart';
@@ -19,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -34,23 +35,48 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        
-        if (mounted) {
-          // الانتقال للهوم سكرين بعد نجاح الدخول
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-            (route) => false,
-          );
+        // ١. عملية تسجيل الدخول في Auth
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+              email: _emailController.text.trim(),
+              password: _passwordController.text.trim(),
+            );
+
+        // ٢. جلب بيانات المستخدم من Firestore (عشان نضمن إن حسابه مربوط صح)
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (userDoc.exists) {
+          // إذا البيانات موجودة، ننتقل للهوم
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (route) => false,
+            );
+          }
+        } else {
+          // إذا الشخص مسجل دخول بس ماله بيانات في Firestore (مثل حالة الـ Add User اليدوي)
+          throw "User data not found in Database";
         }
       } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? "Login Failed")),
-        );
+        // معالجة أخطاء الفايربيس (مثل باسوورد غلط)
+        String message = "An error occurred";
+        if (e.code == 'user-not-found')
+          message = "No user found with this email";
+        else if (e.code == 'wrong-password')
+          message = "Wrong password provided";
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      } catch (e) {
+        // معالجة أي خطأ آخر
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -62,7 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(30.0),
@@ -84,9 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text(
                         "Welcome Back!",
                         style: TextStyle(
-                          fontSize: 18, 
-                          color: AppColors.textMain, 
-                          fontWeight: FontWeight.w500
+                          fontSize: 18,
+                          color: AppColors.textMain,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       const Text(
@@ -111,10 +139,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         isPassword: _obscurePassword,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: AppColors.iconGrey,
                           ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                       ),
 
@@ -124,7 +156,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () {},
                           child: const Text(
                             "Forgot Password?",
-                            style: TextStyle(color: AppColors.primary, fontSize: 13),
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ),
@@ -145,7 +180,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             elevation: 5,
                           ),
-                          child: const Text("Login", style: AppTextStyles.buttonText),
+                          child: const Text(
+                            "Login",
+                            style: AppTextStyles.buttonText,
+                          ),
                         ),
                       ),
 
@@ -155,19 +193,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Don't have an account?", style: TextStyle(color: AppColors.textMain)),
+                          const Text(
+                            "Don't have an account?",
+                            style: TextStyle(color: AppColors.textMain),
+                          ),
                           TextButton(
                             onPressed: () {
                               Navigator.push(
-                                context, 
-                                MaterialPageRoute(builder: (context) => const SignUpScreen())
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignUpScreen(),
+                                ),
                               );
                             },
                             child: const Text(
                               "Sign Up",
                               style: TextStyle(
-                                color: AppColors.primary, 
-                                fontWeight: FontWeight.bold
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -192,7 +235,8 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: controller,
       obscureText: isPassword,
       style: const TextStyle(color: AppColors.textMain),
-      validator: (value) => (value == null || value.isEmpty) ? "Required field" : null,
+      validator: (value) =>
+          (value == null || value.isEmpty) ? "Required field" : null,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textHint),
