@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({Key? key}) : super(key: key);
@@ -25,9 +27,9 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F0F0),
+      backgroundColor: AppColors.background, 
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6B4B8A),
+        backgroundColor: AppColors.primary, 
         title: const Text('Contact Us'),
         centerTitle: true,
       ),
@@ -38,12 +40,11 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 30),
-              const Text(
+              Text(
                 'Get in touch',
-                style: TextStyle(
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: AppColors.primary, 
                   fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF6B4B8A),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -74,18 +75,17 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 child: ElevatedButton(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B4B8A),
+                    backgroundColor: AppColors.primary, 
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                     elevation: 5,
                   ),
-                  child: const Text(
+                  child: Text(
                     'Send Message',
-                    style: TextStyle(
-                      color: Colors.white,
+                    style: AppTextStyles.buttonText.copyWith(
+                      color: AppColors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -109,9 +109,10 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF6B4B8A)),
+        hintStyle: AppTextStyles.subtitle.copyWith(color: AppColors.textHint),
+        prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -131,9 +132,10 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       maxLines: 5,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF6B4B8A)),
+        hintStyle: AppTextStyles.subtitle.copyWith(color: AppColors.textHint),
+        prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -151,6 +153,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   //_emailController.clear();
   // _messageController.clear();
   // }
+  
   // Norah's Update: Logic to send contact messages directly to Firestore
   Future<void> _submit() async {
     // 1. Validation to ensure no empty fields are sent to the database
