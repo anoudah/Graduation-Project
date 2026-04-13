@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/event_card.dart'; // تأكدي من مسار ملف الـ widget
 // Alanoud added: Import the new AI Data Source we created
 import '../../data/datasources/ai_remote_source.dart'; 
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 // Alanoud added: Changed to StatefulWidget to handle loading states
 class MuseumsScreen extends StatefulWidget {
@@ -28,13 +30,13 @@ class _MuseumsScreenState extends State<MuseumsScreen> {
     // Alanoud added: Deleted the hardcoded 'riyadhMuseums' list! The AI does this now.
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // لون خلفية فاتح
+      backgroundColor: AppColors.background, // تم الربط بالثيم (بدل F8F9FA)
       appBar: AppBar(
         title: const Text(
           "Museums in Riyadh",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF1A237E), // لون الهوية (كحلي)
+        backgroundColor: const Color(0xFF1A237E), // حافظت على الكحلي كما هو لأنه "لون هوية" خاص
         elevation: 2,
         centerTitle: true,
       ),
