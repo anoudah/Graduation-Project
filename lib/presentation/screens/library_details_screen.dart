@@ -260,6 +260,101 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
             backgroundColor: const Color(0xFF1A237E),
           ),
         ),
+
+        // --- هنا قسم عرض التعليقات (التقييم، الزحمة، النص) ---
+        const SizedBox(height: 30),
+        const Text(
+          "Reviews & Feedback",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A237E),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('Comment Feedback')
+              .where(
+                'id',
+                isEqualTo: data['id'].toString(),
+              ) // ربط التعليق بهذي الفعالية
+              .orderBy('Date', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting)
+              return const Center(child: CircularProgressIndicator());
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+              return const Text("No comments yet.");
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: snapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+                var comment =
+                    snapshot.data!.docs[index].data() as Map<String, dynamic>;
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // 1. عرض النجوم (Rating)
+                            Text(
+                              "Rating: ${comment['Rating']} ⭐",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            // 2. عرض حالة الزحمة (Crowd)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                "Crowd: ${comment['crowd_report']}",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        // 3. نص الكومنت
+                        Text(
+                          comment['Comment_Text'] ?? "",
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ],
     );
   }
