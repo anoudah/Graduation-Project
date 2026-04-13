@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// استدعاء ملف الثيم
+// استدعاء ملف الثيم - تأكدي من صحة المسار في مشروعك
 import '../../core/theme.dart'; 
 
 void main() {
@@ -28,25 +28,25 @@ class EventsHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, // ربط خلفية الصفحة بالثيم
+      backgroundColor: AppColors.background, // ربط الخلفية بالثيم
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppColors.background, // جعل الـ AppBar بنفس لون الخلفية
+        backgroundColor: AppColors.background, 
         leading: IconButton(
-          icon: Icon(Icons.menu, color: AppColors.textMain), // لون الأيقونة من الثيم
+          icon: Icon(Icons.menu, color: AppColors.textMain), // لون الأيقونة
           onPressed: () {},
         ),
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.divider.withOpacity(0.2), // لون البحث من لون الفواصل
+            color: AppColors.divider.withOpacity(0.2), 
             borderRadius: BorderRadius.circular(20),
           ),
           child: TextField(
             readOnly: true,
             decoration: InputDecoration(
               hintText: 'Search',
-              hintStyle: TextStyle(color: AppColors.textHint), // لون التلميح
+              hintStyle: TextStyle(color: AppColors.textHint), 
               prefixIcon: Icon(Icons.search, size: 20, color: AppColors.iconGrey),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -57,8 +57,8 @@ class EventsHomePage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
-              backgroundColor: AppColors.primaryLight, // اللون البنفسجي الفاتح من الثيم
-              child: Text('M', style: TextStyle(color: AppColors.primary)), // الحرف باللون الأساسي
+              backgroundColor: AppColors.primaryLight, 
+              child: Text('M', style: TextStyle(color: AppColors.primary)), 
             ),
           ),
         ],
@@ -76,7 +76,7 @@ class EventsHomePage extends StatelessWidget {
                   child: Container(
                     height: 120,
                     decoration: BoxDecoration(
-                      color: AppColors.avatarBg, // لون إطار الصورة من الثيم
+                      color: AppColors.avatarBg, 
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(Icons.image, size: 50, color: AppColors.iconGrey),
@@ -88,7 +88,7 @@ class EventsHomePage extends StatelessWidget {
                   child: Text(
                     'WHAT’S\nHAPPENING',
                     style: AppTextStyles.heroMobile.copyWith(
-                      color: AppColors.textMain, // ربط النص الكبير بالثيم
+                      color: AppColors.textMain, 
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -120,7 +120,7 @@ class EventsHomePage extends StatelessWidget {
             NearbyCard(
               title: 'King Abdul Aziz Historical Center',
               distance: '2.3 km',
-              color: Colors.orange[100]!, // تركت الألوان المميزة للكرت كما هي
+              color: Colors.orange[100]!, 
             ),
             NearbyCard(
               title: 'King Fahad Cultural Center',
@@ -131,7 +131,7 @@ class EventsHomePage extends StatelessWidget {
             Center(
               child: TextButton(
                 onPressed: () {},
-                child: Text('See more', style: TextStyle(color: AppColors.primary)), // لون الزر من الثيم
+                child: Text('See more', style: TextStyle(color: AppColors.primary)), 
               ),
             ),
             const SizedBox(height: 24),
@@ -142,7 +142,7 @@ class EventsHomePage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Text(
                 'No recommendations yet.',
-                style: TextStyle(color: AppColors.textSecondary), // لون نص "لا يوجد"
+                style: TextStyle(color: AppColors.textSecondary), 
               ),
             ),
           ],
@@ -162,7 +162,7 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), // ربط رؤوس الأقسام بالثيم
+      style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), 
     );
   }
 }
@@ -178,7 +178,7 @@ class CategoryChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppColors.divider), // لون الإطار من الثيم
+        border: Border.all(color: AppColors.divider), 
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
