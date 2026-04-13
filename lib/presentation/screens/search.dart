@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 void main() {
   runApp(const EventsApp());
@@ -26,27 +28,28 @@ class EventsHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background, // ربط خلفية الصفحة بالثيم
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background, // جعل الـ AppBar بنفس لون الخلفية
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black87),
+          icon: Icon(Icons.menu, color: AppColors.textMain), // لون الأيقونة من الثيم
           onPressed: () {},
         ),
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.grey[200],
+            color: AppColors.divider.withOpacity(0.2), // لون البحث من لون الفواصل
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const TextField(
+          child: TextField(
             readOnly: true,
             decoration: InputDecoration(
               hintText: 'Search',
-              prefixIcon: Icon(Icons.search, size: 20),
+              hintStyle: TextStyle(color: AppColors.textHint), // لون التلميح
+              prefixIcon: Icon(Icons.search, size: 20, color: AppColors.iconGrey),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
         ),
@@ -54,8 +57,8 @@ class EventsHomePage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
-              backgroundColor: Colors.purple[100],
-              child: const Text('M', style: TextStyle(color: Colors.purple)),
+              backgroundColor: AppColors.primaryLight, // اللون البنفسجي الفاتح من الثيم
+              child: Text('M', style: TextStyle(color: AppColors.primary)), // الحرف باللون الأساسي
             ),
           ),
         ],
@@ -73,20 +76,19 @@ class EventsHomePage extends StatelessWidget {
                   child: Container(
                     height: 120,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AppColors.avatarBg, // لون إطار الصورة من الثيم
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                    child: Icon(Icons.image, size: 50, color: AppColors.iconGrey),
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   flex: 1,
                   child: Text(
                     'WHAT’S\nHAPPENING',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.heroMobile.copyWith(
+                      color: AppColors.textMain, // ربط النص الكبير بالثيم
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -118,7 +120,7 @@ class EventsHomePage extends StatelessWidget {
             NearbyCard(
               title: 'King Abdul Aziz Historical Center',
               distance: '2.3 km',
-              color: Colors.orange[100]!,
+              color: Colors.orange[100]!, // تركت الألوان المميزة للكرت كما هي
             ),
             NearbyCard(
               title: 'King Fahad Cultural Center',
@@ -129,18 +131,18 @@ class EventsHomePage extends StatelessWidget {
             Center(
               child: TextButton(
                 onPressed: () {},
-                child: const Text('See more', style: TextStyle(color: Colors.blue)),
+                child: Text('See more', style: TextStyle(color: AppColors.primary)), // لون الزر من الثيم
               ),
             ),
             const SizedBox(height: 24),
 
             // RECOMMENDED
             const SectionHeader(title: 'Recommended'),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Text(
                 'No recommendations yet.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.textSecondary), // لون نص "لا يوجد"
               ),
             ),
           ],
@@ -160,7 +162,7 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+      style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), // ربط رؤوس الأقسام بالثيم
     );
   }
 }
@@ -175,11 +177,12 @@ class CategoryChip extends StatelessWidget {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
+        color: Colors.white,
+        border: Border.all(color: AppColors.divider), // لون الإطار من الثيم
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
-        child: Text(label, style: const TextStyle(fontSize: 14)),
+        child: Text(label, style: TextStyle(fontSize: 14, color: AppColors.textMain)),
       ),
     );
   }
@@ -231,11 +234,11 @@ class NearbyCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textMain),
                 ),
                 Text(
                   distance,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
               ],
             ),
