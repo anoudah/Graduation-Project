@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 class RemindersScreen extends StatelessWidget {
   const RemindersScreen({Key? key}) : super(key: key);
@@ -11,9 +13,14 @@ class RemindersScreen extends StatelessWidget {
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return Scaffold(
+      backgroundColor: AppColors.background, // ربط خلفية الشاشة بالثيم
       appBar: AppBar(
-        title: const Text('Your Reminders'),
-        backgroundColor: const Color(0xFF6B4B8A),
+        title: const Text(
+          'Your Reminders',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: AppColors.primary, // ربط لون الـ AppBar بالثيم
+        centerTitle: true,
       ),
       // 1. نبدأ بـ StreamBuilder لمراقبة التذكيرات في جدول User_Interactions
       body: StreamBuilder<QuerySnapshot>(
@@ -65,7 +72,7 @@ class RemindersScreen extends StatelessWidget {
                       eventData?['Schedule'] ?? 'لم يتم تحديد وقت';
 
                   return Card(
-                    elevation: 2,
+                    elevation: 0, // خليتها 0 عشان تتماشى مع تصميم الـ Cards في الثيم الجديد
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -78,22 +85,28 @@ class RemindersScreen extends StatelessWidget {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
+                          color: AppColors.primaryLight, // مناداة اللون الفاتح من الثيم
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.event,
-                          color: Color(0xFF6B4B8A),
+                          color: AppColors.primary, // مناداة اللون الأساسي للأيقونة
                         ),
                       ),
                       title: Text(
                         title,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: AppTextStyles.subtitle.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textMain, // استخدمت textMain حسب ملف الثيم حقك
+                        ),
                       ),
-                      subtitle: Text(subtitle),
-                      trailing: const Icon(
+                      subtitle: Text(
+                        subtitle,
+                        style: TextStyle(color: AppColors.textSecondary), // مناداة لون الوصف
+                      ),
+                      trailing: Icon(
                         Icons.notifications,
-                        color: Color(0xFF6B4B8A),
+                        color: AppColors.primary, // مناداة لون أيقونة التنبيه
                       ),
                     ),
                   );
