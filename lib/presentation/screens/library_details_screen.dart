@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'RouteSuggestionScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'login_screen.dart';
 
 class LibraryDetailsScreen extends StatefulWidget {
   // 1. Changed to expect a full Map of data instead of just an ID
@@ -20,6 +21,32 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
   double userRating = 5.0; // للنجوم
   String selectedCrowd = 'Low'; // لتقرير الزحام
   TextEditingController commentController = TextEditingController();
+  // دالة التأكد من تسجيل الدخول باللغة الإنجليزية
+  bool _checkLoginAndShowMessage() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Please log in to like, comment, or subscribe"),
+          backgroundColor: const Color(0xFF6B4B8A), // نفس لون الجرس في كودك
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: "Login",
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
+        ),
+      );
+      return false; // يعني اليوزر غير مسجل
+    }
+    return true; // يعني اليوزر مسجل دخول
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,8 +120,11 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
                 color: isFavorite ? Colors.red : Colors.black,
               ),
               onPressed: () {
-                setState(() => isFavorite = !isFavorite);
-                _updateInteraction('Favorite', isFavorite);
+                if (_checkLoginAndShowMessage()) {
+                  // الفلتر الجديد
+                  setState(() => isFavorite = !isFavorite);
+                  _updateInteraction('Favorite', isFavorite);
+                }
               },
             ),
 
@@ -105,15 +135,18 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
                 color: isReminder ? const Color(0xFF6B4B8A) : Colors.black,
               ),
               onPressed: () {
-                setState(() => isReminder = !isReminder);
-                _updateInteraction('Reminder', isReminder);
+                if (_checkLoginAndShowMessage()) {
+                  // الفلتر الجديد
+                  setState(() => isReminder = !isReminder);
+                  _updateInteraction('Reminder', isReminder);
 
-                if (isReminder) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Reminder added successfully!"),
-                    ),
-                  );
+                  if (isReminder) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Reminder added successfully!"),
+                      ),
+                    );
+                  }
                 }
               },
             ),
@@ -122,7 +155,9 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
             IconButton(
               icon: const Icon(Icons.chat_bubble_outline),
               onPressed: () {
-                _showCommentsSheet(); // هذا السطر هو اللي بيفتح واجهة النجوم والزحام
+                if (_checkLoginAndShowMessage()) {
+                  _showCommentsSheet();
+                }
               },
             ),
 
