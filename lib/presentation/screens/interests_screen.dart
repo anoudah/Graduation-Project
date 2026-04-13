@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart'; // عشان ننتقل للهوم بعد الاختيار
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 class InterestsScreen extends StatefulWidget {
   const InterestsScreen({super.key});
@@ -29,7 +31,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white, // تم الربط بالثيم
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -37,18 +39,17 @@ class _InterestsScreenState extends State<InterestsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-              const Text(
+              Text(
                 "Welcome to Wasel!",
-                style: TextStyle(
+                style: AppTextStyles.sectionTitle.copyWith(
                   fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A237E),
+                  color: const Color(0xFF1A237E), // حافظت على اللون الكحلي الخاص بالترحيب
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 "Pick your interests to get a personalized AI tour plan.",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: AppTextStyles.subtitle.copyWith(fontSize: 16),
               ),
               const SizedBox(height: 30),
 
@@ -76,12 +77,12 @@ class _InterestsScreenState extends State<InterestsScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF6B4B8A)
+                              ? AppColors.primary // تم الربط بالثيم
                               : const Color(0xFFF0F2F5),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFF6B4B8A)
+                                ? AppColors.primary
                                 : Colors.transparent,
                           ),
                         ),
@@ -148,20 +149,17 @@ class _InterestsScreenState extends State<InterestsScreen> {
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFF6B4B8A,
-                    ), // غيرت اللون للبنفسجي عشان يطابق الهوم حقتك
+                    backgroundColor: AppColors.primary, // تم الربط بالثيم
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
-                    ), // شكل بيضاوي أحلى
+                    ),
                     elevation: 5,
                   ),
-                  child: const Text(
+                  child: Text(
                     "Continue to Home",
-                    style: TextStyle(
+                    style: AppTextStyles.buttonText.copyWith(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
