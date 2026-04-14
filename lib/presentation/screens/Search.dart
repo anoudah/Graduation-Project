@@ -120,7 +120,7 @@ class EventsHomePage extends StatelessWidget {
             NearbyCard(
               title: 'King Abdul Aziz Historical Center',
               distance: '2.3 km',
-              color: Colors.orange[100]!,
+              color: Colors.orange[100]!, 
             ),
             NearbyCard(
               title: 'King Fahad Cultural Center',
