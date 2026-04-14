@@ -28,28 +28,27 @@ class EventsHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, // ربط الخلفية بالثيم
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppColors.background, 
+        backgroundColor: Colors.white,
         leading: IconButton(
-          icon: Icon(Icons.menu, color: AppColors.textMain), // لون الأيقونة
+          icon: const Icon(Icons.menu, color: Colors.black87),
           onPressed: () {},
         ),
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.divider.withOpacity(0.2), 
+            color: Colors.grey[200],
             borderRadius: BorderRadius.circular(20),
           ),
-          child: TextField(
+          child: const TextField(
             readOnly: true,
             decoration: InputDecoration(
               hintText: 'Search',
-              hintStyle: TextStyle(color: AppColors.textHint), 
-              prefixIcon: Icon(Icons.search, size: 20, color: AppColors.iconGrey),
+              prefixIcon: Icon(Icons.search, size: 20),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
             ),
           ),
         ),
@@ -57,8 +56,8 @@ class EventsHomePage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
-              backgroundColor: AppColors.primaryLight, 
-              child: Text('M', style: TextStyle(color: AppColors.primary)), 
+              backgroundColor: Colors.purple[100],
+              child: const Text('M', style: TextStyle(color: Colors.purple)),
             ),
           ),
         ],
@@ -76,19 +75,20 @@ class EventsHomePage extends StatelessWidget {
                   child: Container(
                     height: 120,
                     decoration: BoxDecoration(
-                      color: AppColors.avatarBg, 
+                      color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Icon(Icons.image, size: 50, color: AppColors.iconGrey),
+                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
                   ),
                 ),
                 const SizedBox(width: 16),
-                Expanded(
+                const Expanded(
                   flex: 1,
                   child: Text(
                     'WHAT’S\nHAPPENING',
-                    style: AppTextStyles.heroMobile.copyWith(
-                      color: AppColors.textMain, 
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -120,7 +120,7 @@ class EventsHomePage extends StatelessWidget {
             NearbyCard(
               title: 'King Abdul Aziz Historical Center',
               distance: '2.3 km',
-              color: Colors.orange[100]!, 
+              color: Colors.orange[100]!,
             ),
             NearbyCard(
               title: 'King Fahad Cultural Center',
@@ -131,18 +131,18 @@ class EventsHomePage extends StatelessWidget {
             Center(
               child: TextButton(
                 onPressed: () {},
-                child: Text('See more', style: TextStyle(color: AppColors.primary)), 
+                child: const Text('See more', style: TextStyle(color: Colors.blue)),
               ),
             ),
             const SizedBox(height: 24),
 
             // RECOMMENDED
             const SectionHeader(title: 'Recommended'),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.0),
               child: Text(
                 'No recommendations yet.',
-                style: TextStyle(color: AppColors.textSecondary), 
+                style: TextStyle(color: Colors.grey),
               ),
             ),
           ],
@@ -162,7 +162,7 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), 
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
     );
   }
 }
@@ -177,12 +177,11 @@ class CategoryChip extends StatelessWidget {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.divider), 
+        border: Border.all(color: Colors.grey[300]!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
-        child: Text(label, style: TextStyle(fontSize: 14, color: AppColors.textMain)),
+        child: Text(label, style: const TextStyle(fontSize: 14)),
       ),
     );
   }
@@ -234,11 +233,11 @@ class NearbyCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textMain),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 Text(
                   distance,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
