@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-// ===========================================================================
+  // ===========================================================================
   //                     3. CATEGORIES SECTION (NOW CONNECTED)
   // ===========================================================================
 
@@ -200,6 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
   // ===========================================================================
   //                     4. NEAR YOU SECTION
   // ===========================================================================
@@ -227,7 +228,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-// ===========================================================================
+
+  // ===========================================================================
   //                     NEW: HAPPENING NOW SECTION
   // ===========================================================================
 
@@ -266,6 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
   // ===========================================================================
   //                     5. RECOMMENDED SECTION (NOW DYNAMIC)
   // ===========================================================================
@@ -327,7 +330,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: AppTextStyles.sectionTitle), 
+                // ADDED EXPANDED FOR ANDROID APP: Prevents the title and button from overflowing on small phone screens
+                Expanded(
+                  child: Text(title, style: AppTextStyles.sectionTitle), 
+                ),
+                const SizedBox(width: 16), // Buffer space so the text doesn't touch the button
                 ElevatedButton.icon(
                   onPressed: onSeeMore,
                   icon: const Icon(Icons.arrow_forward, size: 18),
@@ -386,6 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
 // =============================================================================
 //                     2. HERO SLIDER WIDGET (NOW LIVE & CLICKABLE)
 // =============================================================================

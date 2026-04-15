@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "417277582360",
+    "firebase_url": "https://wsal-2b30a-default-rtdb.firebaseio.com",
+    "project_id": "wsal-2b30a",
+    "storage_bucket": "wsal-2b30a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:417277582360:android:8b26934d5fb4b8df01776d",
+        "android_client_info": {
+          "package_name": "com.example.wasel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnpvcMaEyKMB4OhT3aidY8WYxAyi4Nhhg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
