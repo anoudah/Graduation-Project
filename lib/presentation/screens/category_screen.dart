@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; //norah
-import 'library_details_screen.dart'; //norah
+import 'package:cloud_firestore/cloud_firestore.dart'; // norah
+import 'library_details_screen.dart'; // norah
 // Alanoud added: Import the AI source to talk to Python
 import '../../data/datasources/ai_remote_source.dart';
+// استدعاء ملف الثيم - تأكدي من صحة المسار في مشروعك
+import '../../core/theme.dart'; 
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
   final String categoryId;
-
   final IconData categoryIcon;
 
   const CategoryScreen({
-    super.key, // تحديث للصيغة المختصرة والحديثة   نوره
+    super.key, 
     required this.categoryName,
     required this.categoryId,
-
     required this.categoryIcon,
   });
+
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-  // Alanoud added: Initialize AI Source and Future to hold the live data
   final AiRemoteSource _aiSource = AiRemoteSource();
   late Future<List<dynamic>> _categoryEventsFuture;
 
@@ -30,59 +30,31 @@ class _CategoryScreenState extends State<CategoryScreen> {
   void initState() {
     super.initState();
 
-    _categoryEventsFuture = Future.wait([
-      _aiSource.fetchEventsByCategory(
-        widget.categoryName,
-      ), // Source 1: AI (Alanoud)
-      
-      FirebaseFirestore.instance
-          .collection('Events')
-          .where(
-            'Category_ID',
-            isEqualTo: widget.categoryId,
-          ) // Source 2: Firestore (Norah)
-          .get()
-          .then(
-            (snapshot) => snapshot.docs.map((doc) {
-              // 1. Create a modifiable copy of the document data
-              final data = Map<String, dynamic>.from(doc.data());
-              
-              // 2. Inject the actual Firestore document ID into the map!
-              data['id'] = doc.id; 
-              
-              return data;
-            }).toList(),
-          ),
-    ]).then((results) {
-      return [...results[0], ...results[1]];
-    });
+    // 1. We ONLY ask the Python AI Backend for the data.
+    // 2. We use the new ID-based function (e.g., passing "MUS" instead of "Museums").
+    _categoryEventsFuture = _aiSource.fetchEventsByCategoryId(widget.categoryId);
   }
-  // Alanoud removed: The hardcoded _getCategoryItems map is gone!
-
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F0F0),
+      backgroundColor: AppColors.background, // مناداة الثيم
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Top Navigation Bar
             _buildTopBar(context),
 
-            // FutureBuilder replaces the static header and list
             FutureBuilder<List<dynamic>>(
               future: _categoryEventsFuture,
               builder: (context, snapshot) {
-                // State 1: Loading
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
                     padding: EdgeInsets.only(top: 100),
                     child: Center(
                       child: Column(
                         children: [
-                          CircularProgressIndicator(color: Color(0xFF6B4B8A)),
+                          CircularProgressIndicator(color: AppColors.primary), // مناداة الثيم
                           SizedBox(height: 16),
                           Text("Wasel AI is calculating live crowds..."),
                         ],
@@ -91,7 +63,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   );
                 }
 
-                // State 2: Error
                 if (snapshot.hasError) {
                   return Padding(
                     padding: const EdgeInsets.only(top: 100),
@@ -99,14 +70,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   );
                 }
 
-                // State 3: Success!
                 final liveItems = snapshot.data ?? [];
 
                 return Column(
                   children: [
-                    // Pass the real count to the header
                     _buildCategoryHeader(context, isMobile, liveItems.length),
-                    // Pass the real data to the list
                     _buildCategoryItemsList(context, isMobile, liveItems),
                   ],
                 );
@@ -128,7 +96,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           IconButton(
             icon: const Icon(
               Icons.arrow_back,
-              color: Color(0xFF333333),
+              color: AppColors.textMain, // مناداة الثيم
               size: 28,
             ),
             onPressed: () => Navigator.pop(context),
@@ -137,23 +105,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
           Expanded(
             child: Text(
               widget.categoryName,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
-                fontFamily: 'Poppins',
-              ),
+              style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), // مناداة الثيم
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.search, color: Color(0xFF333333), size: 24),
+            icon: const Icon(Icons.search, color: AppColors.textMain, size: 24),
             onPressed: () {},
           ),
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(
               Icons.filter_list,
-              color: Color(0xFF333333),
+              color: AppColors.textMain,
               size: 24,
             ),
             onPressed: () {},
@@ -163,7 +126,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
-  // Alanoud added: Pass the totalItemCount so the header updates dynamically
   Widget _buildCategoryHeader(
     BuildContext context,
     bool isMobile,
@@ -181,7 +143,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFE8DDF5),
+                  color: AppColors.primaryLight, // مناداة الثيم
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -192,7 +154,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
                 child: Icon(
                   widget.categoryIcon,
-                  color: const Color(0xFF6B4B8A),
+                  color: AppColors.primary,
                   size: 40,
                 ),
               ),
@@ -203,22 +165,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   children: [
                     Text(
                       widget.categoryName,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF333333),
-                            fontFamily: 'Poppins',
-                          ),
+                      style: AppTextStyles.sectionTitle.copyWith(fontSize: 28),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$totalItemCount places available', // Dynamic count!
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF999999),
-                        fontFamily: 'Poppins',
-                      ),
+                      '$totalItemCount places available', 
+                      style: AppTextStyles.subtitle,
                     ),
                   ],
                 ),
@@ -230,7 +182,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
-  // Alanoud added: Pass the dynamic AI list into the builder
   Widget _buildCategoryItemsList(
     BuildContext context,
     bool isMobile,
@@ -250,7 +201,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         children: categoryItems.map((item) {
-          // Alanoud added: AI Crowd Color Logic
           String crowdStatus = item['Live_Crowd_Status'] ?? "LOW";
           Color crowdColor = Colors.green;
           if (crowdStatus == "MEDIUM") crowdColor = Colors.orange;
@@ -259,7 +209,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -269,31 +219,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
               ],
             ),
-            // Wrap with InkWell to handle navigation to the details screen
             child: InkWell(
-              borderRadius: BorderRadius.circular(
-                16,
-              ), // لضمان أن تأثير الضغط لا يخرج عن زوايا البطاقة
+              borderRadius: BorderRadius.circular(16),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => LibraryDetailsScreen(
-                      eventData: item as Map<String, dynamic>, // Pass the full map!
+                      eventData: item as Map<String, dynamic>, 
                     ),
                   ),
                 );
               },
               child: Row(
                 children: [
-                  // Image
                   Container(
                     width: 120,
                     height: 120,
                     margin: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: Colors.grey[200],
+                      color: AppColors.avatarBg,
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -304,13 +250,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(
                               Icons.image_not_supported,
-                              color: Colors.grey,
+                              color: AppColors.iconGrey,
                             ),
                       ),
                     ),
                   ),
 
-                  // Content
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -325,23 +270,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             item['Title'] ?? 'Unknown Event',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF333333),
-                              fontFamily: 'Poppins',
-                            ),
+                            style: AppTextStyles.sectionTitle.copyWith(fontSize: 14),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             item['About'] ?? item['Category'] ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF999999),
-                              fontFamily: 'Poppins',
-                            ),
+                            style: AppTextStyles.subtitle.copyWith(fontSize: 12),
                           ),
                           const SizedBox(height: 8),
 
@@ -350,14 +286,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               const Icon(
                                 Icons.location_on_outlined,
                                 size: 14,
-                                color: Color(0xFF6B4B8A),
+                                color: AppColors.primary,
                               ),
                               const SizedBox(width: 4),
-                              const Text(
+                              Text(
                                 '-- km',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF6B4B8A),
+                                  color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: 'Poppins',
                                 ),
@@ -389,19 +325,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ),
                   ),
 
-                  // Arrow Icon
                   const Padding(
                     padding: EdgeInsets.only(right: 16),
                     child: Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
-                      color: Color(0xFF6B4B8A),
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
               ),
             ),
-            // --- التعديل ينتهي هنا ---
           );
         }).toList(),
       ),

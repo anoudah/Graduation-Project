@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../widgets/event_card.dart';
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -12,13 +14,13 @@ class FavoritesScreen extends StatelessWidget {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F0F0),
+      backgroundColor: AppColors.background, // تم الربط بالثيم
       appBar: AppBar(
         title: const Text(
           "My Favorites",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF6B4B8A),
+        backgroundColor: AppColors.primary, // تم الربط بالثيم
         centerTitle: true,
         elevation: 0,
       ),
@@ -34,7 +36,9 @@ class FavoritesScreen extends StatelessWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(child: Text("No favorites found"));

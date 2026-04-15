@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+// تأكدي أن المسار هنا يوصل لملف الثيم حقك بالضبط
+import '../../core/theme.dart'; 
 
 class NearYouScreen extends StatelessWidget {
   const NearYouScreen({Key? key}) : super(key: key);
@@ -17,9 +19,14 @@ class NearYouScreen extends StatelessWidget {
     final mapController = MapController();
 
     return Scaffold(
+      backgroundColor: AppColors.background, 
       appBar: AppBar(
-        title: const Text('Near You'),
-        backgroundColor: const Color(0xFF6B4B8A),
+        title: const Text(
+          'Near You',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: AppColors.primary, 
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -68,10 +75,20 @@ class NearYouScreen extends StatelessWidget {
                 itemCount: nearByLocations.length,
                 itemBuilder: (context, index) {
                   return Card(
+                    elevation: 0,
                     margin: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                     child: ListTile(
-                      title: Text(nearByLocations[index]),
-                      trailing: const Icon(Icons.chevron_right),
+                      title: Text(
+                        nearByLocations[index],
+                        style: AppTextStyles.subtitle.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textMain, // التعديل هنا: كان textPrimary وخليته textMain حسب ملفك
+                        ),
+                      ),
+                      trailing: Icon(Icons.chevron_right, color: AppColors.primary),
                     ),
                   );
                 },

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 class FAQPage extends StatelessWidget {
   const FAQPage({Key? key}) : super(key: key);
@@ -7,13 +9,13 @@ class FAQPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F0F0),
+      backgroundColor: AppColors.background, // تم استخدام الثيم
       appBar: AppBar(
         title: const Text(
           'FAQ',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF6B4B8A),
+        backgroundColor: AppColors.primary, // تم استخدام الثيم
         centerTitle: true,
         elevation: 0,
       ),
@@ -54,18 +56,18 @@ class FAQPage extends StatelessWidget {
                   shape: const Border(), // لإزالة الحدود الافتراضية عند الفتح
                   title: Text(
                     faqData['Question'] ?? 'No Question Found',
-                    style: const TextStyle(
-                      color: Color(0xFF6B4B8A),
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: AppColors.primary, // تم استخدام الثيم
+                      fontSize: 16,
                     ),
                   ),
-                  iconColor: const Color(0xFF6B4B8A),
+                  iconColor: AppColors.primary, // تم استخدام الثيم
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
                         faqData['Answer'] ?? 'No Answer Available',
-                        style: const TextStyle(
+                        style: AppTextStyles.subtitle.copyWith(
                           height: 1.5,
                           color: Colors.black87,
                         ),

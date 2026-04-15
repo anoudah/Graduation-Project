@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// استدعاء ملف الثيم
+import '../../core/theme.dart'; 
 
 class RouteSuggestionScreen extends StatelessWidget {
   const RouteSuggestionScreen({super.key});
@@ -6,11 +8,11 @@ class RouteSuggestionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBFBFF), // خلفية فاتحة جداً مثل الصورة
+      backgroundColor: AppColors.background, // تم الربط بخلفية الثيم
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: BackButton(color: AppColors.textMain), // ربط لون زر الرجوع
       ),
       body: Column(
         children: [
@@ -21,14 +23,15 @@ class RouteSuggestionScreen extends StatelessWidget {
               height: 45,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.divider.withOpacity(0.3), // استخدام لون الفواصل من الثيم
                 borderRadius: BorderRadius.circular(25),
               ),
-              child: const TextField(
+              child: TextField(
                 decoration: InputDecoration(
                   hintText: 'search',
+                  hintStyle: TextStyle(color: AppColors.textHint), // ربط لون التلميح
                   border: InputBorder.none,
-                  suffixIcon: Icon(Icons.search, color: Colors.grey),
+                  suffixIcon: Icon(Icons.search, color: AppColors.iconGrey), // ربط لون الأيقونة
                 ),
               ),
             ),
@@ -46,10 +49,10 @@ class RouteSuggestionScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Suggested Route To', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, height: 1.1)),
-                        const Text('Saudi National\nMuseum', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, height: 1.1)),
+                        Text('Suggested Route To', style: AppTextStyles.heroMobile.copyWith(color: AppColors.textMain, height: 1.1)),
+                        Text('Saudi National\nMuseum', style: AppTextStyles.heroMobile.copyWith(color: AppColors.textMain, height: 1.1)),
                         const SizedBox(height: 40),
-                        const Text('Based on your location:', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                        Text('Based on your location:', style: AppTextStyles.subtitle), // ربط ستايل النص الفرعي
                         const SizedBox(height: 15),
                         
                         // أيقونات النقل (سيارة، قطار، مشي)
@@ -62,7 +65,7 @@ class RouteSuggestionScreen extends StatelessWidget {
                         ),
                         
                         const SizedBox(height: 40),
-                        const Text('Future Trip:', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                        Text('Future Trip:', style: AppTextStyles.subtitle),
                         const SizedBox(height: 15),
                         
                         // خانات التاريخ والوقت (Date & Time)
@@ -81,7 +84,7 @@ class RouteSuggestionScreen extends StatelessWidget {
                           icon: const Icon(Icons.add_circle_outline, size: 20),
                           label: const Text('Suggest route', style: TextStyle(fontSize: 16)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1A1F71),
+                            backgroundColor: const Color(0xFF1A1F71), // تركته كحلي كما في الصورة
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 18),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -93,7 +96,7 @@ class RouteSuggestionScreen extends StatelessWidget {
                 ),
 
                 // 3. الخط الفاصل الرأسي (الموجود بالصورة)
-                const VerticalDivider(thickness: 1.5, width: 1, color: Color(0xFFE0E0E0), indent: 20, endIndent: 80),
+                VerticalDivider(thickness: 1.5, width: 1, color: AppColors.divider, indent: 20, endIndent: 80),
 
                 // 4. القسم الأيمن: الخريطة وزر جوجل مابس
                 Expanded(
@@ -108,9 +111,9 @@ class RouteSuggestionScreen extends StatelessWidget {
                           height: 400,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade200),
+                            border: Border.all(color: AppColors.divider),
                             image: const DecorationImage(
-                              image: NetworkImage('https://via.placeholder.com/500x400?text=Map+View'), // استبدليها بـ Asset Image
+                              image: NetworkImage('https://via.placeholder.com/500x400?text=Map+View'), 
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -119,10 +122,10 @@ class RouteSuggestionScreen extends StatelessWidget {
                         // زر View in Google Maps
                         ElevatedButton.icon(
                           onPressed: () {},
-                          icon: const Icon(Icons.location_on, size: 20),
+                          icon: Icon(Icons.location_on, size: 20, color: AppColors.primary),
                           label: const Text('View in Google Maps'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFE5E7FF),
+                            backgroundColor: AppColors.primaryLight, // اللون الفاتح من الثيم
                             foregroundColor: const Color(0xFF1A1F71),
                             padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
                             elevation: 0,
@@ -146,15 +149,15 @@ class RouteSuggestionScreen extends StatelessWidget {
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFE1F5FE) : Colors.white,
+        color: isSelected ? AppColors.primaryLight : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade300),
+        border: Border.all(color: isSelected ? AppColors.primary : AppColors.divider),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: isSelected ? Colors.blue : Colors.black),
+          Icon(icon, size: 18, color: isSelected ? AppColors.primary : AppColors.iconGrey),
           const SizedBox(width: 5),
-          Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Colors.blue : Colors.black)),
+          Text(label, style: TextStyle(fontSize: 12, color: isSelected ? AppColors.primary : AppColors.textMain)),
         ],
       ),
     );
@@ -165,7 +168,7 @@ class RouteSuggestionScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(title, style: AppTextStyles.subtitle),
         const SizedBox(height: 5),
         Container(
           width: 160,
@@ -178,7 +181,7 @@ class RouteSuggestionScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(val, style: const TextStyle(fontWeight: FontWeight.w500)),
-              Icon(icon, size: 18, color: Colors.black54),
+              Icon(icon, size: 18, color: AppColors.iconGrey),
             ],
           ),
         ),
