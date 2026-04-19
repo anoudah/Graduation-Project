@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// استدعاء ملف الثيم - تأكدي من صحة المسار في مشروعك
+import '../../core/theme.dart'; 
 
 void main() {
   runApp(const EventsApp());
@@ -26,27 +28,28 @@ class EventsHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background, // ربط الخلفية بالثيم
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background, 
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black87),
+          icon: Icon(Icons.menu, color: AppColors.textMain), // لون الأيقونة
           onPressed: () {},
         ),
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.grey[200],
+            color: AppColors.divider.withOpacity(0.2), 
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const TextField(
+          child: TextField(
             readOnly: true,
             decoration: InputDecoration(
               hintText: 'Search',
-              prefixIcon: Icon(Icons.search, size: 20),
+              hintStyle: TextStyle(color: AppColors.textHint), 
+              prefixIcon: Icon(Icons.search, size: 20, color: AppColors.iconGrey),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
         ),
@@ -54,8 +57,8 @@ class EventsHomePage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
-              backgroundColor: Colors.purple[100],
-              child: const Text('M', style: TextStyle(color: Colors.purple)),
+              backgroundColor: AppColors.primaryLight, 
+              child: Text('M', style: TextStyle(color: AppColors.primary)), 
             ),
           ),
         ],
@@ -73,20 +76,19 @@ class EventsHomePage extends StatelessWidget {
                   child: Container(
                     height: 120,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AppColors.avatarBg, 
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                    child: Icon(Icons.image, size: 50, color: AppColors.iconGrey),
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   flex: 1,
                   child: Text(
                     'WHAT’S\nHAPPENING',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.heroMobile.copyWith(
+                      color: AppColors.textMain, 
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -118,7 +120,7 @@ class EventsHomePage extends StatelessWidget {
             NearbyCard(
               title: 'King Abdul Aziz Historical Center',
               distance: '2.3 km',
-              color: Colors.orange[100]!,
+              color: Colors.orange[100]!, 
             ),
             NearbyCard(
               title: 'King Fahad Cultural Center',
@@ -129,18 +131,18 @@ class EventsHomePage extends StatelessWidget {
             Center(
               child: TextButton(
                 onPressed: () {},
-                child: const Text('See more', style: TextStyle(color: Colors.blue)),
+                child: Text('See more', style: TextStyle(color: AppColors.primary)), 
               ),
             ),
             const SizedBox(height: 24),
 
             // RECOMMENDED
             const SectionHeader(title: 'Recommended'),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Text(
                 'No recommendations yet.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.textSecondary), 
               ),
             ),
           ],
@@ -160,7 +162,7 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+      style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), 
     );
   }
 }
@@ -175,11 +177,12 @@ class CategoryChip extends StatelessWidget {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
+        color: Colors.white,
+        border: Border.all(color: AppColors.divider), 
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
-        child: Text(label, style: const TextStyle(fontSize: 14)),
+        child: Text(label, style: TextStyle(fontSize: 14, color: AppColors.textMain)),
       ),
     );
   }
@@ -235,7 +238,7 @@ class NearbyCard extends StatelessWidget {
                 ),
                 Text(
                   distance,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
               ],
             ),
