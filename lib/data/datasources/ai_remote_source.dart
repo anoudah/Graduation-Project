@@ -152,3 +152,26 @@ class AiRemoteSource {
     }
   }
 }
+// ===========================================================================
+  // --- 5. Search Events ---
+  // ===========================================================================
+  Future<List<dynamic>> searchEvents(String query) async {
+    final url = Uri.parse('${AppConstants.aiBaseUrl}/search?q=${Uri.encodeComponent(query)}');
+    
+    try {
+      final response = await http.get(
+        url,
+        headers: {"ngrok-skip-browser-warning": "true"},
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['results'] ?? [];
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      // For search, if they are offline, we just return an empty list or throw
+      throw Exception('Network error during search.');
+    }
+  }
