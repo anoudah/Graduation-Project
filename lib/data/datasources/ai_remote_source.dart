@@ -6,7 +6,7 @@ import 'package:wasel/core/constants.dart';
 class AiRemoteSource {
   
   // ===========================================================================
-  // --- NEW: Chatbot Stream Method ---
+  // --- Chatbot Stream Method ---
   // ===========================================================================
   /// Connects to the FastAPI /chat endpoint and returns a stream of text chunks.
   Stream<String> getChatStream(String userQuery, {String? eventId}) async* {
@@ -151,8 +151,7 @@ class AiRemoteSource {
       throw Exception('Offline: No trending data.');
     }
   }
-}
-// ===========================================================================
+  // ===========================================================================
   // --- 5. Search Events ---
   // ===========================================================================
   Future<List<dynamic>> searchEvents(String query) async {
@@ -175,3 +174,28 @@ class AiRemoteSource {
       throw Exception('Network error during search.');
     }
   }
+  // ===========================================================================
+  // --- 6. Get Search Suggestions ---
+  // ===========================================================================
+  Future<List<String>> getSearchSuggestions() async {
+    final url = Uri.parse('${AppConstants.aiBaseUrl}/suggestions');
+    
+    try {
+      final response = await http.get(
+        url,
+        headers: {"ngrok-skip-browser-warning": "true"},
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Safely convert the dynamic list to a List<String>
+        return List<String>.from(data['suggestions'] ?? []);
+      } else {
+        return []; // Return empty if the server fails
+      }
+    } catch (e) {
+      return []; // Return empty on network error
+    }
+  }
+}
+  

@@ -15,6 +15,7 @@ import 'Reminders.dart';
 import 'profile.dart';
 import 'library_details_screen.dart';
 import 'chat_screen.dart';
+import 'search.dart';
 
 // --- Widget Imports ---
 import '../widgets/category_card.dart';
@@ -33,7 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // 2. INITIALIZE THE AI SOURCE AND FUTURE
   final AiRemoteSource _aiSource = AiRemoteSource();
   late Future<List<dynamic>> _recommendedEventsFuture;
-  late Future<List<dynamic>> _trendingEventsFuture; // NEW: For the "Happening Now" section
+  late Future<List<dynamic>> _trendingEventsFuture; // For the "Happening Now" section
+  
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Note: You can replace "Culture" with a variable from the user's actual profile later!
     _recommendedEventsFuture = _aiSource.fetchRecommendations("Culture");
     _trendingEventsFuture = _aiSource.fetchTrendingEvents(); // FETCH TRENDING
+    _aiSource.getSearchSuggestions();
   }
 
   @override
@@ -114,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ===========================================================================
+ // ===========================================================================
   //                     1. NAVIGATION BAR SECTION
   // ===========================================================================
 
@@ -131,19 +134,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search',
-                  hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  suffixIcon: Icon(Icons.search, color: AppColors.iconGrey, size: 20),
+            // 1. ADDED: GestureDetector to handle the tap
+            child: GestureDetector(
+              onTap: () {
+                // 2. ADDED: Push to the new SearchScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SearchScreen()),
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
+                ),
+                // 3. ADDED: IgnorePointer stops the keyboard from opening on the Home Screen
+                child: const IgnorePointer(
+                  child: TextField(
+                    readOnly: true, // Prevents typing on this specific screen
+                    decoration: InputDecoration(
+                      hintText: 'Search',
+                      hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      suffixIcon: Icon(Icons.search, color: AppColors.iconGrey, size: 20),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -160,7 +177,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
   // ===========================================================================
   //                     3. CATEGORIES SECTION (NOW CONNECTED)
   // ===========================================================================
