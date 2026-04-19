@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-// استدعاء ملف الثيم - تأكدي من صحة المسار في مشروعك
-import '../../core/theme.dart'; 
 
 void main() {
   runApp(const EventsApp());
