@@ -23,6 +23,7 @@ import '../widgets/near_you_card.dart';
 import '../widgets/compact_event_card.dart';
 import '../widgets/hero_slider.dart';
 import '../widgets/categories_section.dart';
+import '../widgets/recommended_section.dart';
 
 // 1. CHANGED TO STATEFUL WIDGET
 class HomeScreen extends StatefulWidget {
@@ -76,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const CategoriesSection(),
             _buildHappeningNowSection(context),
             _buildNearYouSection(context), // Note: Left static for now until spatial data is ready
-            _buildRecommendedSection(context), // AI Integration applied here!
+            RecommendedSection(recommendedFuture: _recommendedEventsFuture), 
             _buildBottomBannerSection(context),
           ],
         ),
@@ -245,53 +246,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  // ===========================================================================
-  //                     5. RECOMMENDED SECTION (NOW DYNAMIC)
-  // ===========================================================================
-
-  Widget _buildRecommendedSection(BuildContext context) {
-    return _buildSectionLayout(
-      context: context,
-      title: 'Recommended',
-      onSeeMore: () {}, 
-      child: SizedBox(
-        height: 240, 
-        // 4. THE FUTURE BUILDER HANDLES ALL LOADING AND ERROR STATES
-        child: FutureBuilder<List<dynamic>>(
-          future: _recommendedEventsFuture,
-          builder: (context, snapshot) {
-            // While waiting for the Python AI...
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            } 
-            // If the server crashes or internet drops (and no cache exists)
-            else if (snapshot.hasError) {
-              return Center(child: Text('Failed to load recommendations.', style: TextStyle(color: Colors.red.shade400)));
-            } 
-            // If it succeeds but returns an empty list
-            else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No recommendations available right now.'));
-            }
-
-            // SUCCESS! Map the Python data to the UI
-            final recommendations = snapshot.data!;
-
-            return ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: recommendations.length,
-              itemBuilder: (context, index) {
-                // Ensure the map format matches what CompactEventCard expects
-                final eventData = Map<String, dynamic>.from(recommendations[index]);
-                return CompactEventCard(eventData: eventData);
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   // ===========================================================================
   //                   REUSABLE LAYOUT HELPER (For Titles & See More)
   // ===========================================================================
