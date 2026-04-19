@@ -1,31 +1,23 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; 
-// --- Core Imports ---
 import '../../core/theme.dart';
 import '../../data/datasources/ai_remote_source.dart';
 
 // --- Screen Imports ---
-import 'category_screen.dart';
-import 'smart_tour_screen.dart';
-import 'favorites_screen.dart';
-import 'contactus.dart';
-import 'faq.dart';
-import 'Nearyou.dart';
-import 'Reminders.dart';
-import 'profile.dart';
-import 'library_details_screen.dart';
+// These are the full-page screens that the user navigates to from the home page
 import 'chat_screen.dart';
-import 'search.dart';
 
-// --- Widget Imports ---
-import '../widgets/category_card.dart';
-import '../widgets/near_you_card.dart';
-import '../widgets/compact_event_card.dart';
+// --- Widget Imports (The Modular Architecture) ---
+// By importing these sections instead of writing them here, 
+// we keep this main file incredibly fast, readable, and easy to debug.
+import '../widgets/app_drawer.dart'; 
+import '../widgets/home_top_bar.dart'; 
 import '../widgets/hero_slider.dart';
 import '../widgets/categories_section.dart';
+import '../widgets/happening_now_section.dart'; 
+import '../widgets/near_you_section.dart'; 
 import '../widgets/recommended_section.dart';
+import '../widgets/smart_tour_banner.dart'; 
 
-// 1. CHANGED TO STATEFUL WIDGET
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -34,292 +26,86 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // 2. INITIALIZE THE AI SOURCE AND FUTURE
+  // 1. DATA SOURCE
+  // We initialize the connection to the Python/Firebase backend here
   final AiRemoteSource _aiSource = AiRemoteSource();
-  late Future<List<dynamic>> _recommendedEventsFuture;
-  late Future<List<dynamic>> _trendingEventsFuture; // For the "Happening Now" section
   
+  // 2. STATE VARIABLES
+  // We use 'late Future' because we will assign these values in initState.
+  // Passing these Futures down to the child widgets prevents the whole 
+  // screen from freezing while waiting for the internet.
+  late Future<List<dynamic>> _recommendedEventsFuture;
+  late Future<List<dynamic>> _trendingEventsFuture; 
 
   @override
   void initState() {
     super.initState();
     // 3. FETCH DATA ON LOAD
-    // Note: You can replace "Culture" with a variable from the user's actual profile later!
+    // As soon as the screen opens, we ask the database for the data.
     _recommendedEventsFuture = _aiSource.fetchRecommendations("Culture");
-    _trendingEventsFuture = _aiSource.fetchTrendingEvents(); // FETCH TRENDING
-    _aiSource.getSearchSuggestions();
+    _trendingEventsFuture = _aiSource.fetchTrendingEvents();
+    
+    // 4. PRE-FETCHING (Performance Optimization)
+    // Secretly download the search categories in the background so the 
+    // Search Screen loads instantly when the user eventually clicks it.
+    _aiSource.getSearchSuggestions(); 
   }
 
   @override
   Widget build(BuildContext context) {
+    // 5. RESPONSIVE DESIGN CHECK
+    // Determines if the user is on a phone or a wider screen (like web/tablet)
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
       backgroundColor: AppColors.background, 
-      drawer: _buildDrawer(context),
+      
+      // --- SIDE NAVIGATION ---
+      // The hamburger menu slides this drawer out.
+      drawer: const AppDrawer(), 
+      
+      // --- FLOATING CHAT BUTTON ---
+      // The AI assistant button that hovers in the bottom right corner.
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
         elevation: 4,
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ChatScreen()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatScreen()));
         },
         child: const Icon(Icons.chat_bubble_outline),
       ),
+      
+      // --- MAIN CONTENT AREA ---
+      // SingleChildScrollView allows the user to scroll vertically if the screen is small.
       body: SingleChildScrollView(
+        // The Column acts as our "Table of Contents", stacking our modular widgets.
         child: Column(
           children: [
-            _buildNavigationBar(context),
+            // Top Bar: Contains Menu Icon, Search Bar, and Profile Icon
+            const HomeTopBar(),
+            
+            // Hero Slider: The auto-playing trending images at the top.
+            // We pass the data future into it so it manages its own loading spinner.
             HeroSlider(isMobile: isMobile, trendingFuture: _trendingEventsFuture),
+            
+            // Categories: Static list of buttons (Museums, Libraries, etc.)
+            // Marked as 'const' so Flutter only draws it once to save battery/CPU.
             const CategoriesSection(),
-            _buildHappeningNowSection(context),
-            _buildNearYouSection(context), // Note: Left static for now until spatial data is ready
+            
+            // Happening Now: Uses the same trending data as the slider
+            HappeningNowSection(trendingFuture: _trendingEventsFuture),
+            
+            // Near You: Currently a placeholder for GPS-based events
+            const NearYouSection(), 
+            
+            // Recommended: Uses the AI logic to fetch personalized events
             RecommendedSection(recommendedFuture: _recommendedEventsFuture), 
-            _buildBottomBannerSection(context),
+            
+            // Smart Tour Banner: The call-to-action block at the very bottom
+            const SmartTourBanner(),
           ],
         ),
-      ),
-    );
-  }
-
-  // ===========================================================================
-  //                              DRAWER MENU
-  // ===========================================================================
-
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(color: AppColors.primary),
-            child: Text('Options', style: TextStyle(color: AppColors.white, fontSize: 24)),
-          ),
-          _drawerTile(context, Icons.question_answer, 'FAQ', const FAQPage()),
-          _drawerTile(context, Icons.mail_outline, 'Contact Us', const ContactUsScreen()),
-          _drawerTile(context, Icons.favorite_border, 'Favorites', const FavoritesScreen()),
-          _drawerTile(context, Icons.notifications, 'Reminders', const RemindersScreen()),
-        ],
-      ),
-    );
-  }
-
-  ListTile _drawerTile(BuildContext context, IconData icon, String title, Widget destination) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: () {
-        Navigator.pop(context);
-        Navigator.push(context, MaterialPageRoute(builder: (context) => destination));
-      },
-    );
-  }
-
- // ===========================================================================
-  //                     1. NAVIGATION BAR SECTION
-  // ===========================================================================
-
-  Widget _buildNavigationBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: AppColors.textMain, size: 28),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            // 1. ADDED: GestureDetector to handle the tap
-            child: GestureDetector(
-              onTap: () {
-                // 2. ADDED: Push to the new SearchScreen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SearchScreen()),
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
-                ),
-                // 3. ADDED: IgnorePointer stops the keyboard from opening on the Home Screen
-                child: const IgnorePointer(
-                  child: TextField(
-                    readOnly: true, // Prevents typing on this specific screen
-                    decoration: InputDecoration(
-                      hintText: 'Search',
-                      hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      suffixIcon: Icon(Icons.search, color: AppColors.iconGrey, size: 20),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage())),
-            child: const CircleAvatar(
-              backgroundColor: AppColors.avatarBg,
-              child: Icon(Icons.person, color: AppColors.iconGrey, size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===========================================================================
-  //                     4. NEAR YOU SECTION
-  // ===========================================================================
-
-  Widget _buildNearYouSection(BuildContext context) {
-    final nearByLocations = [
-      {'name': 'King Abdul Aziz Historical Center', 'distance': '2.3 km'},
-      {'name': 'King Fahad Cultural Center', 'distance': '4.1 km'},
-      {'name': 'Saudi National Museum', 'distance': '5.2 km'},
-    ];
-
-    return _buildSectionLayout(
-      context: context,
-      title: 'Near you',
-      onSeeMore: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NearYouScreen())),
-      child: SizedBox(
-        height: 124, 
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: nearByLocations.length,
-          itemBuilder: (context, index) {
-            return NearYouCard(locationData: nearByLocations[index]);
-          },
-        ),
-      ),
-    );
-  }
-
-  // ===========================================================================
-  //                     NEW: HAPPENING NOW SECTION
-  // ===========================================================================
-
-  Widget _buildHappeningNowSection(BuildContext context) {
-    return _buildSectionLayout(
-      context: context,
-      title: "What's happening now",
-      onSeeMore: () {}, 
-      child: SizedBox(
-        height: 240, 
-        child: FutureBuilder<List<dynamic>>(
-          future: _trendingEventsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            } 
-            else if (snapshot.hasError) {
-              return const Center(child: Text('Failed to load live events.'));
-            } 
-            else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No live events right now.'));
-            }
-
-            final trendingEvents = snapshot.data!;
-
-            return ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: trendingEvents.length,
-              itemBuilder: (context, index) {
-                final eventData = Map<String, dynamic>.from(trendingEvents[index]);
-                return CompactEventCard(eventData: eventData);
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-  // ===========================================================================
-  //                   REUSABLE LAYOUT HELPER (For Titles & See More)
-  // ===========================================================================
-
-  Widget _buildSectionLayout({required BuildContext context, required String title, required VoidCallback onSeeMore, required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 40, 0, 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 40),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // ADDED EXPANDED FOR ANDROID APP: Prevents the title and button from overflowing on small phone screens
-                Expanded(
-                  child: Text(title, style: AppTextStyles.sectionTitle), 
-                ),
-                const SizedBox(width: 16), // Buffer space so the text doesn't touch the button
-                ElevatedButton.icon(
-                  onPressed: onSeeMore,
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: const Text('See more'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          child, 
-        ],
-      ),
-    );
-  }
-
-  // ===========================================================================
-  //                     6. SMART TOUR BANNER SECTION
-  // ===========================================================================
-
-  Widget _buildBottomBannerSection(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        children: [
-          const Divider(color: AppColors.divider, thickness: 1, height: 32),
-          const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 16, offset: Offset(0, 4))],
-            ),
-            child: Column(
-              children: [
-                const Text('Want to have a full day of culture?', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                const Text('Generate a tour based on your interests', textAlign: TextAlign.center, style: AppTextStyles.subtitle),
-                const SizedBox(height: 28),
-                ElevatedButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartTourScreen())),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary, 
-                    foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  ),
-                  child: const Text("Let's go", style: AppTextStyles.buttonText),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
