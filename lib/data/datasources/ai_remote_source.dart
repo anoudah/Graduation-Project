@@ -5,7 +5,9 @@ import 'package:wasel/core/constants.dart';
 
 class AiRemoteSource {
   
+  // ===========================================================================
   // --- NEW: Chatbot Stream Method ---
+  // ===========================================================================
   /// Connects to the FastAPI /chat endpoint and returns a stream of text chunks.
   Stream<String> getChatStream(String userQuery, {String? eventId}) async* {
     // 1. Construct the URL with optional event context
@@ -34,7 +36,9 @@ class AiRemoteSource {
     }
   }
 
+  // ===========================================================================
   // --- 1. Fetch by Category ID ---
+  // ===========================================================================
   Future<List<dynamic>> fetchEventsByCategoryId(String categoryId) async {
     final url = Uri.parse('${AppConstants.aiBaseUrl}/category/$categoryId');
     final prefs = await SharedPreferences.getInstance();
@@ -61,7 +65,9 @@ class AiRemoteSource {
     }
   }
 
+  // ===========================================================================
   // --- 2. Fetch Smart Recommendations ---
+  // ===========================================================================
   Future<List<dynamic>> fetchRecommendations(String interest) async {
     final url = Uri.parse('${AppConstants.aiBaseUrl}/recommend?interest=$interest');
     final prefs = await SharedPreferences.getInstance();
@@ -88,7 +94,9 @@ class AiRemoteSource {
     }
   }
 
+  // ===========================================================================
   // --- 3. Fetch Single Event by ID ---
+  // ===========================================================================
   Future<Map<String, dynamic>> fetchEventById(String eventId) async {
     final url = Uri.parse('${AppConstants.aiBaseUrl}/event/$eventId');
     final prefs = await SharedPreferences.getInstance();
@@ -115,7 +123,9 @@ class AiRemoteSource {
     }
   }
 
+  // ===========================================================================
   // --- 4. Fetch Trending Events ---
+  // ===========================================================================
   Future<List<dynamic>> fetchTrendingEvents() async {
     final url = Uri.parse('${AppConstants.aiBaseUrl}/trending');
     final prefs = await SharedPreferences.getInstance();

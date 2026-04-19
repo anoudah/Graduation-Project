@@ -30,7 +30,7 @@ class NearYouCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               // We use DecorationImage here so we can easily apply border radius to it
               image: const DecorationImage(
-                image: NetworkImage('https://via.placeholder.com/100x100?text=Location'),
+                image: NetworkImage('https://placehold.co/100x100/png?text=Nearby Event'), // Placeholder image URL
                 fit: BoxFit.cover,
               ),
             ),

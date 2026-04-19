@@ -14,6 +14,7 @@ import 'Nearyou.dart';
 import 'Reminders.dart';
 import 'profile.dart';
 import 'library_details_screen.dart';
+import 'chat_screen.dart';
 
 // --- Widget Imports ---
 import '../widgets/category_card.dart';
@@ -50,6 +51,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background, 
       drawer: _buildDrawer(context),
+      // --- ADD THIS BLOCK ---
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.white,
+        elevation: 4,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChatScreen()),
+          );
+        },
+        child: const Icon(Icons.chat_bubble_outline),
+      ),
+      // ----------------------
       body: SingleChildScrollView(
         child: Column(
           children: [
