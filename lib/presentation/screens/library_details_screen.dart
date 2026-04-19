@@ -232,15 +232,17 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
-        Text(data['About'] ?? "لا يوجد وصف متوفر حالياً."),
+        // يسحب الوصف من الفايربيس
+        Text(data['About'] ?? "No description available."),
         const SizedBox(height: 20),
         const Text(
           "Details",
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        _buildDetailRow("Schedule:", data['Schedule'] ?? "غير محدد"),
-        _buildDetailRow("Price:", data['Price'] ?? "مجاني"),
-        _buildDetailRow("Location:", data['Location_Address'] ?? "الرياض"),
+        // سحب تفاصيل الفعالية بالإنجليزية
+        _buildDetailRow("Schedule:", data['Schedule'] ?? "TBD"),
+        _buildDetailRow("Price:", data['Price'] ?? "Free"),
+        _buildDetailRow("Location:", data['Location_Address'] ?? "Riyadh"),
         const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: () {
@@ -261,7 +263,7 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
           ),
         ),
 
-        // --- هنا قسم عرض التعليقات (التقييم، الزحمة، النص) ---
+        // --- Reviews & Feedback Section ---
         const SizedBox(height: 30),
         const Text(
           "Reviews & Feedback",
@@ -276,17 +278,15 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('Comment Feedback')
-              .where(
-                'id',
-                isEqualTo: data['id'].toString(),
-              ) // ربط التعليق بهذي الفعالية
+              .where('id', isEqualTo: data['id'].toString())
               .orderBy('Date', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting)
               return const Center(child: CircularProgressIndicator());
+
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
-              return const Text("No comments yet.");
+              return const Text("No reviews yet. Be the first to share!");
 
             return ListView.builder(
               shrinkWrap: true,
@@ -310,14 +310,12 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // 1. عرض النجوم (Rating)
                             Text(
                               "Rating: ${comment['Rating']} ⭐",
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            // 2. عرض حالة الزحمة (Crowd)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -339,7 +337,6 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // 3. نص الكومنت
                         Text(
                           comment['Comment_Text'] ?? "",
                           style: const TextStyle(

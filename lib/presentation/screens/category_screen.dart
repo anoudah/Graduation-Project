@@ -26,34 +26,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
   final AiRemoteSource _aiSource = AiRemoteSource();
   late Future<List<dynamic>> _categoryEventsFuture;
 
-  @override
+@override
   void initState() {
     super.initState();
 
-    _categoryEventsFuture = Future.wait([
-      _aiSource.fetchEventsByCategory(
-        widget.categoryName,
-      ), 
-      
-      FirebaseFirestore.instance
-          .collection('Events')
-          .where(
-            'Category_ID',
-            isEqualTo: widget.categoryId,
-          ) 
-          .get()
-          .then(
-            (snapshot) => snapshot.docs.map((doc) {
-              final data = Map<String, dynamic>.from(doc.data());
-              data['id'] = doc.id; 
-              return data;
-            }).toList(),
-          ),
-    ]).then((results) {
-      return [...results[0], ...results[1]];
-    });
+    // 1. We ONLY ask the Python AI Backend for the data.
+    // 2. We use the new ID-based function (e.g., passing "MUS" instead of "Museums").
+    _categoryEventsFuture = _aiSource.fetchEventsByCategoryId(widget.categoryId);
   }
-
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;

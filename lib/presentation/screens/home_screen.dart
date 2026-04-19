@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-
+import 'dart:async'; 
 // --- Core Imports ---
 import '../../core/theme.dart';
-
+import '../../data/datasources/ai_remote_source.dart';
 
 // --- Screen Imports ---
-// import 'category_screen.dart';
+import 'category_screen.dart';
 import 'smart_tour_screen.dart';
 import 'favorites_screen.dart';
 import 'contactus.dart';
@@ -13,32 +13,52 @@ import 'faq.dart';
 import 'Nearyou.dart';
 import 'Reminders.dart';
 import 'profile.dart';
-
+import 'library_details_screen.dart';
 
 // --- Widget Imports ---
 import '../widgets/category_card.dart';
 import '../widgets/near_you_card.dart';
 import '../widgets/compact_event_card.dart';
 
-class HomeScreen extends StatelessWidget {
+// 1. CHANGED TO STATEFUL WIDGET
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // 2. INITIALIZE THE AI SOURCE AND FUTURE
+  final AiRemoteSource _aiSource = AiRemoteSource();
+  late Future<List<dynamic>> _recommendedEventsFuture;
+  late Future<List<dynamic>> _trendingEventsFuture; // NEW: For the "Happening Now" section
+
+  @override
+  void initState() {
+    super.initState();
+    // 3. FETCH DATA ON LOAD
+    // Note: You can replace "Culture" with a variable from the user's actual profile later!
+    _recommendedEventsFuture = _aiSource.fetchRecommendations("Culture");
+    _trendingEventsFuture = _aiSource.fetchTrendingEvents(); // FETCH TRENDING
+  }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
-      // MUCH CLEANER: Using AppColors.background instead of Color(0xFF...)
       backgroundColor: AppColors.background, 
       drawer: _buildDrawer(context),
       body: SingleChildScrollView(
         child: Column(
           children: [
             _buildNavigationBar(context),
-            _HeroSlider(isMobile: isMobile), 
+            _HeroSlider(isMobile: isMobile, trendingFuture: _trendingEventsFuture),
             _buildCategoriesSection(context),
-            _buildNearYouSection(context),
-            _buildRecommendedSection(context),
+            _buildHappeningNowSection(context),
+            _buildNearYouSection(context), // Note: Left static for now until spatial data is ready
+            _buildRecommendedSection(context), // AI Integration applied here!
             _buildBottomBannerSection(context),
           ],
         ),
@@ -95,7 +115,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Search Bar
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -115,7 +134,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Profile Button
           InkWell(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage())),
             child: const CircleAvatar(
@@ -127,19 +145,20 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
+  
   // ===========================================================================
-  //                     3. CATEGORIES SECTION
+  //                     3. CATEGORIES SECTION (NOW CONNECTED)
   // ===========================================================================
 
   Widget _buildCategoriesSection(BuildContext context) {
+    // 1. ADDED BACKEND IDs: These match your Python API perfectly!
     final categories = [
-      {'label': 'Libraries', 'icon': Icons.library_books, 'fullLabel': 'Libraries'},
-      {'label': 'Heritage and\nTradition', 'icon': Icons.museum, 'fullLabel': 'Heritage and Tradition'},
-      {'label': 'Museums', 'icon': Icons.collections, 'fullLabel': 'Museums'},
-      {'label': 'Conferences\nand Forums', 'icon': Icons.forum, 'fullLabel': 'Conferences and Forums'},
-      {'label': 'Cultural\nInstitutions', 'icon': Icons.business, 'fullLabel': 'Cultural Institutions'},
-      {'label': 'Exhibition and\nConvention', 'icon': Icons.storefront, 'fullLabel': 'Exhibition and Convention Centre'},
+      {'label': 'Libraries', 'icon': Icons.library_books, 'fullLabel': 'Libraries', 'id': 'LIB'},
+      {'label': 'Heritage and\nTradition', 'icon': Icons.museum, 'fullLabel': 'Heritage and Tradition', 'id': 'HER'},
+      {'label': 'Museums', 'icon': Icons.collections, 'fullLabel': 'Museums', 'id': 'MUS'},
+      {'label': 'Conferences\nand Forums', 'icon': Icons.forum, 'fullLabel': 'Conferences and Forums', 'id': 'CONF'},
+      {'label': 'Cultural\nInstitutions', 'icon': Icons.business, 'fullLabel': 'Cultural Institutions', 'id': 'INST'},
+      {'label': 'Exhibition and\nConvention', 'icon': Icons.storefront, 'fullLabel': 'Exhibition and Convention Centre', 'id': 'EXH'},
     ];
 
     return Padding(
@@ -155,7 +174,25 @@ class HomeScreen extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               itemCount: categories.length,
               itemBuilder: (context, index) {
-                return CategoryCard(category: categories[index]);
+                final category = categories[index];
+                
+                // 2. ADDED NAVIGATION: We wrap the card in a GestureDetector (or InkWell)
+                return GestureDetector(
+                  onTap: () {
+                    // 3. PUSH TO NEW SCREEN: Send the specific ID and Name to the Category Screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CategoryScreen(
+                          categoryId: category['id'] as String,
+                          categoryName: category['fullLabel'] as String,
+                          categoryIcon: category['icon'] as IconData,
+                        ),
+                      ),
+                    );
+                  },
+                  child: CategoryCard(category: category),
+                );
               },
             ),
           ),
@@ -193,27 +230,85 @@ class HomeScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  //                     5. RECOMMENDED SECTION
+  //                     NEW: HAPPENING NOW SECTION
+  // ===========================================================================
+
+  Widget _buildHappeningNowSection(BuildContext context) {
+    return _buildSectionLayout(
+      context: context,
+      title: "What's happening now",
+      onSeeMore: () {}, 
+      child: SizedBox(
+        height: 240, 
+        child: FutureBuilder<List<dynamic>>(
+          future: _trendingEventsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            } 
+            else if (snapshot.hasError) {
+              return const Center(child: Text('Failed to load live events.'));
+            } 
+            else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No live events right now.'));
+            }
+
+            final trendingEvents = snapshot.data!;
+
+            return ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: trendingEvents.length,
+              itemBuilder: (context, index) {
+                final eventData = Map<String, dynamic>.from(trendingEvents[index]);
+                return CompactEventCard(eventData: eventData);
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  //                     5. RECOMMENDED SECTION (NOW DYNAMIC)
   // ===========================================================================
 
   Widget _buildRecommendedSection(BuildContext context) {
-    final recommendations = [
-      {'Title': 'King Fahad National Library', 'id': 'lib_01', 'Image_Url': 'https://placehold.co/220x160/png?text=Library', 'Category': 'Libraries', 'About': 'A special viewing of rare historical Islamic manuscripts.', 'Location_Address': 'King Fahad National Library', 'Price': 'Free'},
-      {'Title': 'Diriyah Historical Tour', 'id': 'her_01', 'Image_Url': 'https://placehold.co/220x160/png?text=Diriyah', 'Category': 'Heritage and Tradition', 'About': 'Walk through the birthplace of the Kingdom. A guided evening tour.', 'Location_Address': 'At-Turaif, Diriyah', 'Price': '150 SAR'},
-      {'Title': 'Al Masmak Palace Exhibition', 'id': 'mus_02', 'Image_Url': 'https://placehold.co/220x160/png?text=Masmak', 'Category': 'Museums', 'About': 'Walk through the mud-brick fortress that played a vital role in the Kingdom\'s unification.', 'Location_Address': 'Al Diriyah, Riyadh', 'Price': 'Free'},
-    ];
-
     return _buildSectionLayout(
       context: context,
       title: 'Recommended',
       onSeeMore: () {}, 
       child: SizedBox(
         height: 240, 
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: recommendations.length,
-          itemBuilder: (context, index) {
-            return CompactEventCard(eventData: recommendations[index]);
+        // 4. THE FUTURE BUILDER HANDLES ALL LOADING AND ERROR STATES
+        child: FutureBuilder<List<dynamic>>(
+          future: _recommendedEventsFuture,
+          builder: (context, snapshot) {
+            // While waiting for the Python AI...
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            } 
+            // If the server crashes or internet drops (and no cache exists)
+            else if (snapshot.hasError) {
+              return Center(child: Text('Failed to load recommendations.', style: TextStyle(color: Colors.red.shade400)));
+            } 
+            // If it succeeds but returns an empty list
+            else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No recommendations available right now.'));
+            }
+
+            // SUCCESS! Map the Python data to the UI
+            final recommendations = snapshot.data!;
+
+            return ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: recommendations.length,
+              itemBuilder: (context, index) {
+                // Ensure the map format matches what CompactEventCard expects
+                final eventData = Map<String, dynamic>.from(recommendations[index]);
+                return CompactEventCard(eventData: eventData);
+              },
+            );
           },
         ),
       ),
@@ -235,7 +330,11 @@ class HomeScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: AppTextStyles.sectionTitle), 
+                // ADDED EXPANDED FOR ANDROID APP: Prevents the title and button from overflowing on small phone screens
+                Expanded(
+                  child: Text(title, style: AppTextStyles.sectionTitle), 
+                ),
+                const SizedBox(width: 16), // Buffer space so the text doesn't touch the button
                 ElevatedButton.icon(
                   onPressed: onSeeMore,
                   icon: const Icon(Icons.arrow_forward, size: 18),
@@ -296,12 +395,14 @@ class HomeScreen extends StatelessWidget {
 }
 
 // =============================================================================
-//                     2. HERO SLIDER WIDGET (Stateful)
+//                     2. HERO SLIDER WIDGET (NOW LIVE & CLICKABLE)
 // =============================================================================
 
 class _HeroSlider extends StatefulWidget {
   final bool isMobile;
-  const _HeroSlider({required this.isMobile, Key? key}) : super(key: key);
+  final Future<List<dynamic>> trendingFuture; // 1. Now accepts live data!
+
+  const _HeroSlider({required this.isMobile, required this.trendingFuture, Key? key}) : super(key: key);
 
   @override
   State<_HeroSlider> createState() => _HeroSliderState();
@@ -309,22 +410,68 @@ class _HeroSlider extends StatefulWidget {
 
 class _HeroSliderState extends State<_HeroSlider> {
   int _currentSlideIndex = 0;
-  
-  final List<String> imagePlaceholders = [
-    'https://via.placeholder.com/400x300?text=Event+1',
-    'https://via.placeholder.com/400x300?text=Event+2',
-    'https://via.placeholder.com/400x300?text=Event+3',
-  ];
+  final PageController _pageController = PageController();
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_pageController.hasClients) {
+        // Note: We assume 3 trending events based on our Python backend
+        int nextPage = _currentSlideIndex + 1;
+        if (nextPage >= 3) {
+          nextPage = 0;
+        }
+        _pageController.animateToPage(
+          nextPage, 
+          duration: const Duration(milliseconds: 500), 
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: widget.isMobile ? 20 : 30, vertical: 30),
-      child: widget.isMobile ? _buildMobile() : _buildDesktop(),
+      // 2. Wrap the whole layout in a FutureBuilder to wait for the data
+      child: FutureBuilder<List<dynamic>>(
+        future: widget.trendingFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return SizedBox(
+              height: widget.isMobile ? 250 : 350, 
+              child: const Center(child: CircularProgressIndicator(color: AppColors.primary))
+            );
+          }
+          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+            return const SizedBox.shrink(); // Hide slider if no data
+          }
+
+          final trendingEvents = snapshot.data!;
+          
+          return widget.isMobile 
+              ? _buildMobile(trendingEvents) 
+              : _buildDesktop(trendingEvents);
+        }
+      ),
     );
   }
 
-  Widget _buildSlider(double height) {
+  Widget _buildSlider(double height, List<dynamic> events) {
     return Container(
       width: double.infinity,
       height: height,
@@ -335,21 +482,93 @@ class _HeroSliderState extends State<_HeroSlider> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: PageView.builder( 
-          itemCount: imagePlaceholders.length,
+          controller: _pageController,
+          itemCount: events.length,
           onPageChanged: (index) {
             setState(() => _currentSlideIndex = index);
           },
-          itemBuilder: (context, index) => Image.network(imagePlaceholders[index], fit: BoxFit.cover),
+          itemBuilder: (context, index) {
+            final event = Map<String, dynamic>.from(events[index]);
+            
+            // Image Safety Check (just like our cards)
+            String imageUrl = event['Image_Url'] ?? '';
+            if (imageUrl.isEmpty || imageUrl.contains('via.placeholder.com')) {
+              imageUrl = 'https://placehold.co/800x400/png?text=Trending+Event';
+            }
+
+            // 3. Make it Clickable!
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LibraryDetailsScreen(eventData: event),
+                  ),
+                );
+              },
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Background Image
+                  Image.network(imageUrl, fit: BoxFit.cover),
+                  
+                  // Dark Gradient Overlay for text readability
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.transparent, Colors.black87],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.4, 1.0], // Starts fading to black halfway down
+                      ),
+                    ),
+                  ),
+                  
+                  // Event Text Over the Image
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    right: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text("🔥 TRENDING", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          event['Title'] ?? 'Unknown Event',
+                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          event['Category'] ?? '',
+                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildDots() {
+  Widget _buildDots(int count) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
-        imagePlaceholders.length,
+        count,
         (index) => Container(
           margin: const EdgeInsets.symmetric(horizontal: 6),
           width: 10,
@@ -363,11 +582,11 @@ class _HeroSliderState extends State<_HeroSlider> {
     );
   }
 
-  Widget _buildDesktop() {
+  Widget _buildDesktop(List<dynamic> events) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(child: Column(children: [_buildSlider(350), const SizedBox(height: 16), _buildDots()])),
+        Expanded(child: Column(children: [_buildSlider(350, events), const SizedBox(height: 16), _buildDots(events.length)])),
         const SizedBox(width: 60),
         const Expanded(
           child: Text('SEE WHAT\nIS HAPPENING\nHERE', style: AppTextStyles.heroDesktop), 
@@ -376,12 +595,12 @@ class _HeroSliderState extends State<_HeroSlider> {
     );
   }
 
-  Widget _buildMobile() {
+  Widget _buildMobile(List<dynamic> events) {
     return Column(
       children: [
-        _buildSlider(250),
+        _buildSlider(250, events),
         const SizedBox(height: 16),
-        _buildDots(),
+        _buildDots(events.length),
         const SizedBox(height: 30),
         const Text('SEE WHAT IS HAPPENING HERE', textAlign: TextAlign.center, style: AppTextStyles.heroMobile),
       ],

@@ -18,13 +18,12 @@ class _MuseumsScreenState extends State<MuseumsScreen> {
   final AiRemoteSource _aiSource = AiRemoteSource();
   late Future<List<dynamic>> _museumEventsFuture;
 
-  @override
+@override
   void initState() {
     super.initState();
-    // Alanoud added: Ask Python for "Museums" category as soon as the screen opens
-    _museumEventsFuture = _aiSource.fetchEventsByCategory("Museums");
+    // Alanoud added: Ask Python for "Museums" category using the clean REST ID
+    _museumEventsFuture = _aiSource.fetchEventsByCategoryId("MUS");
   }
-
   @override
   Widget build(BuildContext context) {
     // Alanoud added: Deleted the hardcoded 'riyadhMuseums' list! The AI does this now.

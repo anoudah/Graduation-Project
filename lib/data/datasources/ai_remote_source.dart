@@ -1,20 +1,46 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart'; // The new local storage package
-import 'package:wasel/core/constants.dart'; // Make sure this path matches your constants file!
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wasel/core/constants.dart';
 
 class AiRemoteSource {
   
-  // 1. Fetch by Category (e.g., Museums, Exhibitions) with Offline Caching
-  Future<List<dynamic>> fetchEventsByCategory(String categoryName) async {
-    final url = Uri.parse('${AppConstants.aiBaseUrl}/category?category_name=$categoryName');
-    
-    // Set up local storage and a unique key for this category
-    final prefs = await SharedPreferences.getInstance();
-    final cacheKey = 'cached_category_$categoryName';
+  // --- NEW: Chatbot Stream Method ---
+  /// Connects to the FastAPI /chat endpoint and returns a stream of text chunks.
+  Stream<String> getChatStream(String userQuery, {String? eventId}) async* {
+    // 1. Construct the URL with optional event context
+    final url = Uri.parse(
+      '${AppConstants.aiBaseUrl}/chat?user_query=${Uri.encodeComponent(userQuery)}'
+      '${eventId != null ? "&event_id=$eventId" : ""}'
+    );
 
     try {
-      // TRY THE INTERNET FIRST (with a 5-second timeout)
+      // 2. We use http.Request + send() to handle StreamingResponse
+      final request = http.Request('GET', url);
+      request.headers.addAll({"ngrok-skip-browser-warning": "true"});
+
+      final response = await http.Client().send(request);
+
+      if (response.statusCode == 200) {
+        // 3. Transform the byte stream into a readable UTF-8 String stream
+        yield* response.stream
+            .transform(utf8.decoder)
+            .handleError((error) => "Connection interrupted...");
+      } else {
+        yield "Error: Server returned ${response.statusCode}";
+      }
+    } catch (e) {
+      yield "Connection failed. Please check your internet.";
+    }
+  }
+
+  // --- 1. Fetch by Category ID ---
+  Future<List<dynamic>> fetchEventsByCategoryId(String categoryId) async {
+    final url = Uri.parse('${AppConstants.aiBaseUrl}/category/$categoryId');
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'cached_category_$categoryId';
+
+    try {
       final response = await http.get(
         url,
         headers: {"ngrok-skip-browser-warning": "true"},
@@ -23,43 +49,25 @@ class AiRemoteSource {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final eventsList = data['events'];
-
-        // SAVE FOR LATER (The Cache)
         await prefs.setString(cacheKey, json.encode(eventsList));
-        print("Live data fetched and cached securely for: $categoryName");
-        
         return eventsList; 
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
-
     } catch (e) {
-      // OFFLINE FALLBACK
-      print("Network connection failed. Attempting to load offline data for $categoryName...");
-
       final cachedString = prefs.getString(cacheKey);
-      
-      if (cachedString != null) {
-        // We found saved data! Return it to the UI.
-        print("Success: Loaded $categoryName from offline cache.");
-        return json.decode(cachedString);
-      } else {
-        // Offline AND no saved data
-        throw Exception('You are offline and no data is saved for this category yet. Please connect to the internet.');
-      }
+      if (cachedString != null) return json.decode(cachedString);
+      throw Exception('You are offline and no data is saved.');
     }
   }
 
-  // 2. Fetch Smart Recommendations (e.g., "Art" or "Tech") with Offline Caching
+  // --- 2. Fetch Smart Recommendations ---
   Future<List<dynamic>> fetchRecommendations(String interest) async {
     final url = Uri.parse('${AppConstants.aiBaseUrl}/recommend?interest=$interest');
-    
-    // Set up local storage and a unique key for this interest
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'cached_recommendation_$interest';
 
     try {
-      // TRY THE INTERNET FIRST
       final response = await http.get(
         url,
         headers: {"ngrok-skip-browser-warning": "true"},
@@ -68,27 +76,69 @@ class AiRemoteSource {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final recommendationsList = data['recommendations'];
-        
-        // SAVE FOR LATER
         await prefs.setString(cacheKey, json.encode(recommendationsList));
-        print("Live recommendations fetched and cached securely for: $interest");
-
         return recommendationsList;
       } else {
-        throw Exception('Server error: ${response.statusCode}');
+        throw Exception('Server error');
       }
     } catch (e) {
-      // OFFLINE FALLBACK
-      print("Network connection failed. Attempting to load offline recommendations for $interest...");
-
       final cachedString = prefs.getString(cacheKey);
-      
-      if (cachedString != null) {
-        print("Success: Loaded recommendations for $interest from offline cache.");
-        return json.decode(cachedString);
+      if (cachedString != null) return json.decode(cachedString);
+      throw Exception('Offline: No recommendations saved.');
+    }
+  }
+
+  // --- 3. Fetch Single Event by ID ---
+  Future<Map<String, dynamic>> fetchEventById(String eventId) async {
+    final url = Uri.parse('${AppConstants.aiBaseUrl}/event/$eventId');
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'cached_event_$eventId';
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {"ngrok-skip-browser-warning": "true"},
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final eventData = data['event'];
+        await prefs.setString(cacheKey, json.encode(eventData));
+        return eventData;
       } else {
-        throw Exception('You are offline and no recommendations are saved yet.');
+        throw Exception('Server error');
       }
+    } catch (e) {
+      final cachedString = prefs.getString(cacheKey);
+      if (cachedString != null) return json.decode(cachedString);
+      throw Exception('Offline: Event not saved.');
+    }
+  }
+
+  // --- 4. Fetch Trending Events ---
+  Future<List<dynamic>> fetchTrendingEvents() async {
+    final url = Uri.parse('${AppConstants.aiBaseUrl}/trending');
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'cached_trending';
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {"ngrok-skip-browser-warning": "true"},
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final trendingList = data['events'];
+        await prefs.setString(cacheKey, json.encode(trendingList));
+        return trendingList;
+      } else {
+        throw Exception('Server error');
+      }
+    } catch (e) {
+      final cachedString = prefs.getString(cacheKey);
+      if (cachedString != null) return json.decode(cachedString);
+      throw Exception('Offline: No trending data.');
     }
   }
 }
