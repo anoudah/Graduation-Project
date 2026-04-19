@@ -22,6 +22,7 @@ import '../widgets/category_card.dart';
 import '../widgets/near_you_card.dart';
 import '../widgets/compact_event_card.dart';
 import '../widgets/hero_slider.dart';
+import '../widgets/categories_section.dart';
 
 // 1. CHANGED TO STATEFUL WIDGET
 class HomeScreen extends StatefulWidget {
@@ -72,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _buildNavigationBar(context),
             HeroSlider(isMobile: isMobile, trendingFuture: _trendingEventsFuture),
-            _buildCategoriesSection(context),
+            const CategoriesSection(),
             _buildHappeningNowSection(context),
             _buildNearYouSection(context), // Note: Left static for now until spatial data is ready
             _buildRecommendedSection(context), // AI Integration applied here!
@@ -170,60 +171,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const CircleAvatar(
               backgroundColor: AppColors.avatarBg,
               child: Icon(Icons.person, color: AppColors.iconGrey, size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  // ===========================================================================
-  //                     3. CATEGORIES SECTION (NOW CONNECTED)
-  // ===========================================================================
-
-  Widget _buildCategoriesSection(BuildContext context) {
-    // 1. ADDED BACKEND IDs: These match your Python API perfectly!
-    final categories = [
-      {'label': 'Libraries', 'icon': Icons.library_books, 'fullLabel': 'Libraries', 'id': 'LIB'},
-      {'label': 'Heritage and\nTradition', 'icon': Icons.museum, 'fullLabel': 'Heritage and Tradition', 'id': 'HER'},
-      {'label': 'Museums', 'icon': Icons.collections, 'fullLabel': 'Museums', 'id': 'MUS'},
-      {'label': 'Conferences\nand Forums', 'icon': Icons.forum, 'fullLabel': 'Conferences and Forums', 'id': 'CONF'},
-      {'label': 'Cultural\nInstitutions', 'icon': Icons.business, 'fullLabel': 'Cultural Institutions', 'id': 'INST'},
-      {'label': 'Exhibition and\nConvention', 'icon': Icons.storefront, 'fullLabel': 'Exhibition and Convention Centre', 'id': 'EXH'},
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 40, 0, 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Categories', style: AppTextStyles.sectionTitle), 
-          const SizedBox(height: 28),
-          SizedBox(
-            height: 140,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                
-                // 2. ADDED NAVIGATION: We wrap the card in a GestureDetector (or InkWell)
-                return GestureDetector(
-                  onTap: () {
-                    // 3. PUSH TO NEW SCREEN: Send the specific ID and Name to the Category Screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CategoryScreen(
-                          categoryId: category['id'] as String,
-                          categoryName: category['fullLabel'] as String,
-                          categoryIcon: category['icon'] as IconData,
-                        ),
-                      ),
-                    );
-                  },
-                  child: CategoryCard(category: category),
-                );
-              },
             ),
           ),
         ],
