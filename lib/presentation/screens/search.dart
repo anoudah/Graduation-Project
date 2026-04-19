@@ -231,11 +231,11 @@ class NearbyCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textMain),
                 ),
                 Text(
                   distance,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
