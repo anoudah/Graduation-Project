@@ -96,8 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // Happening Now: Uses the same trending data as the slider
             HappeningNowSection(trendingFuture: _trendingEventsFuture),
             
-            // Near You: Currently a placeholder for GPS-based events
-            const NearYouSection(), 
+            // Near You: The section that calculates distance using the user's GPS and shows nearby events
+            NearYouSection(eventsFuture: _trendingEventsFuture),
             
             // Recommended: Uses the AI logic to fetch personalized events
             RecommendedSection(recommendedFuture: _recommendedEventsFuture), 
