@@ -19,7 +19,7 @@ class AiRemoteSource {
     try {
       // 2. We use http.Request + send() to handle StreamingResponse
       final request = http.Request('GET', url);
-      request.headers.addAll({"ngrok-skip-browser-warning": "true"});
+      //request.headers.addAll({"ngrok-skip-browser-warning": "true"});
 
       final response = await http.Client().send(request);
 
@@ -47,7 +47,7 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        headers: {"ngrok-skip-browser-warning": "true"},
+        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -76,7 +76,7 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        headers: {"ngrok-skip-browser-warning": "true"},
+        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -105,7 +105,7 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        headers: {"ngrok-skip-browser-warning": "true"},
+        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -134,7 +134,7 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        headers: {"ngrok-skip-browser-warning": "true"},
+        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -160,7 +160,7 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        headers: {"ngrok-skip-browser-warning": "true"},
+        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -183,7 +183,7 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        headers: {"ngrok-skip-browser-warning": "true"},
+        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
