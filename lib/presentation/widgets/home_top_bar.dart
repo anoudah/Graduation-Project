@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../screens/search.dart';
-import '../screens/profile.dart';
+// تم تعديل الامبورت ليكون بنفس نمط السيرش
+import '../screens/login_screen.dart'; 
+import '../screens/signup_screen.dart';
 
 class HomeTopBar extends StatelessWidget {
   const HomeTopBar({super.key});
@@ -9,11 +11,10 @@ class HomeTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // Standardized padding to align with the rest of the Riyadh Wasel UI
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: [
-          // BUILDER: Required to get the correct context to open the Scaffold drawer
+          // المنيو الجانبية (لم يتم تغييرها)
           Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu, color: AppColors.textMain, size: 28),
@@ -21,8 +22,7 @@ class HomeTopBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // SEARCH BAR: This is a "Hero" style fake search bar. 
-          // It looks like a TextField but actually acts as a button to open the SearchScreen.
+          // شريط البحث (لم يتم تغييره)
           Expanded(
             child: GestureDetector(
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchScreen())),
@@ -34,7 +34,7 @@ class HomeTopBar extends StatelessWidget {
                 ),
                 child: const IgnorePointer(
                   child: TextField(
-                    readOnly: true, // Prevents keyboard from popping up here
+                    readOnly: true,
                     decoration: InputDecoration(
                       hintText: 'Search',
                       hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
@@ -47,14 +47,43 @@ class HomeTopBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          // PROFILE AVATAR: Quick access to the user's personal profile
-          InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage())),
-            child: const CircleAvatar(
-              backgroundColor: AppColors.avatarBg,
-              child: Icon(Icons.person, color: AppColors.iconGrey, size: 20),
-            ),
+          const SizedBox(width: 12),
+          
+          // --- التعديل: استبدال البروفايل بأزرار تسجيل الدخول ---
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                },
+                style: TextButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Log in', 
+                  style: TextStyle(color: AppColors.textMain, fontWeight: FontWeight.bold, fontSize: 12)
+                ),
+              ),
+              const SizedBox(width: 4),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpScreen()));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Sign up', style: TextStyle(fontSize: 12)),
+              ),
+            ],
           ),
         ],
       ),

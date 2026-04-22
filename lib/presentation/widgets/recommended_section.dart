@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import 'compact_event_card.dart';
+import '../screens/recommended_full_screen.dart';
 
 class RecommendedSection extends StatelessWidget {
-  // We pass the Future from the Home Screen into this widget
+  // Pass the Future from the Home Screen into this widget
   final Future<List<dynamic>> recommendedFuture;
 
   const RecommendedSection({super.key, required this.recommendedFuture});
@@ -21,12 +22,30 @@ class RecommendedSection extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Recommended', style: AppTextStyles.sectionTitle),
-                TextButton(
+                const Expanded(
+                  child: Text('Recommended', style: AppTextStyles.sectionTitle),
+                ),
+                const SizedBox(width: 16),
+                // تم التعديل هنا ليطابق شكل Near You
+                ElevatedButton.icon(
                   onPressed: () {
-                    // TODO: Navigate to full Recommended list
-                  }, 
-                  child: const Text('See More', style: TextStyle(color: AppColors.primary)),
+                   Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
+    ),
+  );
+                  },
+                  icon: const Icon(Icons.arrow_forward, size: 18),
+                  label: const Text('See more'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                  ),
                 ),
               ],
             ),
