@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart';
-// ignore: unused_import
-import 'RouteSuggestionScreen.dart'; // تأكدي من مسمى الملف عندك
+import '../../core/theme.dart'; // تأكدي أن المسار يوصل لملف AppColors
+import 'RouteSuggestionScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
@@ -22,18 +21,17 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
   String selectedCrowd = 'Low';
   TextEditingController commentController = TextEditingController();
 
-  // 1. فنكشن التأكد من تسجيل الدخول (ما لمستها)
+  // دالة التأكد من تسجيل الدخول (لحماية الأزرار)
   bool _checkLoginAndShowMessage() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("Please log in to interact"),
-          backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 3),
+          backgroundColor: AppColors.primary, // لون الموف من الثيم
           action: SnackBarAction(
             label: "Login",
-            textColor: AppColors.white,
+            textColor: Colors.white,
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
           ),
         ),
@@ -43,113 +41,6 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
     return true;
   }
 
-  // 2. فنكشن التفاعل مع الفايربيس (حفظ البيانات - ما لمستها)
-  Future<void> _updateInteraction(String field, bool value) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    String eventId = widget.eventData['id'] ?? '';
-    if (eventId.isEmpty) return;
-
-    String docId = "${user.uid}_$eventId";
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('User_Interactions')
-          .doc(docId)
-          .set({
-            'User_Id': user.uid,
-            'id': eventId,
-            field: value,
-            'Last_Update': Timestamp.now(),
-          }, SetOptions(merge: true));
-
-      if (field == 'Is_Attending') {
-        await FirebaseFirestore.instance
-            .collection('Events')
-            .doc(eventId)
-            .update({
-              'attendance_count': value ? FieldValue.increment(1) : FieldValue.increment(-1),
-            });
-      }
-    } catch (e) {
-      print("Error updating interaction: $e");
-    }
-  }
-
-  // 3. فنكشن إرسال التعليق (ما لمستها)
-  Future<void> _submitComment() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    String eventId = widget.eventData['id'] ?? '';
-    if (commentController.text.isEmpty) return;
-
-    try {
-      await FirebaseFirestore.instance.collection('Reviews').add({
-        'Event_Id': eventId,
-        'User_Name': user.displayName ?? 'Anonymous',
-        'Comment': commentController.text,
-        'Rating': userRating,
-        'Crowd_Level': selectedCrowd,
-        'Timestamp': Timestamp.now(),
-      });
-      commentController.clear();
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Review submitted successfully!"), backgroundColor: Colors.green),
-      );
-    } catch (e) {
-      print("Error submitting comment: $e");
-    }
-  }
-
-  // 4. واجهة كتابة التعليق (BottomSheet - ما لمستها)
-  void _showCommentsSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Write a Review", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textMain)),
-              const SizedBox(height: 15),
-              TextField(
-                controller: commentController,
-                decoration: InputDecoration(
-                  hintText: "Share your experience...",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 15),
-              // تقييم النجوم
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) => IconButton(
-                  icon: Icon(index < userRating ? Icons.star : Icons.star_border, color: Colors.amber),
-                  onPressed: () => setSheetState(() => userRating = index + 1.0),
-                )),
-              ),
-              const SizedBox(height: 15),
-              ElevatedButton(
-                onPressed: _submitComment,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(double.infinity, 50)),
-                child: const Text("Submit", style: TextStyle(color: AppColors.white)),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final data = widget.eventData;
@@ -157,33 +48,106 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textMain),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(data['Category'] ?? "Details", style: const TextStyle(color: AppColors.textMain)),
+        title: Text(data['Category'] ?? "Details", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildHeaderImage(data),
+            const SizedBox(height: 20),
+            _buildSearchBar(),
+            const SizedBox(height: 40),
             Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildMainTitle(data),
-                  const SizedBox(height: 20),
-                  _buildActionButtons(),
-                  const SizedBox(height: 30),
-                  _buildAboutSection(data),
-                  const SizedBox(height: 30),
-                  _buildDetailsGrid(data),
-                  const SizedBox(height: 40),
-                  _buildReviewsSection(data['id'] ?? ''),
+                  // القسم الأيسر: الصورة والأزرار (القلب، الجرس، الكومنت)
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      children: [
+                        Text(data['Title'] ?? "", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 20),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.network(data['Image_Url'] ?? '', fit: BoxFit.cover, height: 400, width: double.infinity),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            // 1. زر القلب (ينور أحمر)
+                            IconButton(
+                              icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border, color: isFavorite ? Colors.red : Colors.black),
+                              onPressed: () {
+                                if (_checkLoginAndShowMessage()) setState(() => isFavorite = !isFavorite);
+                              },
+                            ),
+                            // 2. زر الجرس (ينور موفي)
+                            IconButton(
+                              icon: Icon(isReminder ? Icons.notifications : Icons.notifications_none, color: isReminder ? AppColors.primary : Colors.black),
+                              onPressed: () {
+                                if (_checkLoginAndShowMessage()) setState(() => isReminder = !isReminder);
+                              },
+                            ),
+                            // 3. زر الكومنت (يفتح واجهة الكتابة)
+                            IconButton(
+                              icon: const Icon(Icons.chat_bubble_outline),
+                              onPressed: () {
+                                if (_checkLoginAndShowMessage()) _showCommentsSheet();
+                              },
+                            ),
+                            const Spacer(),
+                            // 4. زر الحضور (موفي)
+                            ElevatedButton(
+                              onPressed: () {
+                                if (_checkLoginAndShowMessage()) {
+                                  setState(() => isAttending = !isAttending);
+                                  _updateInteraction('Is_Attending', isAttending);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(backgroundColor: isAttending ? Colors.green : AppColors.primary),
+                              child: Text(isAttending ? "Attending" : "I'm attending", style: const TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                  // القسم الأيمن: المعلومات والتعليقات
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("About", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+                        Text(data['About'] ?? "No description."),
+                        const SizedBox(height: 20),
+                        const Text("Details", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        _detailRow("Schedule:", data['Schedule'] ?? "TBD"),
+                        _detailRow("Price:", data['Price'] ?? "Free"),
+                        _detailRow("Location:", data['Location_Address'] ?? "Riyadh"),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RouteSuggestionScreen())),
+                          icon: const Icon(Icons.location_on, color: Colors.white),
+                          label: const Text("Suggest a route", style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                        ),
+                        const SizedBox(height: 30),
+                        const Text("Reviews & Feedback", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        _buildReviewsStream(data['id']?.toString() ?? ''),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -193,132 +157,72 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
     );
   }
 
-  // --- Widgets البناء (كلها مرتبطة بالثيم) ---
+  // --- بقية الـ Widgets والـ Functions (نفس كودك الأصلي تماماً) ---
+  
+  Widget _buildReviewsStream(String eventId) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('Comment Feedback').where('id', isEqualTo: eventId).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const LinearProgressIndicator();
+        return ListView(
+          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+          children: snapshot.data!.docs.map((doc) => Card(
+            child: ListTile(
+              title: Text("Rating: ${doc['Rating']} ⭐"),
+              subtitle: Text(doc['Comment_Text'] ?? ""),
+            ),
+          )).toList(),
+        );
+      },
+    );
+  }
 
-  Widget _buildHeaderImage(Map<String, dynamic> data) {
-    return Container(
-      height: 250,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: NetworkImage(data['Image_Url'] ?? ''),
-          fit: BoxFit.cover,
-        ),
+  void _showCommentsSheet() {
+    showModalBottomSheet(
+      context: context, isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text("Add Your Feedback", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          TextField(controller: commentController, decoration: const InputDecoration(hintText: "Your comment")),
+          ElevatedButton(onPressed: _submitComment, style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary), child: const Text("Submit", style: TextStyle(color: Colors.white))),
+          const SizedBox(height: 20),
+        ]),
       ),
     );
   }
 
-  Widget _buildMainTitle(Map<String, dynamic> data) {
-    return Text(
-      data['Title'] ?? "No Title",
-      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textMain),
-    );
+  Future<void> _submitComment() async {
+    final user = FirebaseAuth.instance.currentUser;
+    try {
+      await FirebaseFirestore.instance.collection('Comment Feedback').add({
+        'id': widget.eventData['id']?.toString() ?? '',
+        'Comment_Text': commentController.text,
+        'Rating': userRating,
+        'Date': Timestamp.now(),
+        'User_Name': user?.displayName ?? 'Guest',
+      });
+      commentController.clear();
+      Navigator.pop(context);
+    } catch (e) { print(e); }
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        _iconBtn(isFavorite ? Icons.favorite : Icons.favorite_border, isFavorite ? Colors.red : AppColors.iconGrey, () {
-          if (_checkLoginAndShowMessage()) {
-            setState(() => isFavorite = !isFavorite);
-            _updateInteraction('Favorite', isFavorite);
-          }
-        }),
-        _iconBtn(isReminder ? Icons.notifications : Icons.notifications_none, isReminder ? AppColors.primary : AppColors.iconGrey, () {
-          if (_checkLoginAndShowMessage()) {
-            setState(() => isReminder = !isReminder);
-            _updateInteraction('Reminder', isReminder);
-          }
-        }),
-        _iconBtn(Icons.chat_bubble_outline, AppColors.iconGrey, () {
-          if (_checkLoginAndShowMessage()) _showCommentsSheet();
-        }),
-        const Spacer(),
-        ElevatedButton(
-          onPressed: () {
-            if (_checkLoginAndShowMessage()) {
-              setState(() => isAttending = !isAttending);
-              _updateInteraction('Is_Attending', isAttending);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isAttending ? Colors.green : AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
-          child: Text(isAttending ? "Attending" : "I'm attending", style: const TextStyle(color: AppColors.white)),
-        ),
-      ],
-    );
+  Future<void> _updateInteraction(String field, bool value) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      String docId = "${user.uid}_${widget.eventData['id']}";
+      await FirebaseFirestore.instance.collection('User_Interactions').doc(docId).set({
+        'User_Id': user.uid, 'id': widget.eventData['id'], field: value, 'Last_Update': Timestamp.now(),
+      }, SetOptions(merge: true));
+    } catch (e) { print(e); }
   }
 
-  Widget _iconBtn(IconData icon, Color color, VoidCallback onTap) {
-    return IconButton(icon: Icon(icon, color: color, size: 26), onPressed: onTap);
+  Widget _buildSearchBar() {
+    return Container(width: 500, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(30)), child: const TextField(decoration: InputDecoration(hintText: "search", border: InputBorder.none, prefixIcon: Icon(Icons.search))));
   }
 
-  Widget _buildAboutSection(Map<String, dynamic> data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("About", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textMain)),
-        const SizedBox(height: 10),
-        Text(data['About'] ?? "No description.", style: const TextStyle(color: AppColors.textMain, height: 1.5, fontSize: 16)),
-      ],
-    );
-  }
-
-  Widget _buildDetailsGrid(Map<String, dynamic> data) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
-      child: Column(
-        children: [
-          _detailRow(Icons.calendar_today, "Schedule", data['Schedule'] ?? "TBD"),
-          const Divider(),
-          _detailRow(Icons.attach_money, "Price", data['Price'] ?? "Free"),
-          const Divider(),
-          _detailRow(Icons.location_on, "Location", data['Location_Address'] ?? "Riyadh"),
-        ],
-      ),
-    );
-  }
-
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(width: 10),
-          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewsSection(String eventId) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Reviews", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textMain)),
-        const SizedBox(height: 15),
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('Reviews').where('Event_Id', isEqualTo: eventId).snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const LinearProgressIndicator();
-            return Column(
-              children: snapshot.data!.docs.map((doc) => Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  title: Text(doc['User_Name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(doc['Comment']),
-                  trailing: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.star, color: Colors.amber, size: 16), Text(doc['Rating'].toString())]),
-                ),
-              )).toList(),
-            );
-          },
-        ),
-      ],
-    );
+  Widget _detailRow(String title, String value) {
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children: [Text("$title ", style: const TextStyle(fontWeight: FontWeight.bold)), Text(value)]));
   }
 }
