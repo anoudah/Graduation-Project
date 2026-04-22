@@ -96,20 +96,35 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
           style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: Image.network(
-            data['Image_Url'] ?? '',
-            height: 350,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              height: 350,
-              color: Colors.grey[300],
-              child: const Icon(Icons.broken_image, size: 100),
+        // --- بداية التعديل ---
+        Center(
+          // لجعل الصورة في المنتصف تماماً في الشاشات الواسعة
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 800, // يمنع الصورة من التمدد البشع في شاشات اللابتوب
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: AspectRatio(
+                aspectRatio:
+                    16 / 9, // يحافظ على أبعاد سينمائية مرتبة (مثل يوتيوب)
+                child: Image.network(
+                  data['Image_Url'] ?? '',
+                  fit: BoxFit.cover, // يقص الزوائد بذكاء بدل ما يمط الصورة
+                  alignment:
+                      Alignment.center, // يضمن بقاء قصر المصمك في المنتصف
+                  filterQuality:
+                      FilterQuality.high, // يحسن الرندر لمنع "النغبشة"
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.broken_image, size: 100),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
+        // --- نهاية التعديل ---
         const SizedBox(height: 20),
         Row(
           children: [
