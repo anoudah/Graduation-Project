@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-// ignore: unused_import
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// تعريف الألوان هنا مباشرة عشان تضمنين ما يطلع لك Undefined AppColors
+// تعريف الألوان داخلياً لضمان عدم وجود أخطاء في الـ Imports
 class ProfileColors {
-  static const Color primary = Color(0xFF6B4B8A); // الموفي حقك
-  static const Color background = Color(0xFFF5F5F5);
+  static const Color primary = Color(0xFF6B4B8A); // الموفي
+  static const Color background = Color(0xFFF5F5F5); 
   static const Color cardGrey = Color(0xFFE0E0E0);
 }
 
@@ -21,34 +20,41 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  
-  // حل مشكلة الشاشة الحمراء: التأكد من تطابق الحروف الكبيرة
-  String gender = 'Male'; 
+  String gender = 'Male'; // القيمة الافتراضية بحرف كبير لتجنب الإيرور
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadUserData(); // جلب البيانات فور فتح الصفحة
   }
 
+  // --- فنكشن جلب بيانات المستخدم بعد تسجيل الدخول ---
   Future<void> _loadUserData() async {
-    if (widget.uid == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     try {
+      // نستخدم الكولكشن Users (تأكدي من مطابقة الاسم في Firestore)
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.uid)
+          .collection('Users')
+          .doc(user.uid)
           .get();
 
       if (userDoc.exists) {
         setState(() {
-          fullNameController.text = userDoc['fullName'] ?? '';
-          emailController.text = userDoc['email'] ?? '';
+          fullNameController.text = userDoc['Full_Name'] ?? '';
+          emailController.text = userDoc['Email'] ?? user.email ?? '';
           
-          // تأكدي من جلب القيمة وتحويل أول حرف لكبير لضمان عدم حدوث الخطأ
+          // حماية من الشاشة الحمراء: توحيد حالة الحروف للجنس
           String fetchedGender = userDoc['gender'] ?? 'Male';
           if (fetchedGender.isNotEmpty) {
             gender = fetchedGender[0].toUpperCase() + fetchedGender.substring(1).toLowerCase();
           }
+        });
+      } else {
+        // إذا كان يوزر جديد، نضع إيميله المسجل به تلقائياً
+        setState(() {
+          emailController.text = user.email ?? '';
         });
       }
     } catch (e) {
@@ -85,7 +91,7 @@ class _ProfilePageState extends State<ProfilePage> {
             _buildTextField("Email", emailController, enabled: false),
             const SizedBox(height: 20),
             
-            // ويدجيت اختيار الجنس المصلحة
+            // ويدجيت الـ Dropdown المصلحة (بدون إيرور أحمر)
             _buildDropdownField("Gender", gender, ['Male', 'Female'], (String? newValue) {
               setState(() {
                 gender = newValue!;
@@ -93,14 +99,33 @@ class _ProfilePageState extends State<ProfilePage> {
             }),
             
             const SizedBox(height: 40),
+            
+            // --- زر Save Changes المربوط بالفايربيس ---
             ElevatedButton(
               onPressed: () async {
-                if (widget.uid != null) {
-                  await FirebaseFirestore.instance.collection('users').doc(widget.uid).update({
-                    'fullName': fullNameController.text,
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) return;
+
+                try {
+                  await FirebaseFirestore.instance.collection('Users').doc(user.uid).update({
+                    'Full_Name': fullNameController.text.trim(),
                     'gender': gender,
+                    'Last_Update': Timestamp.now(),
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile Updated!")));
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Profile updated successfully!"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print("Error updating profile: $e");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Error: Could not save changes")),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -108,7 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Save Changes", style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: const Text("Save Changes", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -116,6 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // --- ويدجيت حقل النص ---
   Widget _buildTextField(String label, TextEditingController controller, {bool enabled = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,6 +161,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // --- ويدجيت القائمة المنسدلة ---
   Widget _buildDropdownField(String label, String value, List<String> items, ValueChanged<String?> onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
