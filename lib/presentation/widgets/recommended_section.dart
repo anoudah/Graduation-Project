@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import 'compact_event_card.dart';
+import '../screens/recommended_full_screen.dart';
 
 class RecommendedSection extends StatelessWidget {
   // Pass the Future from the Home Screen into this widget
@@ -28,7 +29,12 @@ class RecommendedSection extends StatelessWidget {
                 // تم التعديل هنا ليطابق شكل Near You
                 ElevatedButton.icon(
                   onPressed: () {
-                    // TODO: Navigate to full Recommended list
+                   Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
+    ),
+  );
                   },
                   icon: const Icon(Icons.arrow_forward, size: 18),
                   label: const Text('See more'),
