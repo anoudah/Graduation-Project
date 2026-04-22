@@ -1,35 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // هذا السطر اللي كان ناقصك
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() async {
-  // 1. ضمان تهيئة Flutter Widgets
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. تهيئة Firebase (هنا كان الخطأ الأحمر لأنه ما كان فيه Import فوق)
-  await Firebase.initializeApp();
-
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Profile Page',
-      theme: ThemeData(primaryColor: Colors.purple, useMaterial3: true),
-      // فحص حالة المستخدم: إذا مسجل دخول نرسل الـ UID لصفحة البروفايل
-      home: ProfilePage(uid: FirebaseAuth.instance.currentUser?.uid),
-    );
-  }
+// تعريف الألوان هنا مباشرة عشان تضمنين ما يطلع لك Undefined AppColors
+class ProfileColors {
+  static const Color primary = Color(0xFF6B4B8A); // الموفي حقك
+  static const Color background = Color(0xFFF5F5F5);
+  static const Color cardGrey = Color(0xFFE0E0E0);
 }
 
 class ProfilePage extends StatefulWidget {
-  final String? uid; // إضافة متغير لاستقبال المعرف
+  final String? uid;
   const ProfilePage({Key? key, this.uid}) : super(key: key);
 
   @override
@@ -38,523 +19,148 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController fullNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
-  final TextEditingController dateOfBirthController = TextEditingController();
-
-  String? selectedGender; // هذا المتغير سيخزن القيمة المختارة (Male أو Female)
-  String userEmail = ""; // سنخزن الإيميل هنا لعرضه
-  // دالة جلب البيانات من Firestore
+  final TextEditingController emailController = TextEditingController();
+  
+  // حل مشكلة الشاشة الحمراء: التأكد من تطابق الحروف الكبيرة
+  String gender = 'Male'; 
 
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // هذا السطر هو الذي سيقوم بتشغيل جلب البيانات فور فتح الصفحة
+    _loadUserData();
   }
 
   Future<void> _loadUserData() async {
+    if (widget.uid == null) return;
     try {
-      // نستخدم الـ uid اللي استلمناه من الـ Widget
-      String? userId = widget.uid ?? FirebaseAuth.instance.currentUser?.uid;
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.uid)
+          .get();
 
-      if (userId != null) {
-        var doc = await FirebaseFirestore.instance
-            .collection('Users') // *** تأكدي من حرف U الكبير ***
-            .doc(userId)
-            .get();
-
-        if (doc.exists) {
-          // هنا السحر! نضع البيانات داخل الـ Controllers عشان تظهر في الـ UI
-          setState(() {
-            // استخدمي هذه الأسماء بالضبط كما هي في Firestore
-            fullNameController.text =
-                doc.data()?['Full_Name'] ?? ''; // تأكدي من حرف F و N كبير
-            dateOfBirthController.text = doc.data()?['dob'] ?? '';
-            selectedGender = doc.data()?['gender'];
-            userEmail = doc.data()?['Email'] ?? "";
-          });
-        }
+      if (userDoc.exists) {
+        setState(() {
+          fullNameController.text = userDoc['fullName'] ?? '';
+          emailController.text = userDoc['email'] ?? '';
+          
+          // تأكدي من جلب القيمة وتحويل أول حرف لكبير لضمان عدم حدوث الخطأ
+          String fetchedGender = userDoc['gender'] ?? 'Male';
+          if (fetchedGender.isNotEmpty) {
+            gender = fetchedGender[0].toUpperCase() + fetchedGender.substring(1).toLowerCase();
+          }
+        });
       }
     } catch (e) {
-      print("Error loading data: $e");
-    }
-  }
-
-  Future<void> _updateProfile() async {
-    try {
-      // 1. الحصول على UID المستخدم الحالي
-      String uid = FirebaseAuth.instance.currentUser!.uid;
-
-      // 2. تنظيف البيانات (إزالة المسافات الزائدة من البداية والنهاية)
-      String fName = fullNameController.text.trim();
-      String lName = lastNameController.text.trim();
-
-      // منطق دمج الاسم: إذا كان الاسم الأخير فارغاً لا تضف مسافة زائدة
-      String combinedName = lName.isEmpty ? fName : '$fName $lName';
-
-      // 3. تحديث الوثيقة في مجموعة 'Users'
-      await FirebaseFirestore.instance.collection('Users').doc(uid).update({
-        'Full_Name': combinedName, // مطابق تماماً لاسم الحقل في Firestore
-        'gender': selectedGender,
-        'dob': dateOfBirthController.text.trim(), // تنظيف تاريخ الميلاد أيضاً
-      });
-
-      // 4. إظهار رسالة نجاح
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: Colors.green, // إضافة لون أخضر للنجاح
-          ),
-        );
-      }
-    } catch (e) {
-      // تسجيل الخطأ للمبرمج
-      debugPrint("Error updating profile: $e");
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update profile. Please try again.'),
-            backgroundColor: Colors.red, // إضافة لون أحمر للفشل
-          ),
-        );
-      }
+      print("Error loading user data: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF3E5F5),
-
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-
-          child: Column(
-            children: [
-              SizedBox(height: 40),
-
-              Text(
-                fullNameController.text.isEmpty
-                    ? 'Welcome!'
-                    : 'Welcome, ${fullNameController.text}!',
-
-                style: TextStyle(
-                  fontSize: 32,
-
-                  fontWeight: FontWeight.bold,
-
-                  color: Colors.purple[800],
-                ),
-              ),
-
-              SizedBox(height: 30),
-
-              Container(
-                padding: EdgeInsets.all(20),
-
-                decoration: BoxDecoration(
-                  color: Colors.white,
-
-                  borderRadius: BorderRadius.circular(15),
-
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 35,
-
-                          backgroundColor: Colors.purple[200],
-
-                          child: Icon(
-                            Icons.person,
-
-                            size: 40,
-
-                            color: Colors.purple[800],
-                          ),
-                        ),
-
-                        SizedBox(width: 15),
-
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-
-                          children: [
-                            Text(
-                              '${fullNameController.text}',
-
-                              style: TextStyle(
-                                fontSize: 18,
-
-                                fontWeight: FontWeight.bold,
-
-                                color: Colors.black,
-                              ),
-                            ),
-
-                            SizedBox(height: 5),
-
-                            Text(
-                              userEmail,
-
-                              style: TextStyle(
-                                fontSize: 14,
-
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    ElevatedButton(
-                      onPressed:
-                          _updateProfile, // استبدلي الأقواس الفارغة باسم دالة التحديث
-
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple[400],
-
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-
-                      child: Text(
-                        'Edit',
-
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 30),
-
-              Container(
-                padding: EdgeInsets.all(20),
-
-                decoration: BoxDecoration(
-                  color: Colors.white,
-
-                  borderRadius: BorderRadius.circular(15),
-
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-
-                  children: [
-                    // حقل الاسم الكامل الموحد
-                    Text(
-                      'Full Name',
-
-                      style: TextStyle(
-                        fontSize: 12,
-
-                        fontWeight: FontWeight.w600,
-
-                        color: Colors.grey[600],
-                      ),
-                    ),
-
-                    SizedBox(height: 8),
-
-                    TextField(
-                      controller: fullNameController,
-
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-
-                    // توقفي هنا.. لا تغلقي الـ Column والـ Container الآن
-
-                    // لأننا سنضيف حقول (الجنس وتاريخ الميلاد) تحت هذا الحقل مباشرة.
-                    SizedBox(height: 20),
-
-                    Row(
-                      children: [
-                        // حقل الجنس (Dropdown)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              Text(
-                                'Gender',
-
-                                style: TextStyle(
-                                  fontSize: 12,
-
-                                  fontWeight: FontWeight.w600,
-
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-
-                              SizedBox(height: 8),
-
-                              DropdownButtonFormField<String>(
-                                value: selectedGender,
-
-                                items: ['Male', 'Female', 'Other']
-                                    .map(
-                                      (gender) => DropdownMenuItem(
-                                        value: gender,
-
-                                        child: Text(gender),
-                                      ),
-                                    )
-                                    .toList(),
-
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedGender = value;
-                                  });
-                                },
-
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-
-                                    vertical: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        SizedBox(width: 15),
-
-                        // حقل تاريخ الميلاد
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              Text(
-                                'Date of Birth',
-
-                                style: TextStyle(
-                                  fontSize: 12,
-
-                                  fontWeight: FontWeight.w600,
-
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-
-                              SizedBox(height: 8),
-
-                              TextField(
-                                controller: dateOfBirthController,
-
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-
-                                    vertical: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ], // نهاية الـ children للـ Column داخل الـ Container الأبيض
-                ),
-              ), // نهاية الـ Container الأبيض الخاص بالبيانات
-
-              SizedBox(height: 30),
-
-              Align(
-                alignment: Alignment.centerLeft,
-
-                child: Text(
-                  'Your comments',
-
-                  style: TextStyle(
-                    fontSize: 18,
-
-                    fontWeight: FontWeight.bold,
-
-                    color: Colors.purple[800],
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 15),
-
-              _buildCommentCard(
-                'Sarah Ahmed',
-                '1 month ago',
-                'kinda crowded but nice',
-              ),
-
-              SizedBox(height: 12),
-
-              _buildCommentCard('Sarah Ahmed', '1 month ago', 'recommended'),
-
-              SizedBox(height: 30),
-
-              Container(
-                padding: EdgeInsets.all(20),
-
-                decoration: BoxDecoration(
-                  color: Colors.white,
-
-                  borderRadius: BorderRadius.circular(15),
-
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-
-                child: Row(
-                  children: [
-                    Icon(Icons.email, color: Colors.purple[400], size: 24),
-
-                    SizedBox(width: 12),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-
-                      children: [
-                        Text(
-                          'Email Address',
-
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-
-                        SizedBox(height: 4),
-
-                        Text(
-                          userEmail, // استخدمنا المتغير اللي عرفتيه فوق
-
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 30),
-            ], // نهاية الـ Column الرئيسية
-          ),
-        ), // نهاية الـ Padding
-      ), // نهاية الـ SingleChildScrollView
-    ); // نهاية الـ Scaffold
-  } // نهاية الـ build method
-
-  // --- دالة تنظيف الذاكرة (يجب أن تكون داخل الكلاس) ---
-  @override
-  void dispose() {
-    fullNameController.dispose();
-    dateOfBirthController.dispose();
-    // تأكدي من إضافة أي Controller جديد هنا
-    super.dispose();
-  }
-
-  // --- دالة بناء كرت التعليقات (يجب أن تكون داخل الكلاس) ---
-  Widget _buildCommentCard(String username, String time, String comment) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      backgroundColor: ProfileColors.background,
+      appBar: AppBar(
+        title: const Text('Profile', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // حماية الواجهة من الأسماء الطويلة جداً
-              Expanded(
-                child: Text(
-                  username,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const CircleAvatar(
+              radius: 50,
+              backgroundColor: ProfileColors.cardGrey,
+              child: Icon(Icons.person, size: 50, color: ProfileColors.primary),
+            ),
+            const SizedBox(height: 30),
+            _buildTextField("Full Name", fullNameController),
+            const SizedBox(height: 20),
+            _buildTextField("Email", emailController, enabled: false),
+            const SizedBox(height: 20),
+            
+            // ويدجيت اختيار الجنس المصلحة
+            _buildDropdownField("Gender", gender, ['Male', 'Female'], (String? newValue) {
+              setState(() {
+                gender = newValue!;
+              });
+            }),
+            
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () async {
+                if (widget.uid != null) {
+                  await FirebaseFirestore.instance.collection('users').doc(widget.uid).update({
+                    'fullName': fullNameController.text,
+                    'gender': gender,
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile Updated!")));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ProfileColors.primary,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              const SizedBox(width: 10),
-              Text(
-                time,
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            comment,
-            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-          ),
-        ],
+              child: const Text("Save Changes", style: TextStyle(color: Colors.white, fontSize: 16)),
+            ),
+          ],
+        ),
       ),
     );
   }
-} // <--- تأكدي أن هذا هو القوس الوحيد في نهاية الملف لإغلاق الكلاس
+
+  Widget _buildTextField(String label, TextEditingController controller, {bool enabled = true}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          enabled: enabled,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField(String label, String value, List<String> items, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              items: items.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
