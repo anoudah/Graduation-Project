@@ -1,5 +1,5 @@
 import 'package:geolocator/geolocator.dart';
-
+//class for utility functions related to distance calculations and formatting for the UI
 class AppUtils {
   /// Calculates the distance in meters between two GPS coordinates
   static double calculateDistance(double startLat, double startLng, double endLat, double endLng) {
