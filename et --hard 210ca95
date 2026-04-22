@@ -1,0 +1,53 @@
+[33m8d19e71[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: checkout: moving from screens to main
+[33m14c27b5[m[33m ([m[1;31morigin/screens[m[33m, [m[1;32mscreens[m[33m)[m HEAD@{1}: pull --tags origin screens: Fast-forward
+[33mb1c0e28[m HEAD@{2}: checkout: moving from main to screens
+[33m8d19e71[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{3}: checkout: moving from main to main
+[33m8d19e71[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{4}: checkout: moving from main to main
+[33m8d19e71[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{5}: commit: Final cleanup: removed large binaries and synced UI code
+[33m210ca95[m HEAD@{6}: reset: moving to HEAD~4
+[33mc35c871[m HEAD@{7}: reset: moving to HEAD
+[33mc35c871[m HEAD@{8}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33m0bb7baa[m HEAD@{9}: commit: ...
+[33mce0950c[m HEAD@{10}: reset: moving to HEAD~1
+[33md804b6f[m HEAD@{11}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33mce0950c[m HEAD@{12}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33me49d71b[m HEAD@{13}: commit: ,
+[33m210ca95[m HEAD@{14}: checkout: moving from screens to main
+[33mb1c0e28[m HEAD@{15}: checkout: moving from main to screens
+[33m210ca95[m HEAD@{16}: checkout: moving from main to main
+[33m210ca95[m HEAD@{17}: checkout: moving from main to main
+[33m210ca95[m HEAD@{18}: checkout: moving from screens to main
+[33mb1c0e28[m HEAD@{19}: commit: edits
+[33mf8137b5[m HEAD@{20}: commit (merge): edit
+[33mc70c875[m HEAD@{21}: commit: notification
+[33md2b8b3d[m HEAD@{22}: commit: edit
+[33mda0a157[m HEAD@{23}: commit: connected the profile
+[33m3c8d860[m HEAD@{24}: commit: reminders page
+[33m3942139[m HEAD@{25}: commit: near you page
+[33mbde2948[m HEAD@{26}: pull --tags origin screens: Merge made by the 'ort' strategy.
+[33m726ee73[m HEAD@{27}: commit: moved fav and contact us
+[33m7931f28[m HEAD@{28}: commit: FAQ
+[33m8e2044f[m HEAD@{29}: commit: contact us page
+[33m9742860[m HEAD@{30}: pull --tags origin screens: Fast-forward
+[33m6c6c6f2[m HEAD@{31}: pull --tags origin screens: Merge made by the 'ort' strategy.
+[33me155ec0[m HEAD@{32}: commit: Catogories
+[33m673e05a[m HEAD@{33}: commit: homepage
+[33mee5355d[m HEAD@{34}: pull --tags origin screens: Fast-forward
+[33m9a7ab70[m HEAD@{35}: checkout: moving from screens to screens
+[33m9a7ab70[m HEAD@{36}: commit: profile screen
+[33m87d2614[m HEAD@{37}: pull --tags origin screens: Merge made by the 'ort' strategy.
+[33m72ebcb8[m HEAD@{38}: commit: search
+[33m3188256[m HEAD@{39}: checkout: moving from main to screens
+[33m210ca95[m HEAD@{40}: checkout: moving from screens to main
+[33m3188256[m HEAD@{41}: checkout: moving from main to screens
+[33m210ca95[m HEAD@{42}: checkout: moving from screens to main
+[33m3188256[m HEAD@{43}: checkout: moving from main to screens
+[33m210ca95[m HEAD@{44}: commit: ss
+[33md115ef1[m HEAD@{45}: commit: edit profile
+[33m54bb1ab[m HEAD@{46}: commit: create profilr
+[33m2c9c33c[m HEAD@{47}: commit: mo ved the file
+[33m2f47eb0[m[33m ([m[1;31morigin/AI-logic[m[33m)[m HEAD@{48}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33m9bc2bbe[m HEAD@{49}: commit: search as dart
+[33m4f328e4[m HEAD@{50}: commit: search web page
+[33mcce5db2[m HEAD@{51}: commit: jj
+[33m9789ea8[m HEAD@{52}: clone: from https://github.com/anoudah/Graduation-Project.git
