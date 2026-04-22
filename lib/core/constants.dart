@@ -3,5 +3,7 @@
 //o	Example: const String firebaseEventsCollection = "events";
 class AppConstants {
   //Wasel AI URL
-  static const String aiBaseUrl = 'https://marilyn-sodless-margeret.ngrok-free.dev';
+  static const String aiBaseUrl = 'https://alanoud-ai-wasel-ai-engine.hf.space';
+  //unocomment for testing
+  // static const String aiBaseUrl = 'https://marilyn-sodless-margeret.ngrok-free.dev';
 }
