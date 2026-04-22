@@ -1,134 +1,166 @@
 import 'package:flutter/material.dart';
-import 'package:dash_chat_2/dash_chat_2.dart';
-import 'package:wasel/data/datasources/ai_remote_source.dart';
-import 'package:wasel/core/theme.dart';
+import '../../core/theme.dart';
+import '../../data/datasources/ai_remote_source.dart';
 
-
-class WaselChatPage extends StatefulWidget {
-  final String? eventId;
-  final String? eventName;
-
-  const WaselChatPage({super.key, this.eventId, this.eventName});
-
-  @override
-  State<WaselChatPage> createState() => _WaselChatPageState();
+class ChatMessage {
+  final String text;
+  final bool isUser;
+  ChatMessage({required this.text, required this.isUser});
 }
 
-class _WaselChatPageState extends State<WaselChatPage> {
-  final AiRemoteSource _aiSource = AiRemoteSource();
-  
-  // 1. Define the Users using your AppColors
-  final ChatUser _currentUser = ChatUser(
-    id: '1',
-    firstName: 'User',
-  );
+class ChatScreen extends StatefulWidget {
+  final String? eventId; 
 
-  final ChatUser _waselBot = ChatUser(
-    id: '2',
-    firstName: 'Wasel Guide',
-  );
-
-  final List<ChatMessage> _messages = <ChatMessage>[];
+  const ChatScreen({Key? key, this.eventId}) : super(key: key);
 
   @override
-  void initState() {
-    super.initState();
-    // Initializing with a themed welcome message
-    _messages.add(
-      ChatMessage(
-        text: widget.eventName != null 
-          ? "Welcome to ${widget.eventName}! I'm your Wasel guide. Ask me anything about this place."
-          : "Welcome to Wasel! How can I help you explore Riyadh's culture today?",
-        user: _waselBot,
-        createdAt: DateTime.now(),
-      ),
-    );
-  }
+  State<ChatScreen> createState() => _ChatScreenState();
+}
 
-  void _onSend(ChatMessage message) {
-    setState(() => _messages.insert(0, message));
+class _ChatScreenState extends State<ChatScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final AiRemoteSource _aiSource = AiRemoteSource();
+  
+  final List<ChatMessage> _messages = [
+    ChatMessage(
+      text: "Hello! I am your Wasel cultural guide. How can I help you explore Riyadh today?", 
+      isUser: false
+    )
+  ];
+  
+  bool _isLoading = false;
 
-    ChatMessage botResponse = ChatMessage(
-      text: "",
-      user: _waselBot,
-      createdAt: DateTime.now(),
-    );
-    setState(() => _messages.insert(0, botResponse));
+  void _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty || _isLoading) return;
 
-    String fullText = "";
-    _aiSource.getChatStream(message.text, eventId: widget.eventId).listen(
-      (chunk) {
-        fullText += chunk;
+    _controller.clear();
+    
+    setState(() {
+      _messages.insert(0, ChatMessage(text: text, isUser: true));
+      _messages.insert(0, ChatMessage(text: "", isUser: false));
+      _isLoading = true;
+    });
+
+    try {
+      await for (var chunk in _aiSource.getChatStream(text, eventId: widget.eventId)) {
         setState(() {
-          _messages[0] = ChatMessage(
-            text: fullText,
-            user: _waselBot,
-            createdAt: botResponse.createdAt,
-          );
+          final currentAiMessage = _messages.first.text;
+          _messages[0] = ChatMessage(text: currentAiMessage + chunk, isUser: false);
         });
-      },
-      onError: (error) {
-        setState(() => _messages[0].text = "Connection lost. Please try again.");
-      },
-    );
+      }
+    } catch (e) {
+      setState(() {
+        _messages[0] = ChatMessage(text: "Sorry, I lost connection to the server.", isUser: false);
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, // Using your scaffold background
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          widget.eventName ?? "Wasel Guide",
-          style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), // Using your section title style
-        ),
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.primary,
-        elevation: 0.5,
-        centerTitle: true,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.white,
+        title: const Text('Ask Wasel AI'),
+        elevation: 0,
       ),
-      body: DashChat(
-        currentUser: _currentUser,
-        onSend: _onSend,
-        messages: _messages,
-        // --- CUSTOM THEMED INPUT BOX ---
-        inputOptions: InputOptions(
-          sendOnEnter: true,
-          inputTextStyle: const TextStyle(color: AppColors.textMain, fontFamily: 'Poppins'),
-          inputDecoration: InputDecoration(
-            hintText: "Ask about Riyadh...",
-            hintStyle: const TextStyle(color: AppColors.textHint),
-            fillColor: AppColors.white,
-            filled: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: BorderSide.none,
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              reverse: true, 
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16.0),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final message = _messages[index];
+                return _buildChatBubble(message);
+              },
             ),
           ),
+          _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatBubble(ChatMessage message) {
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        decoration: BoxDecoration(
+          color: message.isUser ? AppColors.primary : AppColors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(message.isUser ? 20 : 5),
+            bottomRight: Radius.circular(message.isUser ? 5 : 20),
+          ),
+          boxShadow: [
+            if (!message.isUser)
+              const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+          ],
         ),
-        // --- CUSTOM THEMED MESSAGE BUBBLES ---
-        messageOptions: MessageOptions(
-          showOtherUsersAvatar: false,
-          showTime: true,
-          // Bot Bubble Styling
-          containerColor: AppColors.primaryLight, // Using your Light Purple
-          textColor: AppColors.textMain,
-          // User Bubble Styling
-          currentUserContainerColor: AppColors.primary, // Using your Deep Purple
-          currentUserTextColor: AppColors.white,
-          borderRadius: 18.0,
-          messageTextBuilder: (message, previousMessage, nextMessage) {
-             return Text(
-               message.text,
-               style: const TextStyle(
-                 fontFamily: 'Poppins', 
-                 fontSize: 15,
-                 height: 1.4,
-               ),
-             );
-          },
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        child: Text(
+          message.text,
+          style: TextStyle(
+            color: message.isUser ? AppColors.white : AppColors.textMain,
+            fontSize: 15,
+            height: 1.4,
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInputArea() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _sendMessage(),
+              decoration: InputDecoration(
+                hintText: 'Type your message...',
+                hintStyle: const TextStyle(color: AppColors.textHint),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24.0),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: AppColors.background,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
+            child: IconButton(
+              icon: _isLoading 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                  : const Icon(Icons.send, color: AppColors.white),
+              onPressed: _isLoading ? null : _sendMessage,
+            ),
+          ),
+        ],
       ),
     );
   }
