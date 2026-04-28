@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../core/theme.dart';
-import '../screens/library_details_screen.dart'; // Required for clicking the slider
+import '../screens/event_details_screen.dart'; // Required for clicking the slider
 
 class HeroSlider extends StatefulWidget {
   final bool isMobile;
@@ -103,7 +103,7 @@ class _HeroSliderState extends State<HeroSlider> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => LibraryDetailsScreen(eventData: event),
+                    builder: (context) => EventDetailsScreen(eventData: event),
                   ),
                 );
               },

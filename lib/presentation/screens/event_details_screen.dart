@@ -5,15 +5,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 
-class LibraryDetailsScreen extends StatefulWidget {
+class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> eventData;
-  const LibraryDetailsScreen({super.key, required this.eventData});
+  const EventDetailsScreen({super.key, required this.eventData});
 
   @override
-  State<LibraryDetailsScreen> createState() => _LibraryDetailsScreenState();
+  State<EventDetailsScreen> createState() => _EventDetailsScreenState();
 }
 
-class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
+class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool isFavorite = false;
   bool isReminder = false;
   bool isAttending = false;
@@ -157,8 +157,6 @@ class _LibraryDetailsScreenState extends State<LibraryDetailsScreen> {
     );
   }
 
-  // --- بقية الـ Widgets والـ Functions (نفس كودك الأصلي تماماً) ---
-  
   Widget _buildReviewsStream(String eventId) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('Comment Feedback').where('id', isEqualTo: eventId).snapshots(),
