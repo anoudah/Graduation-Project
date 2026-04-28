@@ -23,6 +23,75 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  // --- دالة استعادة كلمة المرور ---
+  void _showForgotPasswordDialog() {
+    final TextEditingController resetEmailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Reset Password",
+          style: TextStyle(color: AppColors.primary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Enter your email to receive a password reset link."),
+            const SizedBox(height: 15),
+            TextField(
+              controller: resetEmailController,
+              decoration: InputDecoration(
+                hintText: "Email Address",
+                prefixIcon: const Icon(Icons.email, color: AppColors.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "Cancel",
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              if (resetEmailController.text.isNotEmpty) {
+                try {
+                  await FirebaseAuth.instance.sendPasswordResetEmail(
+                    email: resetEmailController.text.trim(),
+                  );
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Reset link sent! Check your email."),
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Error: ${e.toString()}")),
+                  );
+                }
+              }
+            },
+            child: const Text("Send", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -153,7 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: _showForgotPasswordDialog,
                           child: const Text(
                             "Forgot Password?",
                             style: TextStyle(
