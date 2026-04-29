@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart'; // norah
-import 'library_details_screen.dart'; // norah
+import 'event_details_screen.dart'; // norah
 // Alanoud added: Import the AI source to talk to Python
 import '../../data/datasources/ai_remote_source.dart';
 // استدعاء ملف الثيم - تأكدي من صحة المسار في مشروعك
@@ -225,7 +225,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => LibraryDetailsScreen(
+                    builder: (context) => EventDetailsScreen(
                       eventData: item as Map<String, dynamic>, 
                     ),
                   ),

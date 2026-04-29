@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme.dart';
 import 'compact_event_card.dart';
+
 
 class HappeningNowSection extends StatelessWidget {
   final Future<List<dynamic>> trendingFuture;
@@ -23,7 +25,10 @@ class HappeningNowSection extends StatelessWidget {
                 const Expanded(child: Text("What's happening now", style: AppTextStyles.sectionTitle)),
                 const SizedBox(width: 16),
                 ElevatedButton.icon(
-                  onPressed: () {}, // Action to see full trending list
+                  onPressed: () { 
+     
+
+                  }, // Action to see full trending list
                   icon: const Icon(Icons.arrow_forward, size: 18),
                   label: const Text('See more'),
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white),
