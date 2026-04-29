@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../core/localization/localization_extension.dart';
 import 'compact_event_card.dart';
 
 
@@ -22,16 +23,22 @@ class HappeningNowSection extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(child: Text("What's happening now", style: AppTextStyles.sectionTitle)),
+                Expanded(
+                  child: Builder(
+                    builder: (context) => Text(context.loc.happeningNow, style: AppTextStyles.sectionTitle),
+                  ),
+                ),
                 const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () { 
-     
+                Builder(
+                  builder: (context) => ElevatedButton.icon(
+                    onPressed: () { 
+       
 
-                  }, // Action to see full trending list
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: const Text('See more'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white),
+                    }, // Action to see full trending list
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    label: Text(context.loc.seeMore),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white),
+                  ),
                 ),
               ],
             ),
@@ -47,7 +54,9 @@ class HappeningNowSection extends StatelessWidget {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(color: AppColors.primary));
                 } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No live events right now.', style: TextStyle(color: AppColors.textSecondary)));
+                  return Builder(
+                    builder: (context) => Center(child: Text(context.loc.noEventsFound, style: const TextStyle(color: AppColors.textSecondary))),
+                  );
                 }
                 
                 final trendingEvents = snapshot.data!;

@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # التعديل المجهري: إضافة المكتبات هنا بمسافتين بادئة بالضبط
   firebase_core: ^3.10.1
@@ -44,7 +46,6 @@ dependencies:
   shared_preferences: ^2.5.5
 
   http: ^1.2.0
-  dash_chat_2: ^0.0.20
   geolocator: ^14.0.2
   url_launcher: ^6.3.2
 

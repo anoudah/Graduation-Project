@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/localization/localization_extension.dart';
 import '../screens/smart_tour_screen.dart';
 
 class SmartTourBanner extends StatelessWidget {
@@ -23,9 +24,13 @@ class SmartTourBanner extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Text('Want to have a full day of culture?', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Builder(
+                  builder: (context) => Text(context.loc.smartTour, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                ),
                 const SizedBox(height: 12),
-                const Text('Generate a tour based on your interests', textAlign: TextAlign.center, style: AppTextStyles.subtitle),
+                Builder(
+                  builder: (context) => Text(context.loc.viewTour, textAlign: TextAlign.center, style: AppTextStyles.subtitle),
+                ),
                 const SizedBox(height: 28),
                 // Primary button to trigger the Smart Tour AI flow
                 ElevatedButton(
@@ -36,7 +41,9 @@ class SmartTourBanner extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   ),
-                  child: const Text("Let's go", style: AppTextStyles.buttonText),
+                  child: Builder(
+                    builder: (context) => Text(context.loc.letsGo, style: AppTextStyles.buttonText),
+                  ),
                 ),
               ],
             ),
