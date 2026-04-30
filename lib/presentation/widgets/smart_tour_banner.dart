@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../screens/smart_tour_screen.dart';
+import '../screens/route_suggestion_screen.dart';
 
 class SmartTourBanner extends StatelessWidget {
   const SmartTourBanner({super.key});
@@ -29,7 +29,7 @@ class SmartTourBanner extends StatelessWidget {
                 const SizedBox(height: 28),
                 // Primary button to trigger the Smart Tour AI flow
                 ElevatedButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartTourScreen())),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RouteSuggestionScreen())),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary, 
                     foregroundColor: AppColors.white,

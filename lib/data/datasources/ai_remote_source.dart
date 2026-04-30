@@ -197,5 +197,45 @@ class AiRemoteSource {
       return []; // Return empty on network error
     }
   }
+// ===========================================================================
+  // --- 7. Generate AI Smart Tour ---
+  // ===========================================================================
+  Future<Map<String, dynamic>> generateSmartTour({
+    required double lat,
+    required double lng,
+    required double availableHours,
+    required String preferences,
+    required String startTime,
+  }) async {
+    // Uses the base URL you defined in AppConstants
+    final url = Uri.parse('${AppConstants.aiBaseUrl}/generate-tour');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "user_lat": lat,
+          "user_lng": lng,
+          "available_hours": availableHours,
+          "preferences": preferences.isEmpty ? "Riyadh Culture" : preferences,
+          "start_time": startTime
+        }),
+      ).timeout(const Duration(seconds: 30)); 
+
+      if (response.statusCode == 200) {
+        final decodedData = jsonDecode(response.body);
+        if (decodedData['status'] == 'success') {
+          return decodedData['tour']; // Returns the generated JSON route
+        } else {
+          throw Exception(decodedData['message']);
+        }
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error during AI Generation: $e');
+    }
+  }
 }
   
