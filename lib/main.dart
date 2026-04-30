@@ -71,9 +71,16 @@ class WaselApp extends StatelessWidget {
             useMaterial3: true,
             fontFamily: 'Poppins',
           ),
+          builder: (context, child) {
+        return SafeArea(
+          // This ensures the notch/status bar never covers your app anywhere
+          child: child!, 
+        );
+      },
           home: const HomeScreen(),
         );
       },
     );
   }
+  
 }

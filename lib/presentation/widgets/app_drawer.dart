@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // NEW: Added Firebase Auth
 import '../../core/theme.dart';
 import '../../application/providers/language_provider.dart';
 import '../../core/localization/app_localizations.dart';
 
 // --- Screen Imports ---
-// We import these here so the drawer can navigate to them
 import '../screens/profile.dart';
 import '../screens/favorites_screen.dart';
 import '../screens/Reminders.dart';
 import '../screens/faq.dart';
 import '../screens/contactus.dart';
+import '../screens/login_screen.dart'; // NEW: Needed to redirect logged-out users
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -54,11 +55,46 @@ class AppDrawer extends StatelessWidget {
               ),
               
               // --- Navigation Menu Items ---
-              _buildDrawerTile(context, Icons.person_outline, localizations.profile, const ProfilePage()),
+              
+              // 1. SECURED PROFILE BUTTON
+              ListTile(
+                leading: const Icon(Icons.person_outline, color: AppColors.textMain),
+                title: Text(
+                  localizations.profile,
+                  style: const TextStyle(color: AppColors.textMain, fontSize: 16)
+                ),
+                onTap: () {
+                  Navigator.pop(context); // Closes the drawer first
+                  
+                  final user = FirebaseAuth.instance.currentUser;
+                  
+                  if (user == null) {
+                    // SCENARIO A: Logged Out -> Show warning and go to Login
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please log in to view your profile"),
+                        backgroundColor: AppColors.primary,
+                      ),
+                    );
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (context) => const LoginScreen())
+                    );
+                  } else {
+                    // SCENARIO B: Logged In -> Go to Profile with their unique ID
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (context) => ProfilePage(uid: user.uid))
+                    );
+                  }
+                },
+              ),
+
+              // 2. STANDARD MENU BUTTONS
               _buildDrawerTile(context, Icons.favorite_border, localizations.favorites, const FavoritesScreen()),
               _buildDrawerTile(context, Icons.notifications_none, localizations.nearYou, const RemindersScreen()),
               
-              const Divider(), // A subtle line to separate sections
+              const Divider(), 
               
               _buildDrawerTile(context, Icons.help_outline, localizations.contactUs, const FAQPage()),
               _buildDrawerTile(context, Icons.mail_outline, localizations.contactUs, const ContactUsScreen()),
@@ -78,7 +114,7 @@ class AppDrawer extends StatelessWidget {
         style: const TextStyle(color: AppColors.textMain, fontSize: 16)
       ),
       onTap: () {
-        Navigator.pop(context); // Closes the drawer before navigating
+        Navigator.pop(context); 
         Navigator.push(
           context, 
           MaterialPageRoute(builder: (context) => destination)

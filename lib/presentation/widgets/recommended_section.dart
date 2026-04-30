@@ -34,11 +34,11 @@ class RecommendedSection extends StatelessWidget {
                   builder: (context) => ElevatedButton.icon(
                     onPressed: () {
                      Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
-      ),
-    );
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
+                      ),
+                    );
                     },
                     icon: const Icon(Icons.arrow_forward, size: 18),
                     label: Text(context.loc.seeMore),
