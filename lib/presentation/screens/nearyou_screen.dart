@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../application/services/location_service.dart';
+import 'event_details_screen.dart';
 
 /// A dedicated full-screen view for the Wasel app that plots the user's location 
 /// and nearby cultural events on an interactive OpenStreetMap canvas.
@@ -84,8 +85,10 @@ class _NearYouScreenState extends State<NearYouScreen> {
           debugPrint("WASEL MAP PARSING ERROR: $e");
         }
 
-        // 4. Mathematical Haversine Distance Calculation
+        // 4. Mathematical Haversine Distance & Time Calculation
         double distanceInMeters = 0;
+        String timeString = 'Unknown time'; 
+
         if (_userPosition != null) {
           distanceInMeters = AppUtils.calculateDistance(
             _userPosition!.latitude, 
@@ -93,6 +96,12 @@ class _NearYouScreenState extends State<NearYouScreen> {
             targetLat, 
             targetLng
           );
+          
+          // Add the driving time calculation
+          double actualDrivingDistanceMeters = distanceInMeters * 1.2;
+          double distanceInKm = actualDrivingDistanceMeters / 1000;
+          int timeInMinutes = (distanceInKm / 40 * 60).round();
+          timeString = '~$timeInMinutes min drive';
         }
 
         // 5. Append processed data to the new list
@@ -102,6 +111,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
           'targetLng': targetLng,
           'distance_raw': distanceInMeters,
           'distance': AppUtils.formatDistance(distanceInMeters),
+          'time': timeString, // NEW: Save the time!
         });
       }
 
@@ -334,6 +344,18 @@ class _NearYouScreenState extends State<NearYouScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                                 child: ListTile(
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  
+                                  // FEATURE 1: Click the card to go to Details
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        // Replace 'EventDetailsScreen' with your actual details screen name!
+                                        builder: (context) => EventDetailsScreen(eventData: location),
+                                      ),
+                                    );
+                                  },
+                                  
                                   title: Text(
                                     title,
                                     style: AppTextStyles.subtitle.copyWith(
@@ -341,17 +363,52 @@ class _NearYouScreenState extends State<NearYouScreen> {
                                       color: AppColors.textMain, 
                                     ),
                                   ),
-                                  subtitle: Text(
-                                    _userPosition != null ? '${location['distance']} away' : 'Location unavailable',
-                                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-                                  ),
-                                  // 7. EXTERNAL ROUTING ACTION
-                                  // Calls the URL Launcher service to open native OS map routing (Google/Apple Maps)
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.directions, color: AppColors.primary, size: 30),
-                                    onPressed: () {
+                                  subtitle: _userPosition != null 
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(top: 6.0),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.location_on, size: 14, color: AppColors.primary),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${location['distance']}',
+                                              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                                            ),
+                                            const SizedBox(width: 16), 
+                                            const Icon(Icons.directions_car, size: 14, color: Colors.grey),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${location['time']}',
+                                              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Location unavailable',
+                                        style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                                      ),
+                                      
+                                  // FEATURE 2: The "Navigate" button lives here now!
+                                  trailing: GestureDetector(
+                                    onTap: () {
+                                      // This opens Google/Apple Maps
                                       LocationService.openMapRoute(location['targetLat'], location['targetLng']);
                                     },
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.directions, color: AppColors.primary, size: 24),
+                                        const Text(
+                                          "Navigate", 
+                                          style: TextStyle(
+                                            color: AppColors.primary, 
+                                            fontSize: 12, 
+                                            fontWeight: FontWeight.bold
+                                          )
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );

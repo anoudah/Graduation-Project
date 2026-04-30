@@ -34,10 +34,10 @@ class LocationService {
     );
   }
 
-  /// Kicks the user to the native Google Maps / Apple Maps app for free driving directions
+  /// Kicks the user to the native Google Maps for free driving directions
   static Future<void> openMapRoute(double destinationLat, double destinationLng) async {
     // This universal URL format works on both iOS and Android
-    final Uri googleMapsUrl = Uri.parse('http://maps.apple.com/?daddr=$destinationLat,$destinationLng');
+    final Uri googleMapsUrl = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$destinationLat,$destinationLng');
     
     if (await canLaunchUrl(googleMapsUrl)) {
       await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);

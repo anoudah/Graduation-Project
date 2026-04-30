@@ -94,7 +94,7 @@ class _NearYouSectionState extends State<NearYouSection> {
           debugPrint("WASEL DEBUG: Parsing error: $e");
         }
 
-        // 4. HA-VERSINE FORMULA: Calculate physical distance in meters
+        // 4. HA-VERSINE FORMULA & TIME CALCULATION
         double distanceInMeters = AppUtils.calculateDistance(
           position.latitude, 
           position.longitude, 
@@ -102,11 +102,17 @@ class _NearYouSectionState extends State<NearYouSection> {
           targetLng
         );
 
-        // 5. MERGE DATA: Combine original event data with the new distance math
+        // Add the new Time Math here!
+        double actualDrivingDistanceMeters = distanceInMeters * 1.2;
+        double distanceInKm = actualDrivingDistanceMeters / 1000;
+        int timeInMinutes = (distanceInKm / 40 * 60).round();
+
+        // 5. MERGE DATA: Combine original event data with the new distance & time math
         calculatedEvents.add({
           ...event, 
-          'distance_raw': distanceInMeters, // Kept as a double for accurate sorting
-          'distance': AppUtils.formatDistance(distanceInMeters), // Formatted string for UI (e.g., "2.4 km")
+          'distance_raw': distanceInMeters, 
+          'distance': '${distanceInKm.toStringAsFixed(1)} km', // Formatted for UI
+          'time': '~$timeInMinutes min drive', // NEW TIME FIELD
         });
       }
 

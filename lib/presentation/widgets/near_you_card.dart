@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart'; 
+//import 'package:geolocator/geolocator.dart';
+import '../../application/services/location_service.dart';
+import '../screens/event_details_screen.dart';
 
 /// A reusable visual component representing a single location card.
 /// It displays an image, the location title, and the dynamically calculated distance.
@@ -13,72 +16,107 @@ class NearYouCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. BULLETPROOF DATA EXTRACTION:
-    final String title = locationData['Title']?.toString() ?? 
-                         'Unknown Location';
-                         
+    final String title = locationData['Title']?.toString() ?? 'Unknown Location';
     final String distance = locationData['distance']?.toString() ?? 'Unknown distance';
+    final String time = locationData['time']?.toString() ?? 'Unknown time';
+    final String imageUrl = locationData['Image']?.toString() ?? locationData['Image_Url']?.toString() ?? 'https://placehold.co/100x100/png?text=No+Image';
 
-    // 2. MAIN CARD CONTAINER:
-    return Container(
-      width: 280, 
-      margin: const EdgeInsets.only(right: 16, bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.white, // Mapped to theme
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4))
-        ],
-      ),
-      // 3. HORIZONTAL LAYOUT: 
-      // A Row is used to keep the image strictly on the left, and text on the right.
-      child: Row(
-        children: [
-          // --- IMAGE SECTION ---
-          Container(
-            width: 100,
-            margin: const EdgeInsets.all(12), 
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              image: const DecorationImage(
-                image: NetworkImage('https://placehold.co/100x100/png?text=Nearby Event'), 
-                fit: BoxFit.cover,
+    // 2. MAIN CARD CONTAINER: 
+    // Wrap the entire card in a GestureDetector so tapping anywhere opens the details!
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            // Replace 'EventDetailsScreen' with the actual name of your class!
+            // We pass 'locationData' so the details screen knows which event to show.
+            builder: (context) => EventDetailsScreen(eventData: locationData),
+          ),
+        );
+        debugPrint("WASEL: Opening Details for $title"); 
+      },
+      child: Container(
+        width: 310, 
+        margin: const EdgeInsets.only(right: 16, bottom: 8),
+        decoration: BoxDecoration(
+          color: AppColors.white, 
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4))
+          ],
+        ),
+        child: Row(
+          children: [
+            // --- IMAGE SECTION ---
+            Container(
+              width: 100,
+              margin: const EdgeInsets.all(12), 
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: NetworkImage(imageUrl), 
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-          
-          // --- TEXT SECTION ---
-          // Expanded ensures long event titles wrap to a new line instead of overflowing off-screen
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
-                mainAxisAlignment: MainAxisAlignment.center, 
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2, // Caps the title at 2 lines
-                    overflow: TextOverflow.ellipsis, // Adds '...' if the title is too long
-                    style: AppTextStyles.subtitle.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textMain, // Mapped to theme
+            
+            // --- TEXT SECTION ---
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, 
+                  mainAxisAlignment: MainAxisAlignment.center, 
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2, 
+                      overflow: TextOverflow.ellipsis, 
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMain, 
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6), 
-                  Text(
-                    distance,
-                    style: AppTextStyles.subtitle.copyWith(
-                      fontSize: 12,
-                      color: AppColors.primary, // Highlights distance in brand colors
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 8), 
+                    
+                    // --- Distance & Time Stack ---
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              distance,
+                              style: AppTextStyles.subtitle.copyWith(
+                                fontSize: 12,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4), 
+                        Row(
+                          children: [
+                            const Icon(Icons.directions_car, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              time,
+                              style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
