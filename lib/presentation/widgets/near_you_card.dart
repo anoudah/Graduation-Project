@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart'; 
-//import 'package:geolocator/geolocator.dart';
-import '../../application/services/location_service.dart';
 import '../screens/event_details_screen.dart';
 
 /// A reusable visual component representing a single location card.
@@ -28,7 +26,6 @@ class NearYouCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            // Replace 'EventDetailsScreen' with the actual name of your class!
             // We pass 'locationData' so the details screen knows which event to show.
             builder: (context) => EventDetailsScreen(eventData: locationData),
           ),
@@ -41,9 +38,13 @@ class NearYouCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white, 
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4))
-          ],
+          boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04), // Barely visible color
+            blurRadius: 24, // Huge blur for softness
+            offset: const Offset(0, 8), // Pushed down slightly
+          )
+        ],
         ),
         child: Row(
           children: [
