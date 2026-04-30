@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../screens/route_suggestion_screen.dart';
 import '../../core/localization/localization_extension.dart';
-import '../screens/smart_tour_screen.dart';
 
 class SmartTourBanner extends StatelessWidget {
   const SmartTourBanner({super.key});
