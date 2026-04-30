@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'verification_screen.dart';
+import 'dart:math'; // ضروري لتوليد الأرقام العشوائية
 // --- Core Imports ---
 import '../../core/theme.dart'; // تأكد من المسار الصحيح لملف الثيم
 
@@ -59,46 +60,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
         return;
       }
 
-      setState(() => _isLoading = true);
+      // --- بداية التعديل الدقيق ---
 
-      try {
-        UserCredential userCredential = await FirebaseAuth.instance
-            .createUserWithEmailAndPassword(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim(),
-            );
+      // 1. توليد رمز عشوائي من 4 أرقام
+      String otpCode = (Random().nextInt(9000) + 1000).toString();
 
-        // التعديل هنا ليتطابق مع مسميات الحقول في صورتك تماماً
-        await FirebaseFirestore.instance
-            .collection('Users')
-            .doc(userCredential.user!.uid)
-            .set({
-              'User_Id': userCredential.user!.uid, // حفظ الـ UID لسهولة الوصول
-              'Full_Name': _nameController.text.trim(), // مطابق للصورة
-              'Email': _emailController.text.trim(), // حرف E كبير كما في الصورة
-              'Created_At': FieldValue.serverTimestamp(), // مطابق للصورة
-              'referral_code': _referralController.text.trim(),
-              'Profile_Image': "default_url", // القيمة الافتراضية كما في صورتك
-              'dob': "", // حقل تاريخ الميلاد الموجود في صورتك
-              'gender': "", // حقل الجنس الموجود في صورتك
-              'is_admin': false, // القيمة الافتراضية للمستخدم الجديد
-              'selected_interests': [], // مصفوفة فارغة للاهتمامات
-            });
+      // 2. طباعة الرمز في الـ Console (للتجربة)
+      print("Your OTP Code is: $otpCode");
 
-        if (!mounted) return; // حل تنبيه BuildContext
+      // 3. الانتقال لصفحة التحقق مع إرسال كافة البيانات التي أدخلها المستخدم
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VerificationScreen(
+            name: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+            referral: _referralController.text.trim(),
+            correctOtp: otpCode, // نرسل الرمز ليتم مقارنته هناك
+          ),
+        ),
+      );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const InterestsScreen()),
-        );
-      } on FirebaseAuthException catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message ?? "Error occurred")));
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
+      // --- نهاية التعديل ---
     }
   }
 
