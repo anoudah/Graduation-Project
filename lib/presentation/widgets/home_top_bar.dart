@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // الإضافة الوحيدة هنا
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../application/providers/language_provider.dart';
+import '../../core/localization/localization_extension.dart';
 import '../screens/search.dart';
 import '../screens/login_screen.dart'; 
 import '../screens/signup_screen.dart';
@@ -34,15 +37,17 @@ class HomeTopBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
                 ),
-                child: const IgnorePointer(
-                  child: TextField(
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      hintText: 'Search',
-                      hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      suffixIcon: Icon(Icons.search, color: AppColors.iconGrey, size: 20),
+                child: IgnorePointer(
+                  child: Builder(
+                    builder: (context) => TextField(
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        hintText: context.loc.search,
+                        hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        suffixIcon: const Icon(Icons.search, color: AppColors.iconGrey, size: 20),
+                      ),
                     ),
                   ),
                 ),
@@ -51,7 +56,23 @@ class HomeTopBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           
-          // 3. منطقة الأزرار (هنا أضفنا خاصية الإخفاء التلقائي)
+          // 3. Language Toggle Button
+          Consumer<LanguageProvider>(
+            builder: (context, languageProvider, _) {
+              return Tooltip(
+                message: languageProvider.isArabic ? 'English' : 'العربية',
+                child: IconButton(
+                  icon: const Icon(Icons.language, color: AppColors.textMain, size: 24),
+                  onPressed: () {
+                    languageProvider.toggleLanguage();
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          
+          // 4. منطقة الأزرار (هنا أضفنا خاصية الإخفاء التلقائي)
           StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {
@@ -83,9 +104,11 @@ class HomeTopBar extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text(
-                      'Log in', 
-                      style: TextStyle(color: AppColors.textMain, fontWeight: FontWeight.bold, fontSize: 12)
+                    child: Builder(
+                      builder: (context) => Text(
+                        context.loc.login,
+                        style: const TextStyle(color: AppColors.textMain, fontWeight: FontWeight.bold, fontSize: 12)
+                      ),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -100,7 +123,9 @@ class HomeTopBar extends StatelessWidget {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Sign up', style: TextStyle(fontSize: 12)),
+                    child: Builder(
+                      builder: (context) => Text(context.loc.signup, style: const TextStyle(fontSize: 12)),
+                    ),
                   ),
                 ],
               );

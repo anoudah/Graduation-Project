@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/localization/localization_extension.dart';
 import 'compact_event_card.dart';
 import '../screens/recommended_full_screen.dart';
 
@@ -22,29 +23,33 @@ class RecommendedSection extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
-                  child: Text('Recommended', style: AppTextStyles.sectionTitle),
+                Expanded(
+                  child: Builder(
+                    builder: (context) => Text(context.loc.recommended, style: AppTextStyles.sectionTitle),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 // تم التعديل هنا ليطابق شكل Near You
-                ElevatedButton.icon(
-                  onPressed: () {
-                   Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
-    ),
-  );
-                  },
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: const Text('See more'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                Builder(
+                  builder: (context) => ElevatedButton.icon(
+                    onPressed: () {
+                     Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
+      ),
+    );
+                    },
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    label: Text(context.loc.seeMore),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
                   ),
                 ),
               ],
@@ -64,14 +69,18 @@ class RecommendedSection extends StatelessWidget {
                 } 
                 // 2. Error State
                 else if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Failed to load recommendations.', style: TextStyle(color: Colors.red.shade400))
+                  return Builder(
+                    builder: (context) => Center(
+                      child: Text(context.loc.error, style: TextStyle(color: Colors.red.shade400))
+                    ),
                   );
                 } 
                 // 3. Empty State
                 else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('No recommendations available right now.', style: TextStyle(color: AppColors.textSecondary))
+                  return Builder(
+                    builder: (context) => Center(
+                      child: Text(context.loc.noEventsFound, style: const TextStyle(color: AppColors.textSecondary))
+                    ),
                   );
                 }
 

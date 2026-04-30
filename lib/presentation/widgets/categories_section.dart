@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/localization/localization_extension.dart';
 import '../screens/category_screen.dart';
 import 'category_card.dart';
 
@@ -24,7 +25,9 @@ class CategoriesSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Categories', style: AppTextStyles.sectionTitle), 
+          Builder(
+            builder: (context) => Text(context.loc.categories, style: AppTextStyles.sectionTitle),
+          ), 
           const SizedBox(height: 28),
           SizedBox(
             height: 140,

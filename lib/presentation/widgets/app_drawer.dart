@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../application/providers/language_provider.dart';
+import '../../core/localization/app_localizations.dart';
 
 // --- Screen Imports ---
 // We import these here so the drawer can navigate to them
@@ -14,49 +17,55 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: AppColors.background,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // The top colored part of the drawer
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: AppColors.white,
-                  child: Icon(Icons.person, size: 35, color: AppColors.primary),
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, _) {
+        final localizations = AppLocalizations.of(languageProvider.currentLocale);
+        
+        return Drawer(
+          backgroundColor: AppColors.background,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              // The top colored part of the drawer
+              DrawerHeader(
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
                 ),
-                SizedBox(height: 10),
-                Text(
-                  'Welcome to Wasel',
-                  style: TextStyle(
-                    color: AppColors.white, 
-                    fontSize: 18, 
-                    fontWeight: FontWeight.bold
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const CircleAvatar(
+                      radius: 30,
+                      backgroundColor: AppColors.white,
+                      child: Icon(Icons.person, size: 35, color: AppColors.primary),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      localizations.welcome,
+                      style: const TextStyle(
+                        color: AppColors.white, 
+                        fontSize: 18, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              
+              // --- Navigation Menu Items ---
+              _buildDrawerTile(context, Icons.person_outline, localizations.profile, const ProfilePage()),
+              _buildDrawerTile(context, Icons.favorite_border, localizations.favorites, const FavoritesScreen()),
+              _buildDrawerTile(context, Icons.notifications_none, localizations.nearYou, const RemindersScreen()),
+              
+              const Divider(), // A subtle line to separate sections
+              
+              _buildDrawerTile(context, Icons.help_outline, localizations.contactUs, const FAQPage()),
+              _buildDrawerTile(context, Icons.mail_outline, localizations.contactUs, const ContactUsScreen()),
+            ],
           ),
-          
-          // --- Navigation Menu Items ---
-          _buildDrawerTile(context, Icons.person_outline, 'Profile', const ProfilePage()),
-          _buildDrawerTile(context, Icons.favorite_border, 'Favorites', const FavoritesScreen()),
-          _buildDrawerTile(context, Icons.notifications_none, 'Reminders', const RemindersScreen()),
-          
-          const Divider(), // A subtle line to separate sections
-          
-          _buildDrawerTile(context, Icons.help_outline, 'FAQ', const FAQPage()),
-          _buildDrawerTile(context, Icons.mail_outline, 'Contact Us', const ContactUsScreen()),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/localization/localization_extension.dart';
 import '../../core/utils.dart';
 import '../../application/services/location_service.dart';
 import '../screens/nearyou_screen.dart'; 
@@ -142,19 +143,25 @@ class _NearYouSectionState extends State<NearYouSection> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(child: Text('Near you', style: AppTextStyles.sectionTitle)),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      // Pass the same data future to the map screen for optimal performance
-                      builder: (context) => NearYouScreen(eventsFuture: widget.eventsFuture),
-                    ),
+                Expanded(
+                  child: Builder(
+                    builder: (context) => Text(context.loc.nearYou, style: AppTextStyles.sectionTitle),
                   ),
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: const Text('See more'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white),
+                ),
+                const SizedBox(width: 16),
+                Builder(
+                  builder: (context) => ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context, 
+                      MaterialPageRoute(
+                        // Pass the same data future to the map screen for optimal performance
+                        builder: (context) => NearYouScreen(eventsFuture: widget.eventsFuture),
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    label: Text(context.loc.seeMore),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white),
+                  ),
                 ),
               ],
             ),
@@ -180,7 +187,9 @@ class _NearYouSectionState extends State<NearYouSection> {
       return Center(child: Text(_errorMessage!, style: const TextStyle(color: AppColors.textSecondary)));
     }
     if (_nearbyLocations.isEmpty) {
-      return const Center(child: Text("No locations found nearby.", style: TextStyle(color: AppColors.textSecondary)));
+      return Center(child: Builder(
+        builder: (context) => Text(context.loc.noEventsFound, style: const TextStyle(color: AppColors.textSecondary)),
+      ));
     }
 
     // Success State: Render the scrollable cards
