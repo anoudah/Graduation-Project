@@ -20,8 +20,7 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<LanguageProvider>(
       builder: (context, languageProvider, _) {
-        final localizations = AppLocalizations.of(languageProvider.currentLocale);
-        
+       final localizations = AppLocalizations.of(context);        
         return Drawer(
           backgroundColor: AppColors.background,
           child: ListView(

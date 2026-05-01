@@ -1,18 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 // استدعاء ملف الثيم
-import '../../core/theme.dart'; 
+import '../../core/theme.dart';
+import '../../core/localization/app_localizations.dart'; 
 
 class FAQPage extends StatelessWidget {
   const FAQPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    
     return Scaffold(
       backgroundColor: AppColors.background, // تم استخدام الثيم
       appBar: AppBar(
-        title: const Text(
-          'FAQ',
+        title: Text(
+          localizations.faq,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary, // تم استخدام الثيم
@@ -33,8 +36,8 @@ class FAQPage extends StatelessWidget {
 
           // في حال عدم وجود بيانات
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text("No questions available at the moment."),
+            return Center(
+              child: Text(localizations.noQuestionsAvailable),
             );
           }
 

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../core/localization/app_localizations.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart'; // norah
 import 'event_details_screen.dart'; // norah
 // Alanoud added: Import the AI source to talk to Python
 import '../../data/datasources/ai_remote_source.dart';
 // استدعاء ملف الثيم - تأكدي من صحة المسار في مشروعك
-import '../../core/theme.dart'; 
+import '../../core/theme.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
@@ -12,7 +13,7 @@ class CategoryScreen extends StatefulWidget {
   final IconData categoryIcon;
 
   const CategoryScreen({
-    super.key, 
+    super.key,
     required this.categoryName,
     required this.categoryId,
     required this.categoryIcon,
@@ -26,14 +27,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
   final AiRemoteSource _aiSource = AiRemoteSource();
   late Future<List<dynamic>> _categoryEventsFuture;
 
-@override
+  @override
   void initState() {
     super.initState();
 
     // 1. We ONLY ask the Python AI Backend for the data.
     // 2. We use the new ID-based function (e.g., passing "MUS" instead of "Museums").
-    _categoryEventsFuture = _aiSource.fetchEventsByCategoryId(widget.categoryId);
+    _categoryEventsFuture = _aiSource.fetchEventsByCategoryId(
+      widget.categoryId,
+    );
   }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
@@ -49,14 +53,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
               future: _categoryEventsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 100),
+                  final localizations = AppLocalizations.of(context);
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 100),
                     child: Center(
                       child: Column(
                         children: [
-                          CircularProgressIndicator(color: AppColors.primary), // مناداة الثيم
-                          SizedBox(height: 16),
-                          Text("Wasel AI is calculating live crowds..."),
+                          const CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ), // مناداة الثيم
+                          const SizedBox(height: 16),
+                          Text(localizations.waselAICalculatingCrowds),
                         ],
                       ),
                     ),
@@ -64,9 +71,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 }
 
                 if (snapshot.hasError) {
+                  final localizations = AppLocalizations.of(context);
                   return Padding(
                     padding: const EdgeInsets.only(top: 100),
-                    child: Center(child: Text("Error: ${snapshot.error}")),
+                    child: Center(
+                      child: Text('${localizations.error}: ${snapshot.error}'),
+                    ),
                   );
                 }
 
@@ -105,7 +115,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
           Expanded(
             child: Text(
               widget.categoryName,
-              style: AppTextStyles.sectionTitle.copyWith(fontSize: 20), // مناداة الثيم
+              style: AppTextStyles.sectionTitle.copyWith(
+                fontSize: 20,
+              ), // مناداة الثيم
             ),
           ),
           IconButton(
@@ -169,7 +181,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$totalItemCount places available', 
+                      '$totalItemCount ${AppLocalizations.of(context).placesAvailable}',
                       style: AppTextStyles.subtitle,
                     ),
                   ],
@@ -188,11 +200,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
     List<dynamic> categoryItems,
   ) {
     if (categoryItems.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Text(
-          "No events found for this category.",
-          style: TextStyle(color: Colors.grey),
+          AppLocalizations.of(context).noEventsFoundForCategory,
+          style: const TextStyle(color: Colors.grey),
         ),
       );
     }
@@ -226,7 +238,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => EventDetailsScreen(
-                      eventData: item as Map<String, dynamic>, 
+                      eventData: item as Map<String, dynamic>,
                     ),
                   ),
                 );
@@ -267,17 +279,22 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            item['Title'] ?? 'Unknown Event',
+                            item['Title'] ??
+                                AppLocalizations.of(context).unknownEvent,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.sectionTitle.copyWith(fontSize: 14),
+                            style: AppTextStyles.sectionTitle.copyWith(
+                              fontSize: 14,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             item['About'] ?? item['Category'] ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.subtitle.copyWith(fontSize: 12),
+                            style: AppTextStyles.subtitle.copyWith(
+                              fontSize: 12,
+                            ),
                           ),
                           const SizedBox(height: 8),
 
