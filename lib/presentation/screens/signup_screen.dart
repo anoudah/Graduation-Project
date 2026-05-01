@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'verification_screen.dart';
 import 'dart:math'; // ضروري لتوليد الأرقام العشوائية
 // --- Core Imports ---
 import '../../core/theme.dart'; // تأكد من المسار الصحيح لملف الثيم
+import '../../core/localization/localization_extension.dart';
 
 // --- Screen Imports ---
-import 'interests_screen.dart';
-
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -46,8 +43,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (_formKey.currentState!.validate()) {
       if (!_isDeclared || !_isAgreed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please agree to the terms and conditions"),
+          SnackBar(
+            content: Text(context.loc.pleaseAgreeToTerms),
           ),
         );
         return;
@@ -56,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+        ).showSnackBar(SnackBar(content: Text(context.loc.passwordsDoNotMatch)));
         return;
       }
 
@@ -114,32 +111,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           letterSpacing: 2,
                         ),
                       ),
-                      const Text(
-                        "Step One",
-                        style: TextStyle(color: AppColors.textMain),
+                      const SizedBox(height: 8),
+                      Text(
+                        context.loc.stepOne,
+                        style: const TextStyle(color: AppColors.textMain),
                       ),
-                      const Text(
-                        "Fill in your information",
-                        style: TextStyle(color: AppColors.textSecondary),
+                      Text(
+                        context.loc.fillInYourInformation,
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 30),
 
                       _buildTextField(
-                        "Full Name",
+                        context.loc.fullName,
                         Icons.person_outline,
                         _nameController,
                       ),
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        "Email Address",
+                        context.loc.emailAddress,
                         Icons.email_outlined,
                         _emailController,
                       ),
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        "Password",
+                        context.loc.password,
                         Icons.lock_outline,
                         _passwordController,
                         isPassword: true,
@@ -147,7 +145,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        "Confirm Password",
+                        context.loc.confirmPassword,
                         Icons.lock_reset_outlined,
                         _confirmPasswordController,
                         isPassword: true,
@@ -155,19 +153,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        "Referral Code (Optional)",
+                        context.loc.referralCodeOptional,
                         Icons.card_giftcard,
                         _referralController,
+                        isOptional: true,
                       ),
                       const SizedBox(height: 20),
 
                       _buildCheckboxRow(
-                        "I declare that the information provided is true and correct",
+                        context.loc.declareInfoTrue,
                         _isDeclared,
                         (val) => setState(() => _isDeclared = val!),
                       ),
                       _buildCheckboxRow(
-                        "I have read and agree to the Terms & Conditions and Privacy Policy",
+                        context.loc.agreeToTermsPrivacy,
                         _isAgreed,
                         (val) => setState(() => _isAgreed = val!),
                       ),
@@ -188,8 +187,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             elevation: 5,
                           ),
-                          child: const Text(
-                            "Next",
+                          child: Text(
+                            context.loc.next,
                             style: AppTextStyles.buttonText,
                           ),
                         ),
@@ -198,9 +197,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            "Already have an account? ",
-                            style: TextStyle(color: AppColors.textMain),
+                          Text(
+                            context.loc.alreadyHaveAnAccount,
+                            style: const TextStyle(color: AppColors.textMain),
                           ),
                           GestureDetector(
                             onTap: () {
@@ -211,9 +210,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(
+                            child: Text(
+                              context.loc.login,
+                              style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -234,14 +233,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
     IconData icon,
     TextEditingController controller, {
     bool isPassword = false,
+    bool isOptional = false,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: isPassword,
       style: const TextStyle(color: AppColors.textMain),
       validator: (value) {
-        if (!hint.contains("Optional") && (value == null || value.isEmpty)) {
-          return "Required field";
+        if (!isOptional && (value == null || value.isEmpty)) {
+          return context.loc.requiredField;
         }
         return null;
       },
