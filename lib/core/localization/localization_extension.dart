@@ -12,6 +12,7 @@ extension LocalizationExtension on BuildContext {
     
     // 2. Standard AppLocalizations usually takes the context ('this'), not the locale.
     return AppLocalizations.of(this);
+    return AppLocalizations.of(this);
   }
   
   /// Check if current language is Arabic
