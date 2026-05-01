@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'verification_screen.dart';
-import 'dart:math'; // ضروري لتوليد الأرقام العشوائية
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 // --- Core Imports ---
 import '../../core/theme.dart'; // تأكد من المسار الصحيح لملف الثيم
-import '../../core/localization/localization_extension.dart';
 
 // --- Screen Imports ---
+import 'interests_screen.dart';
+
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -40,11 +42,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _handleSignUp() async {
+    // 1. Validation for inputs and terms
     if (_formKey.currentState!.validate()) {
       if (!_isDeclared || !_isAgreed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.loc.pleaseAgreeToTerms),
+          const SnackBar(
+            content: Text("Please agree to the terms and conditions"),
           ),
         );
         return;
@@ -53,33 +56,108 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(context.loc.passwordsDoNotMatch)));
+        ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
         return;
       }
 
-      // --- بداية التعديل الدقيق ---
+      setState(() => _isLoading = true);
 
-      // 1. توليد رمز عشوائي من 4 أرقام
-      String otpCode = (Random().nextInt(9000) + 1000).toString();
+      try {
+        // 2. Create account in Firebase Auth
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+              email: _emailController.text.trim(),
+              password: _passwordController.text.trim(),
+            );
 
-      // 2. طباعة الرمز في الـ Console (للتجربة)
-      print("Your OTP Code is: $otpCode");
+        // 3. Send the verification link to the email
+        await userCredential.user!.sendEmailVerification();
 
-      // 3. الانتقال لصفحة التحقق مع إرسال كافة البيانات التي أدخلها المستخدم
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VerificationScreen(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-            referral: _referralController.text.trim(),
-            correctOtp: otpCode, // نرسل الرمز ليتم مقارنته هناك
+        // 4. Save data to Firestore
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userCredential.user!.uid)
+            .set({
+              'User_Id': userCredential.user!.uid,
+              'Full_Name': _nameController.text.trim(),
+              'Email': _emailController.text.trim(),
+              'Created_At': FieldValue.serverTimestamp(),
+              'referral_code': _referralController.text.trim(),
+              'Profile_Image': "default_url",
+              'dob': "",
+              'gender': "",
+              'is_admin': false,
+              'selected_interests': [],
+            });
+
+        if (!mounted) return;
+
+        // 5. Show verification dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Cannot close by clicking outside
+          builder: (context) => AlertDialog(
+            title: const Text("Verify Your Email"),
+            content: const Text(
+              "We've sent a verification link to your email. "
+              "Please check your inbox, verify your account, then click 'Done'.",
+            ),
+            actions: [
+              // Resend Button (To ensure the link is active and sent)
+              TextButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.currentUser
+                      ?.sendEmailVerification();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Verification link resent!")),
+                  );
+                },
+                child: const Text("Resend"),
+              ),
+              // Done Button (Checks the actual status)
+              TextButton(
+                onPressed: () async {
+                  // Refresh user status from Firebase server
+                  await FirebaseAuth.instance.currentUser?.reload();
+                  User? user = FirebaseAuth.instance.currentUser;
+
+                  if (user != null && user.emailVerified) {
+                    if (!context.mounted) return;
+                    Navigator.pop(context); // Close dialog
+
+                    // Move to Interests Screen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const InterestsScreen(),
+                      ),
+                    );
+                  } else {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Email not verified yet. Please click the link in your email.",
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                child: const Text("Done"),
+              ),
+            ],
           ),
-        ),
-      );
-
-      // --- نهاية التعديل ---
+        );
+      } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message ?? "Error occurred")));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -111,33 +189,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           letterSpacing: 2,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.loc.stepOne,
-                        style: const TextStyle(color: AppColors.textMain),
+                      const Text(
+                        "Step One",
+                        style: TextStyle(color: AppColors.textMain),
                       ),
-                      Text(
-                        context.loc.fillInYourInformation,
-                        style: const TextStyle(color: AppColors.textSecondary),
+                      const Text(
+                        "Fill in your information",
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 30),
 
                       _buildTextField(
-                        context.loc.fullName,
+                        "Full Name",
                         Icons.person_outline,
                         _nameController,
                       ),
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        context.loc.emailAddress,
+                        "Email Address",
                         Icons.email_outlined,
                         _emailController,
                       ),
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        context.loc.password,
+                        "Password",
                         Icons.lock_outline,
                         _passwordController,
                         isPassword: true,
@@ -145,7 +222,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        context.loc.confirmPassword,
+                        "Confirm Password",
                         Icons.lock_reset_outlined,
                         _confirmPasswordController,
                         isPassword: true,
@@ -153,20 +230,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 15),
 
                       _buildTextField(
-                        context.loc.referralCodeOptional,
+                        "Referral Code (Optional)",
                         Icons.card_giftcard,
                         _referralController,
-                        isOptional: true,
                       ),
                       const SizedBox(height: 20),
 
                       _buildCheckboxRow(
-                        context.loc.declareInfoTrue,
+                        "I declare that the information provided is true and correct",
                         _isDeclared,
                         (val) => setState(() => _isDeclared = val!),
                       ),
                       _buildCheckboxRow(
-                        context.loc.agreeToTermsPrivacy,
+                        "I have read and agree to the Terms & Conditions and Privacy Policy",
                         _isAgreed,
                         (val) => setState(() => _isAgreed = val!),
                       ),
@@ -187,8 +263,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             elevation: 5,
                           ),
-                          child: Text(
-                            context.loc.next,
+                          child: const Text(
+                            "Next",
                             style: AppTextStyles.buttonText,
                           ),
                         ),
@@ -197,9 +273,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            context.loc.alreadyHaveAnAccount,
-                            style: const TextStyle(color: AppColors.textMain),
+                          const Text(
+                            "Already have an account? ",
+                            style: TextStyle(color: AppColors.textMain),
                           ),
                           GestureDetector(
                             onTap: () {
@@ -210,9 +286,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               );
                             },
-                            child: Text(
-                              context.loc.login,
-                              style: const TextStyle(
+                            child: const Text(
+                              "Login",
+                              style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -233,15 +309,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     IconData icon,
     TextEditingController controller, {
     bool isPassword = false,
-    bool isOptional = false,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: isPassword,
       style: const TextStyle(color: AppColors.textMain),
       validator: (value) {
-        if (!isOptional && (value == null || value.isEmpty)) {
-          return context.loc.requiredField;
+        if (!hint.contains("Optional") && (value == null || value.isEmpty)) {
+          return "Required field";
         }
         return null;
       },

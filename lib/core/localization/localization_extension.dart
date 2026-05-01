@@ -7,12 +7,17 @@ extension LocalizationExtension on BuildContext {
   /// Easy access to localization strings
   /// Usage: context.loc.home (instead of AppLocalizations.of(...).home)
   AppLocalizations get loc {
+    // 1. We must use 'watch' so the UI rebuilds when the user changes the language!
+    watch<LanguageProvider>(); 
+    
+    // 2. Standard AppLocalizations usually takes the context ('this'), not the locale.
+    return AppLocalizations.of(this);
     return AppLocalizations.of(this);
   }
   
   /// Check if current language is Arabic
-  bool get isArabic => read<LanguageProvider>().isArabic;
+  bool get isArabic => watch<LanguageProvider>().isArabic;
   
   /// Check if current language is English
-  bool get isEnglish => read<LanguageProvider>().isEnglish;
+  bool get isEnglish => watch<LanguageProvider>().isEnglish;
 }
