@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/localization/app_localizations.dart';
 
 // تعريف الألوان داخلياً لضمان عدم وجود أخطاء في الـ Imports
 class ProfileColors {
@@ -67,7 +68,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: ProfileColors.background,
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context).profile, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -86,13 +87,13 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Icon(Icons.person, size: 50, color: ProfileColors.primary),
             ),
             const SizedBox(height: 30),
-            _buildTextField("Full Name", fullNameController),
+            _buildTextField(AppLocalizations.of(context).fullName, fullNameController),
             const SizedBox(height: 20),
-            _buildTextField("Email", emailController, enabled: false),
+            _buildTextField(AppLocalizations.of(context).email, emailController, enabled: false),
             const SizedBox(height: 20),
             
             // ويدجيت الـ Dropdown المصلحة (بدون إيرور أحمر)
-            _buildDropdownField("Gender", gender, ['Male', 'Female'], (String? newValue) {
+            _buildDropdownField(AppLocalizations.of(context).gender, gender, ['Male', 'Female'], (String? newValue) {
               setState(() {
                 gender = newValue!;
               });
@@ -115,8 +116,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Profile updated successfully!"),
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context).profileUpdatedSuccessfully),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -124,7 +125,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 } catch (e) {
                   print("Error updating profile: $e");
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Error: Could not save changes")),
+                    SnackBar(content: Text(AppLocalizations.of(context).couldNotSaveChanges)),
                   );
                 }
               },
@@ -133,7 +134,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Save Changes", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context).saveChanges, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

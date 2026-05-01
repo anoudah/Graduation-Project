@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // استدعاء ملف الثيم
-import '../../core/theme.dart'; 
+import '../../core/theme.dart';
+import '../../core/localization/app_localizations.dart'; 
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({Key? key}) : super(key: key);
@@ -26,11 +27,13 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    
     return Scaffold(
       backgroundColor: AppColors.background, 
       appBar: AppBar(
         backgroundColor: AppColors.primary, 
-        title: const Text('Contact Us'),
+        title: Text(localizations.contactUs),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -41,7 +44,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             children: [
               const SizedBox(height: 30),
               Text(
-                'Get in touch',
+                localizations.getInTouch,
                 style: AppTextStyles.sectionTitle.copyWith(
                   color: AppColors.primary, 
                   fontSize: 28,
@@ -51,20 +54,20 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               const SizedBox(height: 20),
 
               _buildTextField(
-                'Full Name',
+                localizations.fullName,
                 Icons.person_outline,
                 controller: _nameController,
               ),
               const SizedBox(height: 20),
               _buildTextField(
-                'Email Address',
+                localizations.emailAddress,
                 Icons.email_outlined,
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 20),
               _buildMultilineField(
-                'Your Message',
+                localizations.yourMessage,
                 Icons.message_outlined,
                 controller: _messageController,
               ),
@@ -82,7 +85,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                     elevation: 5,
                   ),
                   child: Text(
-                    'Send Message',
+                    localizations.sendMessage,
                     style: AppTextStyles.buttonText.copyWith(
                       color: AppColors.white,
                       fontSize: 18,
@@ -156,12 +159,14 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   
   // Norah's Update: Logic to send contact messages directly to Firestore
   Future<void> _submit() async {
+    final localizations = AppLocalizations.of(context);
+    
     // 1. Validation to ensure no empty fields are sent to the database
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _messageController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        SnackBar(content: Text(localizations.pleaseFillAllFields)),
       );
       return;
     }
@@ -181,8 +186,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       // 3. Confirm success to the user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Your message has been sent successfully!'),
+          SnackBar(
+            content: Text(localizations.messageSentSuccessfully),
           ),
         );
       }
@@ -195,7 +200,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       // 5. Error handling (e.g., connection issues)
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+      ).showSnackBar(SnackBar(content: Text('${localizations.failedToSendMessage} $e')));
     }
   }
 }

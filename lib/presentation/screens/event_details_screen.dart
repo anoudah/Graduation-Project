@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
-import '../../application/services/location_service.dart'; 
+import '../../application/services/location_service.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> eventData;
@@ -25,13 +26,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool _checkLoginAndShowMessage() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
+      final localizations = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Please log in to interact"),
+          content: Text(localizations.pleaseLoginToInteract),
           backgroundColor: AppColors.primary,
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
-            label: "Login",
+            label: localizations.login,
             textColor: AppColors.white,
             onPressed: () => Navigator.push(
               context,
@@ -101,8 +103,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       commentController.clear();
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Review submitted successfully!"),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).reviewSubmittedSuccessfully,
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -131,9 +135,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "Write a Review",
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).writeAReview,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textMain,
@@ -143,7 +147,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               TextField(
                 controller: commentController,
                 decoration: InputDecoration(
-                  hintText: "Share your experience...",
+                  hintText: AppLocalizations.of(context).shareYourExperience,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -173,9 +177,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   backgroundColor: AppColors.primary,
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                child: const Text(
-                  "Submit",
-                  style: TextStyle(color: AppColors.white),
+                child: Text(
+                  AppLocalizations.of(context).submit,
+                  style: const TextStyle(color: AppColors.white),
                 ),
               ),
               const SizedBox(height: 20),
@@ -188,18 +192,32 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   // Helper to make dates look premium (e.g., "Apr 6")
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return "${months[date.month - 1]} ${date.day}";
   }
+
   // Helper to make times look premium (e.g., "9:30 AM")
   String _formatTime(DateTime date) {
     int hour = date.hour;
     int minute = date.minute;
     String ampm = hour >= 12 ? 'PM' : 'AM';
-    
+
     hour = hour % 12;
     if (hour == 0) hour = 12; // Handles midnight and noon
-    
+
     String minuteStr = minute < 10 ? '0$minute' : '$minute';
     return "$hour:$minuteStr $ampm";
   }
@@ -363,10 +381,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     try {
       // --- THE MANUAL OVERRIDE (For complex or weird schedules) ---
       // If the database has a specific text string for 'Schedule', we trust it blindly and skip the math!
-      if (data['Schedule'] != null && data['Schedule'].toString().trim().isNotEmpty) {
+      if (data['Schedule'] != null &&
+          data['Schedule'].toString().trim().isNotEmpty) {
         // We replace '\\n' so you can actually type line breaks directly into the Firebase console!
         scheduleText = data['Schedule'].toString().replaceAll('\\n', '\n');
-      } 
+      }
       // --- NORMAL AUTOMATIC MATH (For standard events) ---
       else {
         var start = data['start_time'] ?? data['Start_Time'] ?? data['start'];
@@ -376,55 +395,66 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         if (start != null && start is Timestamp) {
           DateTime startDate = start.toDate();
           String startTime = _formatTime(startDate);
-          
+
           if (end is Timestamp) {
             DateTime endDate = end.toDate();
             String endTime = _formatTime(endDate);
-            
-            if (startDate.day != endDate.day || startDate.month != endDate.month) {
-               if (startTime == endTime) {
-                 scheduleText = "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime everyday";
-               } else {
-                 scheduleText = "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime - $endTime everyday";
-               }
+
+            if (startDate.day != endDate.day ||
+                startDate.month != endDate.month) {
+              if (startTime == endTime) {
+                scheduleText =
+                    "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime everyday";
+              } else {
+                scheduleText =
+                    "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime - $endTime everyday";
+              }
             } else {
-               scheduleText = "${_formatDate(startDate)}, ${startDate.year}\n$startTime — $endTime";
+              scheduleText =
+                  "${_formatDate(startDate)}, ${startDate.year}\n$startTime — $endTime";
             }
           } else {
-            scheduleText = "${_formatDate(startDate)}, ${startDate.year}\n$startTime";
+            scheduleText =
+                "${_formatDate(startDate)}, ${startDate.year}\n$startTime";
           }
-        } 
+        }
         // --- SCENARIO 2: Python/FastAPI ISO Strings ---
         else if (start is String) {
           DateTime? parsedStart = DateTime.tryParse(start);
-          
+
           if (parsedStart != null) {
             parsedStart = parsedStart.toLocal();
             String startTime = _formatTime(parsedStart);
-            
+
             if (end is String) {
               DateTime? parsedEnd = DateTime.tryParse(end);
               if (parsedEnd != null) {
                 parsedEnd = parsedEnd.toLocal();
                 String endTime = _formatTime(parsedEnd);
-                
-                if (parsedStart.day != parsedEnd.day || parsedStart.month != parsedEnd.month) {
-                   if (startTime == endTime) {
-                     scheduleText = "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime everyday";
-                   } else {
-                     scheduleText = "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime - $endTime everyday";
-                   }
+
+                if (parsedStart.day != parsedEnd.day ||
+                    parsedStart.month != parsedEnd.month) {
+                  if (startTime == endTime) {
+                    scheduleText =
+                        "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime everyday";
+                  } else {
+                    scheduleText =
+                        "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime - $endTime everyday";
+                  }
                 } else {
-                   scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime — $endTime";
+                  scheduleText =
+                      "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime — $endTime";
                 }
               } else {
-                 scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
+                scheduleText =
+                    "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
               }
             } else {
-              scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
+              scheduleText =
+                  "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
             }
           } else {
-            scheduleText = start.split('T').first; 
+            scheduleText = start.split('T').first;
           }
         }
       }
@@ -450,14 +480,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           // Using the new Premium Rows!
           _premiumDetailRow(Icons.calendar_today, "Date & Time", scheduleText),
           const SizedBox(height: 16), // Replaced dividers with clean spacing
-          
-          _premiumDetailRow(Icons.confirmation_number_outlined, "Ticket Price", data['Price']?.toString() ?? "Free Entry"),
+
+          _premiumDetailRow(
+            Icons.confirmation_number_outlined,
+            "Ticket Price",
+            data['Price']?.toString() ?? "Free Entry",
+          ),
           const SizedBox(height: 16),
-          
-          _premiumDetailRow(Icons.location_on_outlined, "Location", data['Location_Address'] ?? "Riyadh"),
-          
+
+          _premiumDetailRow(
+            Icons.location_on_outlined,
+            "Location",
+            data['Location_Address'] ?? "Riyadh",
+          ),
+
           const SizedBox(height: 24),
-          
+
           // --- FULL-WIDTH NAVIGATE BUTTON ---
           SizedBox(
             width: double.infinity,
@@ -472,11 +510,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     targetLat = geo.latitude;
                     targetLng = geo.longitude;
                   } else {
-                    var fallbackLat = data['latitude'] ?? data['targetLat'] ?? data['Latitude'];
-                    var fallbackLng = data['longitude'] ?? data['targetLng'] ?? data['Longitude'];
+                    var fallbackLat =
+                        data['latitude'] ??
+                        data['targetLat'] ??
+                        data['Latitude'];
+                    var fallbackLng =
+                        data['longitude'] ??
+                        data['targetLng'] ??
+                        data['Longitude'];
                     if (fallbackLat != null && fallbackLng != null) {
-                      targetLat = double.tryParse(fallbackLat.toString()) ?? 24.7136;
-                      targetLng = double.tryParse(fallbackLng.toString()) ?? 46.6753;
+                      targetLat =
+                          double.tryParse(fallbackLat.toString()) ?? 24.7136;
+                      targetLng =
+                          double.tryParse(fallbackLng.toString()) ?? 46.6753;
                     }
                   }
                 } catch (e) {
@@ -488,7 +534,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               label: const Text(
                 "Navigate to Event",
                 style: TextStyle(
-                  color: AppColors.primary, 
+                  color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -515,13 +561,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.08), 
+            color: AppColors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: AppColors.primary, size: 22),
         ),
         const SizedBox(width: 16),
-        
+
         // Stacked text
         Expanded(
           child: Column(

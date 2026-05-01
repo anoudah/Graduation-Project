@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // Required for the Timer used in "live search"
 import '../../core/theme.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../data/datasources/ai_remote_source.dart';
-import '../widgets/compact_event_card.dart'; 
+import '../widgets/compact_event_card.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -15,26 +16,26 @@ class _SearchScreenState extends State<SearchScreen> {
   // ==========================================
   // 1. STATE VARIABLES (CONTROLLERS & DATA)
   // ==========================================
-  
+
   // Reads what the user types in the search bar
   final TextEditingController _searchController = TextEditingController();
-  
+
   // Controls the keyboard (allows us to hide it programmatically after searching)
-  final FocusNode _searchFocusNode = FocusNode(); 
-  
+  final FocusNode _searchFocusNode = FocusNode();
+
   // The bridge to your Python backend
   final AiRemoteSource _aiSource = AiRemoteSource();
-  
+
   // Holds the actual event data returned from the search
   List<dynamic> _searchResults = [];
-  
+
   // UI State toggles
-  bool _isLoading = false;      // Shows the spinning loading circle
-  bool _isGridView = false;     // Toggles between Grid (icons) and List views
-  String _statusMessage = '';   // Displays errors or "No events found" text
-  
+  bool _isLoading = false; // Shows the spinning loading circle
+  bool _isGridView = false; // Toggles between Grid (icons) and List views
+  String _statusMessage = ''; // Displays errors or "No events found" text
+
   // Timer used for "Debouncing" (Waiting for the user to finish typing before sending the request)
-  Timer? _debounce; 
+  Timer? _debounce;
 
   // Variables for the "Popular Searches" chips
   List<String> _popularSearches = [];
@@ -69,8 +70,8 @@ class _SearchScreenState extends State<SearchScreen> {
     final suggestions = await _aiSource.getSearchSuggestions();
     setState(() {
       // If the database returns data, use it. Otherwise, use these hardcoded fallbacks.
-      _popularSearches = suggestions.isNotEmpty 
-          ? suggestions 
+      _popularSearches = suggestions.isNotEmpty
+          ? suggestions
           : ['Museum', 'Library', 'Festival', 'Art'];
       _isLoadingSuggestions = false; // Stop the loading spinner
     });
@@ -80,7 +81,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _onSearchChanged(String query) {
     // 1. Cancel the existing timer if the user is still actively typing
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+
     // 2. If they delete all text, clear the results and show suggestions again
     if (query.trim().isEmpty) {
       setState(() {
@@ -92,7 +93,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // 3. Start a new timer. If 500ms passes without them typing, execute the search!
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      _performSearch(query, hideKeyboard: false); // Keep keyboard open while typing
+      _performSearch(
+        query,
+        hideKeyboard: false,
+      ); // Keep keyboard open while typing
     });
   }
 
@@ -115,21 +119,22 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       // Wait for Python to process the search and return the data
       final results = await _aiSource.searchEvents(cleanQuery);
-      
+
       setState(() {
         _searchResults = results;
         _isLoading = false;
-        
+
         // If Python returns an empty list, let the user know
         if (results.isEmpty) {
-          _statusMessage = 'No events found for "$cleanQuery".';
+          final localizations = AppLocalizations.of(context);
+          _statusMessage = '${localizations.noEventsFoundFor} "$cleanQuery".';
         }
       });
     } catch (e) {
       // Handle server crashes or network failures gracefully
       setState(() {
         _isLoading = false;
-        _statusMessage = 'Connection error. Make sure your Python server is running!';
+        _statusMessage = AppLocalizations.of(context).connectionErrorServer;
       });
     }
   }
@@ -149,7 +154,7 @@ class _SearchScreenState extends State<SearchScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textMain),
           onPressed: () => Navigator.pop(context),
         ),
-        
+
         // --- SEARCH BAR ENCLOSURE ---
         title: Container(
           height: 40,
@@ -159,27 +164,39 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           child: TextField(
             controller: _searchController,
-            focusNode: _searchFocusNode, 
+            focusNode: _searchFocusNode,
             autofocus: true,
             textInputAction: TextInputAction.search,
             onSubmitted: (val) => _performSearch(val, hideKeyboard: true),
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
-              hintText: 'Search museums, events...',
-              hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
-              
+              hintText: AppLocalizations.of(context).searchMuseumsEvents,
+              hintStyle: const TextStyle(
+                color: AppColors.textHint,
+                fontSize: 14,
+              ),
+
               // 1. Decorative icon on the left (Not clickable)
-              prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.iconGrey),
-              
+              prefixIcon: const Icon(
+                Icons.search,
+                size: 20,
+                color: AppColors.iconGrey,
+              ),
+
               // 2. Action buttons on the right
               suffixIcon: Padding(
                 padding: const EdgeInsets.only(right: 6.0),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min, // Crucial: Keeps the row from taking up the whole bar
+                  mainAxisSize: MainAxisSize
+                      .min, // Crucial: Keeps the row from taking up the whole bar
                   children: [
                     // The 'Clear' X button
                     IconButton(
-                      icon: const Icon(Icons.clear, size: 16, color: AppColors.iconGrey),
+                      icon: const Icon(
+                        Icons.clear,
+                        size: 16,
+                        color: AppColors.iconGrey,
+                      ),
                       visualDensity: VisualDensity.compact,
                       onPressed: () {
                         _searchController.clear();
@@ -189,10 +206,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         });
                       },
                     ),
-                    
+
                     // The highly visible, solid "Search" button
                     GestureDetector(
-                      onTap: () => _performSearch(_searchController.text, hideKeyboard: true),
+                      onTap: () => _performSearch(
+                        _searchController.text,
+                        hideKeyboard: true,
+                      ),
                       child: Container(
                         height: 30,
                         width: 30,
@@ -204,11 +224,15 @@ class _SearchScreenState extends State<SearchScreen> {
                               color: AppColors.primary.withOpacity(0.3),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
-                            )
-                          ]
+                            ),
+                          ],
                         ),
                         // Using arrow_forward gives it a clear "Go/Submit" feel
-                        child: const Icon(Icons.arrow_forward, size: 16, color: Colors.white), 
+                        child: const Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -219,7 +243,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ),
-        
+
         // --- VIEW TOGGLE BUTTON (Grid vs List) ---
         actions: [
           IconButton(
@@ -227,7 +251,7 @@ class _SearchScreenState extends State<SearchScreen> {
               _isGridView ? Icons.view_list : Icons.grid_view,
               color: AppColors.iconGrey,
             ),
-            tooltip: 'Toggle View',
+            tooltip: AppLocalizations.of(context).toggleView,
             onPressed: () {
               setState(() {
                 _isGridView = !_isGridView; // Flips the boolean true/false
@@ -249,7 +273,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildBody() {
     // 1. Show loading spinner if fetching data
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
 
     // 2. Show suggestion chips if the search bar is empty and no results exist
@@ -265,7 +291,10 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Text(
             _statusMessage,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 16,
+            ),
           ),
         ),
       );
@@ -277,7 +306,8 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.all(24.0),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 260, // Maximum width before wrapping to next row
-          mainAxisExtent: 250,     // Locks height to exactly match the CompactEventCard
+          mainAxisExtent:
+              250, // Locks height to exactly match the CompactEventCard
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -293,7 +323,9 @@ class _SearchScreenState extends State<SearchScreen> {
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800), // Prevents absurd stretching on Web browsers
+        constraints: const BoxConstraints(
+          maxWidth: 800,
+        ), // Prevents absurd stretching on Web browsers
         child: ListView.builder(
           padding: const EdgeInsets.all(24.0),
           itemCount: _searchResults.length,
@@ -319,7 +351,9 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_isLoadingSuggestions) {
       return const Padding(
         padding: EdgeInsets.all(40.0),
-        child: Center(child: CircularProgressIndicator(color: AppColors.primaryLight)),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryLight),
+        ),
       );
     }
 
@@ -328,9 +362,9 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Explore Categories',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context).exploreCategories,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.textMain,
@@ -343,9 +377,14 @@ class _SearchScreenState extends State<SearchScreen> {
             runSpacing: 10,
             children: _popularSearches.map((term) {
               return ActionChip(
-                label: Text(term, style: const TextStyle(color: AppColors.textMain)),
+                label: Text(
+                  term,
+                  style: const TextStyle(color: AppColors.textMain),
+                ),
                 backgroundColor: AppColors.primaryLight.withOpacity(0.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 side: BorderSide.none,
                 onPressed: () {
                   // When a chip is tapped, fill the search bar and immediately perform the search

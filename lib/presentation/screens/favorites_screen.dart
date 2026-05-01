@@ -3,21 +3,24 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../widgets/event_card.dart';
 // استدعاء ملف الثيم
-import '../../core/theme.dart'; 
+import '../../core/theme.dart';
+import '../../core/localization/app_localizations.dart'; 
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    
     // 1. جلب معرف المستخدم الحالي (UID) لضمان خصوصية البيانات
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: AppColors.background, // تم الربط بالثيم
       appBar: AppBar(
-        title: const Text(
-          "My Favorites",
+        title: Text(
+          localizations.myFavorites,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary, // تم الربط بالثيم
@@ -26,7 +29,7 @@ class FavoritesScreen extends StatelessWidget {
       ),
       // 2. إذا لم يكن هناك يوزر مسجل، نطلب منه تسجيل الدخول
       body: userId == null
-          ? const Center(child: Text("Please login to see favorites"))
+          ? Center(child: Text(localizations.pleaseLoginToSeeFavorites))
           : StreamBuilder<QuerySnapshot>(
               // 3. نراقب جدول التفاعلات لليوزر الحالي والفعاليات التي حددها كمفضلة
               stream: FirebaseFirestore.instance
@@ -41,7 +44,7 @@ class FavoritesScreen extends StatelessWidget {
                   );
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No favorites found"));
+                  return Center(child: Text(localizations.noFavoritesFound));
                 }
 
                 return ListView.builder(

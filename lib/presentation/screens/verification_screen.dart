@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme.dart'; // تأكدي أن المسار يوصل لملف الثيم عندك
 import 'interests_screen.dart';
 
@@ -65,16 +66,20 @@ class _VerificationScreenState extends State<VerificationScreen> {
           MaterialPageRoute(builder: (context) => const InterestsScreen()),
         );
       } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message ?? "Error occurred")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.message ?? AppLocalizations.of(context).errorOccurred,
+            ),
+          ),
+        );
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Incorrect Code!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).incorrectCode)),
+      );
     }
   }
 
@@ -88,9 +93,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                "Enter Code",
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).enterCode,
+                style: const TextStyle(
                   fontSize: 24,
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -114,7 +119,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _verifyAndSignUp,
-                      child: const Text("Verify"),
+                      child: Text(AppLocalizations.of(context).verify),
                     ),
             ],
           ),
