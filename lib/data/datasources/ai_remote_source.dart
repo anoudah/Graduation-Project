@@ -9,21 +9,27 @@ class AiRemoteSource {
   // --- Chatbot Stream Method ---
   // ===========================================================================
   /// Connects to the FastAPI /chat endpoint and returns a stream of text chunks.
-  Stream<String> getChatStream(String userQuery, {String? eventId}) async* {
-    // 1. Construct the URL with optional event context
-    final url = Uri.parse(
-      '${AppConstants.aiBaseUrl}/chat?user_query=${Uri.encodeComponent(userQuery)}'
-      '${eventId != null ? "&event_id=$eventId" : ""}'
-    );
+  Stream<String> getChatStream(
+    String userQuery, {
+    String? eventId, 
+    required String sessionId, 
+    String? userId,
+  }) async* {
+    
+    // Construct the URL with the new parameters
+    var urlString = '${AppConstants.aiBaseUrl}/chat?user_query=${Uri.encodeComponent(userQuery)}&session_id=$sessionId';
+    if (eventId != null) urlString += '&event_id=$eventId';
+    if (userId != null) urlString += '&user_id=$userId';
+
+    final url = Uri.parse(urlString);
 
     try {
-      // 2. We use http.Request + send() to handle StreamingResponse
+      // We use http.Request + send() to handle StreamingResponse
       final request = http.Request('GET', url);
-
       final response = await http.Client().send(request);
-
+      
       if (response.statusCode == 200) {
-        // 3. Transform the byte stream into a readable UTF-8 String stream
+        // Transform the byte stream into a readable UTF-8 String stream
         yield* response.stream
             .transform(utf8.decoder)
             .handleError((error) => "Connection interrupted...");
@@ -46,7 +52,6 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -103,7 +108,6 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -132,7 +136,6 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -149,6 +152,7 @@ class AiRemoteSource {
       throw Exception('Offline: No trending data.');
     }
   }
+
   // ===========================================================================
   // --- 5. Search Events ---
   // ===========================================================================
@@ -158,7 +162,6 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -168,10 +171,10 @@ class AiRemoteSource {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      // For search, if they are offline, we just return an empty list or throw
       throw Exception('Network error during search.');
     }
   }
+
   // ===========================================================================
   // --- 6. Get Search Suggestions ---
   // ===========================================================================
@@ -181,21 +184,20 @@ class AiRemoteSource {
     try {
       final response = await http.get(
         url,
-        //headers: {"ngrok-skip-browser-warning": "true"},
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // Safely convert the dynamic list to a List<String>
         return List<String>.from(data['suggestions'] ?? []);
       } else {
-        return []; // Return empty if the server fails
+        return [];
       }
     } catch (e) {
-      return []; // Return empty on network error
+      return []; 
     }
   }
-// ===========================================================================
+
+  // ===========================================================================
   // --- 7. Generate AI Smart Tour ---
   // ===========================================================================
   Future<Map<String, dynamic>> generateSmartTour({
@@ -205,7 +207,6 @@ class AiRemoteSource {
     required String preferences,
     required String startTime,
   }) async {
-    // Uses the base URL you defined in AppConstants
     final url = Uri.parse('${AppConstants.aiBaseUrl}/generate-tour');
 
     try {
@@ -224,7 +225,7 @@ class AiRemoteSource {
       if (response.statusCode == 200) {
         final decodedData = jsonDecode(response.body);
         if (decodedData['status'] == 'success') {
-          return decodedData['tour']; // Returns the generated JSON route
+          return decodedData['tour']; 
         } else {
           throw Exception(decodedData['message']);
         }
@@ -236,4 +237,3 @@ class AiRemoteSource {
     }
   }
 }
-  
