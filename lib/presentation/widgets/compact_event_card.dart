@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-// تأكدي أن هذا المسار صحيح لملف الديتلز في مشروعك
 import '../screens/event_details_screen.dart';
 
 class CompactEventCard extends StatelessWidget {
@@ -8,10 +7,10 @@ class CompactEventCard extends StatelessWidget {
   final bool isFullWidth;
 
   const CompactEventCard({
-    Key? key,
+    super.key,
     required this.eventData,
     this.isFullWidth = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +19,6 @@ class CompactEventCard extends StatelessWidget {
       imageUrl = 'https://placehold.co/400x300/png?text=Culture+Event';
     }
 
-    // تغليف الكرت بـ InkWell لتفعيل الضغط مع تأثير بصري
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -39,7 +37,8 @@ class CompactEventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textMain.withOpacity(0.1),
+              // التحديث لحل تحذير الصورة image_3bd33b.jpg
+              color: AppColors.textMain.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -88,6 +87,13 @@ class CompactEventCard extends StatelessWidget {
   }
 
   Widget _buildTextContent() {
+    // معالجة السعر ليعرض Free إذا كان 0 أو null
+    final priceValue = eventData['Price'];
+    final priceDisplay =
+        (priceValue == null || priceValue == 0 || priceValue == "0")
+        ? 'Free'
+        : '$priceValue SAR';
+
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -101,20 +107,20 @@ class CompactEventCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            eventData['Category'] ?? '',
+            eventData['Category'] ?? 'General',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                eventData['Price'] != null
-                    ? '${eventData['Price']} SAR'
-                    : 'Free',
+                priceDisplay,
                 style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
