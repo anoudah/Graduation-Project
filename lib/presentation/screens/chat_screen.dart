@@ -11,7 +11,7 @@ class ChatMessage {
 class ChatScreen extends StatefulWidget {
   final String? eventId; 
 
-  const ChatScreen({Key? key, this.eventId}) : super(key: key);
+  const ChatScreen({super.key, this.eventId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -22,6 +22,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final AiRemoteSource _aiSource = AiRemoteSource();
   
+  // 1. Declare the session ID variable
+  late final String _sessionId;
+  
   final List<ChatMessage> _messages = [
     ChatMessage(
       text: "Hello! I am your Wasel cultural guide. How can I help you explore Riyadh today?", 
@@ -31,12 +34,20 @@ class _ChatScreenState extends State<ChatScreen> {
   
   bool _isLoading = false;
 
+  // 2. Initialize it the exact moment the chat screen opens
+  @override
+  void initState() {
+    super.initState();
+    // This creates a completely unique ID every single time the user opens the chat
+    _sessionId = "session_${DateTime.now().millisecondsSinceEpoch}";
+  }
+
   void _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _isLoading) return;
 
     _controller.clear();
-    
+
     setState(() {
       _messages.insert(0, ChatMessage(text: text, isUser: true));
       _messages.insert(0, ChatMessage(text: "", isUser: false));
@@ -44,7 +55,12 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
-      await for (var chunk in _aiSource.getChatStream(text, eventId: widget.eventId)) {
+      // 3. Pass the unique sessionId to the backend!
+      await for (var chunk in _aiSource.getChatStream(
+        text, 
+        eventId: widget.eventId,
+        sessionId: _sessionId, // Added here!
+      )) {
         setState(() {
           final currentAiMessage = _messages.first.text;
           _messages[0] = ChatMessage(text: currentAiMessage + chunk, isUser: false);
