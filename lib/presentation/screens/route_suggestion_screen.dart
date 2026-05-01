@@ -102,14 +102,12 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     );
   }
 
-  // Inside route_suggestion_screen.dart
 Future<void> _generateAiTour() async {
   setState(() { _isLoading = true; _errorMessage = null; });
 
   try {
     Position? pos = await LocationService.getCurrentLocation();
-    
-    // Call the new method we just added to the source class
+
     final tourData = await AiRemoteSource().generateSmartTour(
       lat: pos?.latitude ?? 24.7136,
       lng: pos?.longitude ?? 46.6753,

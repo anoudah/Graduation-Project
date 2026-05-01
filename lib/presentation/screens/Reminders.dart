@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/localization/app_localizations.dart';
 // استدعاء ملف الثيم
-import '../../core/theme.dart'; 
+import '../../core/theme.dart';
 
 class RemindersScreen extends StatelessWidget {
   const RemindersScreen({Key? key}) : super(key: key);
@@ -15,9 +16,12 @@ class RemindersScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background, // ربط خلفية الشاشة بالثيم
       appBar: AppBar(
-        title: const Text(
-          'Your Reminders',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context).yourReminders,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: AppColors.primary, // ربط لون الـ AppBar بالثيم
         centerTitle: true,
@@ -34,7 +38,9 @@ class RemindersScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('لا توجد تذكيرات حالياً'));
+            return Center(
+              child: Text(AppLocalizations.of(context).noRemindersCurrently),
+            );
           }
 
           final reminderDocs = snapshot.data!.docs;
@@ -67,12 +73,15 @@ class RemindersScreen extends StatelessWidget {
 
                   // الأسماء كما هي في الـ Firestore عندك (Title و Schedule)
                   final String title =
-                      eventData?['Title'] ?? 'فعالية غير معروفة';
+                      eventData?['Title'] ??
+                      AppLocalizations.of(context).unknownEvent;
                   final String subtitle =
-                      eventData?['Schedule'] ?? 'لم يتم تحديد وقت';
+                      eventData?['Schedule'] ??
+                      AppLocalizations.of(context).scheduleNotSet;
 
                   return Card(
-                    elevation: 0, // خليتها 0 عشان تتماشى مع تصميم الـ Cards في الثيم الجديد
+                    elevation:
+                        0, // خليتها 0 عشان تتماشى مع تصميم الـ Cards في الثيم الجديد
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -85,24 +94,29 @@ class RemindersScreen extends StatelessWidget {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight, // مناداة اللون الفاتح من الثيم
+                          color: AppColors
+                              .primaryLight, // مناداة اللون الفاتح من الثيم
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           Icons.event,
-                          color: AppColors.primary, // مناداة اللون الأساسي للأيقونة
+                          color: AppColors
+                              .primary, // مناداة اللون الأساسي للأيقونة
                         ),
                       ),
                       title: Text(
                         title,
                         style: AppTextStyles.subtitle.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textMain, // استخدمت textMain حسب ملف الثيم حقك
+                          color: AppColors
+                              .textMain, // استخدمت textMain حسب ملف الثيم حقك
                         ),
                       ),
                       subtitle: Text(
                         subtitle,
-                        style: TextStyle(color: AppColors.textSecondary), // مناداة لون الوصف
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                        ), // مناداة لون الوصف
                       ),
                       trailing: Icon(
                         Icons.notifications,

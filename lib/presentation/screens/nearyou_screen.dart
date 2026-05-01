@@ -5,9 +5,10 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../application/services/location_service.dart';
+import '../../core/localization/app_localizations.dart';
 import 'event_details_screen.dart';
 
-/// A dedicated full-screen view for the Wasel app that plots the user's location 
+/// A dedicated full-screen view for the Wasel app that plots the user's location
 /// and nearby cultural events on an interactive OpenStreetMap canvas.
 /// Features dynamic UX controls including immersive fullscreen toggling, custom zoom, and recentering.
 class NearYouScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class NearYouScreen extends StatefulWidget {
 class _NearYouScreenState extends State<NearYouScreen> {
   // Controller to programmatically pan and zoom the map camera
   final MapController _mapController = MapController();
-  
+
   List<Map<String, dynamic>> _nearbyLocations = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -31,9 +32,9 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
   // --- MAP STATE MANAGEMENT ---
   // Tracks whether the map should expand to hide the list view and app bar
-  bool _isFullScreen = false; 
+  bool _isFullScreen = false;
   // Manually tracks the camera's exact center so custom zoom buttons don't pan the screen away
-  LatLng _currentMapCenter = const LatLng(24.7136, 46.6753); 
+  LatLng _currentMapCenter = const LatLng(24.7136, 46.6753);
   // Manually tracks zoom level to prevent zooming out into an empty grey screen
   double _currentZoom = 12.0;
 
@@ -43,7 +44,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
     _loadMapData(); // Initialize data fetching exactly when the screen mounts
   }
 
-  /// Core logic: Fetches GPS hardware data, processes unpredictable database coordinates, 
+  /// Core logic: Fetches GPS hardware data, processes unpredictable database coordinates,
   /// and calculates real-time distances.
   Future<void> _loadMapData() async {
     try {
@@ -61,18 +62,44 @@ class _NearYouScreenState extends State<NearYouScreen> {
         try {
           // 3. ULTIMATE COORDINATE EXTRACTOR: Bulletproof parsing for NoSQL schemas
           // Aggressively checks flat structures, nested maps (Python FastAPI), and raw GeoPoints (Firebase SDK)
-          var rawLat = event['latitude'] ?? event['Latitude'] ?? event['lat'] ?? event['_latitude'];
-          var rawLng = event['longitude'] ?? event['Longitude'] ?? event['lng'] ?? event['_longitude'];
+          var rawLat =
+              event['latitude'] ??
+              event['Latitude'] ??
+              event['lat'] ??
+              event['_latitude'];
+          var rawLng =
+              event['longitude'] ??
+              event['Longitude'] ??
+              event['lng'] ??
+              event['_longitude'];
 
-          var geo = event['location'] ?? event['Location'] ?? event['coordinates'] ?? event['Coordinates'] ?? event['GeoPoint'];
+          var geo =
+              event['location'] ??
+              event['Location'] ??
+              event['coordinates'] ??
+              event['Coordinates'] ??
+              event['GeoPoint'];
           if (geo != null) {
             if (geo is Map) {
               // Handles JSON dictionary formats
-              rawLat = geo['latitude'] ?? geo['Latitude'] ?? geo['lat'] ?? geo['_latitude'] ?? rawLat;
-              rawLng = geo['longitude'] ?? geo['Longitude'] ?? geo['lng'] ?? geo['_longitude'] ?? rawLng;
+              rawLat =
+                  geo['latitude'] ??
+                  geo['Latitude'] ??
+                  geo['lat'] ??
+                  geo['_latitude'] ??
+                  rawLat;
+              rawLng =
+                  geo['longitude'] ??
+                  geo['Longitude'] ??
+                  geo['lng'] ??
+                  geo['_longitude'] ??
+                  rawLng;
             } else {
-               // Handles native Firebase Flutter SDK GeoPoint objects
-               try { rawLat = geo.latitude; rawLng = geo.longitude; } catch (_) {}
+              // Handles native Firebase Flutter SDK GeoPoint objects
+              try {
+                rawLat = geo.latitude;
+                rawLng = geo.longitude;
+              } catch (_) {}
             }
           }
 
@@ -87,16 +114,16 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
         // 4. Mathematical Haversine Distance & Time Calculation
         double distanceInMeters = 0;
-        String timeString = 'Unknown time'; 
+        String timeString = 'Unknown time';
 
         if (_userPosition != null) {
           distanceInMeters = AppUtils.calculateDistance(
-            _userPosition!.latitude, 
-            _userPosition!.longitude, 
-            targetLat, 
-            targetLng
+            _userPosition!.latitude,
+            _userPosition!.longitude,
+            targetLat,
+            targetLng,
           );
-          
+
           // Add the driving time calculation
           double actualDrivingDistanceMeters = distanceInMeters * 1.2;
           double distanceInKm = actualDrivingDistanceMeters / 1000;
@@ -116,7 +143,11 @@ class _NearYouScreenState extends State<NearYouScreen> {
       }
 
       // 6. SORTING: Closest events mathematically sort to the top of the list view
-      calculatedEvents.sort((a, b) => (a['distance_raw'] as double).compareTo(b['distance_raw'] as double));
+      calculatedEvents.sort(
+        (a, b) => (a['distance_raw'] as double).compareTo(
+          b['distance_raw'] as double,
+        ),
+      );
 
       // 7. Update state and render UI
       if (mounted) {
@@ -125,15 +156,19 @@ class _NearYouScreenState extends State<NearYouScreen> {
           _isLoading = false;
           // Set the map center to the user's location so resizing doesn't abruptly reset it
           if (_userPosition != null) {
-            _currentMapCenter = LatLng(_userPosition!.latitude, _userPosition!.longitude);
+            _currentMapCenter = LatLng(
+              _userPosition!.latitude,
+              _userPosition!.longitude,
+            );
           }
         });
       }
     } catch (e) {
       debugPrint("WASEL FATAL MAP ERROR: $e");
       if (mounted) {
+        final localizations = AppLocalizations.of(context);
         setState(() {
-          _errorMessage = "Could not load map data.";
+          _errorMessage = localizations.couldNotLoadMapData;
           _isLoading = false;
         });
       }
@@ -141,7 +176,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
   }
 
   // --- UX CONTROL METHODS ---
-  
+
   /// Toggles the UI state between a split-screen (Map + List) and an immersive Fullscreen Map
   void _toggleFullScreen() {
     setState(() {
@@ -152,7 +187,10 @@ class _NearYouScreenState extends State<NearYouScreen> {
   /// Snaps the map camera directly back to the user's physical GPS location
   void _recenterMap() {
     if (_userPosition != null) {
-      _currentMapCenter = LatLng(_userPosition!.latitude, _userPosition!.longitude);
+      _currentMapCenter = LatLng(
+        _userPosition!.latitude,
+        _userPosition!.longitude,
+      );
       _mapController.move(_currentMapCenter, 14.0);
     }
   }
@@ -171,7 +209,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
   /// Dynamically generates map pins based on the processed database coordinates
   List<Marker> _buildMapMarkers() {
     List<Marker> markers = [];
-    
+
     // Generates red indicator pins for all available cultural events
     for (var location in _nearbyLocations) {
       markers.add(
@@ -179,11 +217,15 @@ class _NearYouScreenState extends State<NearYouScreen> {
           width: 40,
           height: 40,
           point: LatLng(location['targetLat'], location['targetLng']),
-          child: const Icon(Icons.location_on, color: AppColors.primary, size: 35),
+          child: const Icon(
+            Icons.location_on,
+            color: AppColors.primary,
+            size: 35,
+          ),
         ),
       );
     }
-    
+
     // Generates a distinct blue pulsing dot to represent the user's physical device
     if (_userPosition != null) {
       markers.add(
@@ -196,7 +238,9 @@ class _NearYouScreenState extends State<NearYouScreen> {
               color: Colors.blue,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black26, blurRadius: 4),
+              ],
             ),
           ),
         ),
@@ -207,13 +251,20 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
   /// A UI helper that constructs the floating circular buttons for the map control panel.
   /// Ensures perfect design consistency across all map tools.
-  Widget _buildMapControlButton({required IconData icon, required VoidCallback onPressed}) {
+  Widget _buildMapControlButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.white.withOpacity(0.9), // Modern semi-transparent glass effect
+        color: AppColors.white.withOpacity(
+          0.9,
+        ), // Modern semi-transparent glass effect
         shape: BoxShape.circle,
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+        ],
       ),
       child: IconButton(
         icon: Icon(icon, color: AppColors.primary),
@@ -224,7 +275,9 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. ISOLATED MAP COMPONENT: 
+    final localizations = AppLocalizations.of(context);
+
+    // 1. ISOLATED MAP COMPONENT:
     // We isolate the map inside a variable so we can easily swap it between half-screen and fullscreen
     final Widget mapSection = Stack(
       children: [
@@ -233,8 +286,8 @@ class _NearYouScreenState extends State<NearYouScreen> {
           options: MapOptions(
             initialCenter: _currentMapCenter,
             initialZoom: _currentZoom,
-            // CRITICAL UX FIX: Automatically track user pan/zoom gestures. 
-            // If we don't update state here, clicking the custom +/- buttons will abruptly snap 
+            // CRITICAL UX FIX: Automatically track user pan/zoom gestures.
+            // If we don't update state here, clicking the custom +/- buttons will abruptly snap
             // the camera back to where it started!
             onPositionChanged: (position, hasGesture) {
               // if (position.center != null) _currentMapCenter = position.center!;
@@ -242,15 +295,16 @@ class _NearYouScreenState extends State<NearYouScreen> {
             },
           ),
           children: [
-            // Uses free OpenStreetMap tiles instead of paid Google Maps API
+            // Uses free OpenStreetMap tiles
             TileLayer(
               urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.wasel.riyadh_app',
               subdomains: const ['a', 'b', 'c'],
             ),
             MarkerLayer(markers: _buildMapMarkers()),
           ],
         ),
-        
+
         // 2. FLOATING UX CONTROLS (Right side)
         // Positioned explicitly anchors the buttons to the bottom right corner over the map
         Positioned(
@@ -260,19 +314,19 @@ class _NearYouScreenState extends State<NearYouScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildMapControlButton(
-                icon: _isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen, 
+                icon: _isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
                 onPressed: _toggleFullScreen,
               ),
               _buildMapControlButton(
-                icon: Icons.my_location, 
+                icon: Icons.my_location,
                 onPressed: _recenterMap,
               ),
               _buildMapControlButton(
-                icon: Icons.add, 
+                icon: Icons.add,
                 onPressed: () => _zoomMap(1.0),
               ),
               _buildMapControlButton(
-                icon: Icons.remove, 
+                icon: Icons.remove,
                 onPressed: () => _zoomMap(-1.0),
               ),
             ],
@@ -295,130 +349,182 @@ class _NearYouScreenState extends State<NearYouScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background, 
+      backgroundColor: AppColors.background,
       // 4. IMMERSIVE UX: Dynamically hide the AppBar entirely when in Full Screen mode
-      appBar: _isFullScreen 
-        ? null 
-        : AppBar(
-            title: const Text('Near You', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            backgroundColor: AppColors.primary, 
-            centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-        // SafeArea prevents the map from rendering underneath the iPhone Notch or Android status bar
-        : SafeArea(
-            child: Column(
-              children: [
-                // 5. THE FLUTTER CONTROLLER BUG FIX: 
-                // Flexible ensures the map widget tree never gets destroyed during layout shifts.
-                // If we swapped widgets here instead, the MapController would disconnect and crash.
-                Flexible(
-                  fit: _isFullScreen ? FlexFit.tight : FlexFit.loose,
-                  child: SizedBox(
-                    height: _isFullScreen ? double.infinity : 300,
-                    child: mapSection,
-                  ),
+      appBar: _isFullScreen
+          ? null
+          : AppBar(
+              title: Text(
+                localizations.nearYou,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
-                
-                // 6. LIST VIEW TOGGLE
-                // We only render the list of cards if the user is NOT in fullscreen mode.
-                if (!_isFullScreen)
-                  Expanded(
-                    child: _errorMessage != null 
-                      ? Center(child: Text(_errorMessage!))
-                      : Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: ListView.builder(
-                            itemCount: _nearbyLocations.length,
-                            itemBuilder: (context, index) {
-                              final location = _nearbyLocations[index];
-                              
-                              // Bulletproof title extraction to prevent "Null" strings in the UI
-                              final String title = location['Title']?.toString() ?? location['title']?.toString() ?? location['Name']?.toString() ?? location['name']?.toString() ?? 'Unknown Location';
-  
-                              return Card(
-                                elevation: 2, 
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                  
-                                  // FEATURE 1: Click the card to go to Details
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        // Replace 'EventDetailsScreen' with your actual details screen name!
-                                        builder: (context) => EventDetailsScreen(eventData: location),
-                                      ),
-                                    );
-                                  },
-                                  
-                                  title: Text(
-                                    title,
-                                    style: AppTextStyles.subtitle.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textMain, 
+              ),
+              backgroundColor: AppColors.primary,
+              centerTitle: true,
+              iconTheme: const IconThemeData(color: Colors.white),
+            ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          // SafeArea prevents the map from rendering underneath the iPhone Notch or Android status bar
+          : SafeArea(
+              child: Column(
+                children: [
+                  // 5. THE FLUTTER CONTROLLER BUG FIX:
+                  // Flexible ensures the map widget tree never gets destroyed during layout shifts.
+                  // If we swapped widgets here instead, the MapController would disconnect and crash.
+                  Flexible(
+                    fit: _isFullScreen ? FlexFit.tight : FlexFit.loose,
+                    child: SizedBox(
+                      height: _isFullScreen ? double.infinity : 300,
+                      child: mapSection,
+                    ),
+                  ),
+
+                  // 6. LIST VIEW TOGGLE
+                  // We only render the list of cards if the user is NOT in fullscreen mode.
+                  if (!_isFullScreen)
+                    Expanded(
+                      child: _errorMessage != null
+                          ? Center(child: Text(_errorMessage!))
+                          : Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: ListView.builder(
+                                itemCount: _nearbyLocations.length,
+                                itemBuilder: (context, index) {
+                                  final location = _nearbyLocations[index];
+
+                                  // Bulletproof title extraction to prevent "Null" strings in the UI
+                                  final String title =
+                                      location['Title']?.toString() ??
+                                      location['title']?.toString() ??
+                                      location['Name']?.toString() ??
+                                      location['name']?.toString() ??
+                                      localizations.unknownLocation;
+
+                                  return Card(
+                                    elevation: 2,
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 8,
                                     ),
-                                  ),
-                                  subtitle: _userPosition != null 
-                                    ? Padding(
-                                        padding: const EdgeInsets.only(top: 6.0),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.location_on, size: 14, color: AppColors.primary),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '${location['distance']}',
-                                              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 8,
+                                          ),
+
+                                      // FEATURE 1: Click the card to go to Details
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                EventDetailsScreen(
+                                                  eventData: location,
+                                                ),
+                                          ),
+                                        );
+                                      },
+
+                                      title: Text(
+                                        title,
+                                        style: AppTextStyles.subtitle.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textMain,
+                                        ),
+                                      ),
+                                      subtitle: _userPosition != null
+                                          ? Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 6.0,
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.location_on,
+                                                    size: 14,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${location['distance']}',
+                                                    style: const TextStyle(
+                                                      color: AppColors.primary,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 16),
+                                                  const Icon(
+                                                    Icons.directions_car,
+                                                    size: 14,
+                                                    color: Colors.grey,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${location['time']}',
+                                                    style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          : Text(
+                                              localizations.locationUnavailable,
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
-                                            const SizedBox(width: 16), 
-                                            const Icon(Icons.directions_car, size: 14, color: Colors.grey),
-                                            const SizedBox(width: 4),
+
+                                      // FEATURE 2: The "Navigate" button lives here now!
+                                      trailing: GestureDetector(
+                                        onTap: () {
+                                          // This opens Google
+                                          LocationService.openMapRoute(
+                                            location['targetLat'],
+                                            location['targetLng'],
+                                          );
+                                        },
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(
+                                              Icons.directions,
+                                              color: AppColors.primary,
+                                              size: 24,
+                                            ),
                                             Text(
-                                              '${location['time']}',
-                                              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                                              localizations.navigate,
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ],
                                         ),
-                                      )
-                                    : const Text(
-                                        'Location unavailable',
-                                        style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
                                       ),
-                                      
-                                  // FEATURE 2: The "Navigate" button lives here now!
-                                  trailing: GestureDetector(
-                                    onTap: () {
-                                      // This opens Google/Apple Maps
-                                      LocationService.openMapRoute(location['targetLat'], location['targetLng']);
-                                    },
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.directions, color: AppColors.primary, size: 24),
-                                        const Text(
-                                          "Navigate", 
-                                          style: TextStyle(
-                                            color: AppColors.primary, 
-                                            fontSize: 12, 
-                                            fontWeight: FontWeight.bold
-                                          )
-                                        ),
-                                      ],
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                  ),
-              ],
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                ],
+              ),
             ),
-          ),
     );
   }
 }

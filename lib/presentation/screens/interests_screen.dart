@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart'; // عشان ننتقل للهوم بعد الاختيار
 // استدعاء ملف الثيم
-import '../../core/theme.dart'; 
+import '../../core/theme.dart';
+import '../../core/localization/app_localizations.dart'; 
 
 class InterestsScreen extends StatefulWidget {
   const InterestsScreen({super.key});
@@ -13,23 +14,25 @@ class InterestsScreen extends StatefulWidget {
 }
 
 class _InterestsScreenState extends State<InterestsScreen> {
-  // قائمة الاهتمامات المتاحة
-  final List<String> categories = [
-    'Museums',
-    'Libraries',
-    'Heritage',
-    'Arts',
-    'Technology',
-    'Conferences',
-    'Traditional Food',
-    'Festivals',
-  ];
-
   // قائمة لحفظ الاهتمامات اللي اختارها المستخدم
   final List<String> selectedInterests = [];
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    
+    // قائمة الاهتمامات المتاحة
+    final List<String> categories = [
+      localizations.museums,
+      localizations.libraries,
+      localizations.heritage,
+      localizations.arts,
+      localizations.technology,
+      localizations.conferences,
+      localizations.traditionalFood,
+      localizations.festivals,
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.white, // تم الربط بالثيم
       body: SafeArea(
@@ -40,7 +43,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
             children: [
               const SizedBox(height: 40),
               Text(
-                "Welcome to Wasel!",
+                localizations.welcomeToWasel,
                 style: AppTextStyles.sectionTitle.copyWith(
                   fontSize: 28,
                   color: const Color(0xFF1A237E), // حافظت على اللون الكحلي الخاص بالترحيب
@@ -48,7 +51,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                "Pick your interests to get a personalized AI tour plan.",
+                localizations.pickYourInterests,
                 style: AppTextStyles.subtitle.copyWith(fontSize: 16),
               ),
               const SizedBox(height: 30),
@@ -113,8 +116,8 @@ class _InterestsScreenState extends State<InterestsScreen> {
                           if (user == null) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Please login first"),
+                                SnackBar(
+                                  content: Text(localizations.pleaseLoginFirst),
                                 ),
                               );
                             }
@@ -145,7 +148,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
                               );
                             }
                           } catch (e) {
-                            print("Database Error: $e");
+                            print("${localizations.databaseError}: $e");
                           }
                         },
                   style: ElevatedButton.styleFrom(
@@ -156,7 +159,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
                     elevation: 5,
                   ),
                   child: Text(
-                    "Continue to Home",
+                    localizations.continueToHome,
                     style: AppTextStyles.buttonText.copyWith(
                       color: Colors.white,
                       fontSize: 18,

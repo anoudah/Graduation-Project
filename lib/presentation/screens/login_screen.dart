@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // --- Core Imports ---
 import '../../core/theme.dart';
+import '../../core/localization/localization_extension.dart';
 
 // --- Screen Imports ---
 import 'home_screen.dart';
@@ -31,19 +32,19 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Reset Password",
-          style: TextStyle(color: AppColors.primary),
+        title: Text(
+          context.loc.resetPassword,
+          style: const TextStyle(color: AppColors.primary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Enter your email to receive a password reset link."),
+            Text(context.loc.resetPasswordInstructions),
             const SizedBox(height: 15),
             TextField(
               controller: resetEmailController,
               decoration: InputDecoration(
-                hintText: "Email Address",
+                hintText: context.loc.emailAddress,
                 prefixIcon: const Icon(Icons.email, color: AppColors.primary),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -55,9 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Cancel",
-              style: TextStyle(color: AppColors.textSecondary),
+            child: Text(
+              context.loc.cancel,
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -75,18 +76,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Reset link sent! Check your email."),
+                    SnackBar(
+                      content: Text(context.loc.resetLinkSent),
                     ),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error: ${e.toString()}")),
+                    SnackBar(content: Text("${context.loc.error}: ${e.toString()}")),
                   );
                 }
               }
             },
-            child: const Text("Send", style: TextStyle(color: Colors.white)),
+            child: Text(context.loc.send, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -132,11 +133,12 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } on FirebaseAuthException catch (e) {
         // معالجة أخطاء الفايربيس (مثل باسوورد غلط)
-        String message = "An error occurred";
-        if (e.code == 'user-not-found')
-          message = "No user found with this email";
-        else if (e.code == 'wrong-password')
-          message = "Wrong password provided";
+        String message = context.loc.error;
+        if (e.code == 'user-not-found') {
+          message = context.loc.noUserFound;
+        } else if (e.code == 'wrong-password') {
+          message = context.loc.wrongPasswordProvided;
+        }
 
         ScaffoldMessenger.of(
           context,
@@ -178,23 +180,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        "Welcome Back!",
-                        style: TextStyle(
+                      Text(
+                        context.loc.welcomeBack,
+                        style: const TextStyle(
                           fontSize: 18,
                           color: AppColors.textMain,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const Text(
-                        "Login to your account",
-                        style: TextStyle(color: AppColors.textSecondary),
+                      Text(
+                        context.loc.loginToYourAccount,
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 50),
 
                       // Email Field
                       _buildTextField(
-                        "Email Address",
+                        context.loc.emailAddress,
                         Icons.email_outlined,
                         _emailController,
                       ),
@@ -202,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Password Field
                       _buildTextField(
-                        "Password",
+                        context.loc.password,
                         Icons.lock_outline,
                         _passwordController,
                         isPassword: _obscurePassword,
@@ -223,9 +225,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: _showForgotPasswordDialog,
-                          child: const Text(
-                            "Forgot Password?",
-                            style: TextStyle(
+                          child: Text(
+                            context.loc.forgotPassword,
+                            style: const TextStyle(
                               color: AppColors.primary,
                               fontSize: 13,
                             ),
@@ -249,8 +251,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             elevation: 5,
                           ),
-                          child: const Text(
-                            "Login",
+                          child: Text(
+                            context.loc.login,
                             style: AppTextStyles.buttonText,
                           ),
                         ),
@@ -262,9 +264,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            "Don't have an account?",
-                            style: TextStyle(color: AppColors.textMain),
+                          Text(
+                            context.loc.dontHaveAnAccount,
+                            style: const TextStyle(color: AppColors.textMain),
                           ),
                           TextButton(
                             onPressed: () {
@@ -275,9 +277,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
-                              "Sign Up",
-                              style: TextStyle(
+                            child: Text(
+                              context.loc.signup,
+                              style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -299,13 +301,14 @@ class _LoginScreenState extends State<LoginScreen> {
     TextEditingController controller, {
     bool isPassword = false,
     Widget? suffixIcon,
+    bool isOptional = false,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: isPassword,
       style: const TextStyle(color: AppColors.textMain),
       validator: (value) =>
-          (value == null || value.isEmpty) ? "Required field" : null,
+          (!isOptional && (value == null || value.isEmpty)) ? context.loc.requiredField : null,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textHint),

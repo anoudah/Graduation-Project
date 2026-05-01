@@ -1,108 +1,119 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization/localization_extension.dart';
+import '../../application/providers/language_provider.dart';
 import 'compact_event_card.dart';
 import '../screens/recommended_full_screen.dart';
 
 class RecommendedSection extends StatelessWidget {
-  // Pass the Future from the Home Screen into this widget
   final Future<List<dynamic>> recommendedFuture;
 
   const RecommendedSection({super.key, required this.recommendedFuture});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 0, 0, 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- HEADER: Title & See More Button ---
-          Padding(
-            padding: const EdgeInsets.only(right: 40.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Builder(
-                    builder: (context) => Text(context.loc.recommended, style: AppTextStyles.sectionTitle),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // تم التعديل هنا ليطابق شكل Near You
-                Builder(
-                  builder: (context) => ElevatedButton.icon(
-                    onPressed: () {
-                     Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
-      ),
-    );
-                    },
-                    icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: Text(context.loc.seeMore),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+    // We keep the Consumer here so it rebuilds correctly on language toggle
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, _) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(40, 0, 0, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- HEADER: Title & See More Button (Fixed for Mobile) ---
+              Padding(
+                padding: const EdgeInsets.only(right: 40.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Builder(
+                        builder: (context) => Text(
+                          context.loc.recommended, 
+                          style: AppTextStyles.sectionTitle,
+                          maxLines: 1,           // Fixes the "d" issue
+                          softWrap: false,       // Fixes the "d" issue
+                          overflow: TextOverflow.ellipsis, 
+                        ),
                       ),
-                      elevation: 0,
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Builder(
+                      builder: (context) => ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.arrow_forward, size: 16),
+                        label: Text(
+                          context.loc.seeMore,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // --- CONTENT: The FutureBuilder ---
-          SizedBox(
-            height: 250, // Matches your CompactEventCard height
-            child: FutureBuilder<List<dynamic>>(
-              future: recommendedFuture,
-              builder: (context, snapshot) {
-                // 1. Loading State
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-                } 
-                // 2. Error State
-                else if (snapshot.hasError) {
-                  return Builder(
-                    builder: (context) => Center(
-                      child: Text(context.loc.error, style: TextStyle(color: Colors.red.shade400))
-                    ),
-                  );
-                } 
-                // 3. Empty State
-                else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Builder(
-                    builder: (context) => Center(
-                      child: Text(context.loc.noEventsFound, style: const TextStyle(color: AppColors.textSecondary))
-                    ),
-                  );
-                }
+              ),
+              const SizedBox(height: 16),
+              
+              // --- CONTENT: The FutureBuilder ---
+              SizedBox(
+                height: 250, 
+                child: FutureBuilder<List<dynamic>>(
+                  future: recommendedFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                    } 
+                    else if (snapshot.hasError) {
+                      return Builder(
+                        builder: (context) => Center(
+                          child: Text(context.loc.error, style: TextStyle(color: Colors.red.shade400))
+                        ),
+                      );
+                    } 
+                    else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Builder(
+                        builder: (context) => Center(
+                          child: Text(context.loc.noEventsFound, style: const TextStyle(color: AppColors.textSecondary))
+                        ),
+                      );
+                    }
 
-                // 4. Success State!
-                final recommendations = snapshot.data!;
+                    final recommendations = snapshot.data!;
 
-                return ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: recommendations.length,
-                  itemBuilder: (context, index) {
-                    final eventData = Map<String, dynamic>.from(recommendations[index]);
-                    return CompactEventCard(
-                      eventData: eventData,
-                      isFullWidth: false, // Ensures it stays compact for the horizontal scroll
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: recommendations.length,
+                      itemBuilder: (context, index) {
+                        final eventData = Map<String, dynamic>.from(recommendations[index]);
+                        return CompactEventCard(
+                          eventData: eventData,
+                          isFullWidth: false, 
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

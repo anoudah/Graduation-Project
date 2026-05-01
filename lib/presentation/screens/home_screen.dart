@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Added for user identification
+import 'package:cloud_firestore/cloud_firestore.dart'; // Added for fetching interests
 import '../../core/theme.dart';
 import '../../data/datasources/ai_remote_source.dart';
 
@@ -42,13 +44,47 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // 3. FETCH DATA ON LOAD
     // As soon as the screen opens, we ask the database for the data.
-    _recommendedEventsFuture = _aiSource.fetchRecommendations("Culture");
+    // Instead of a static string, we now fetch interests for the specific user.
+    _recommendedEventsFuture = _fetchPersonalizedRecommendations();
     _trendingEventsFuture = _aiSource.fetchTrendingEvents();
     
     // 4. PRE-FETCHING (Performance Optimization)
-    // Secretly download the search categories in the background so the 
+    // Secretly download the search suggestions in the background so the 
     // Search Screen loads instantly when the user eventually clicks it.
     _aiSource.getSearchSuggestions(); 
+  }
+
+  // --- THE SMART FETCH LOGIC ---
+  // This helper pulls the real interests (like Culture or AI) from the logged-in user's profile.
+  Future<List<dynamic>> _fetchPersonalizedRecommendations() async {
+    String queryInterest = "Culture"; // Default fallback for guests
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (user != null) {
+        // Access the specific user's document in the Firestore 'users' collection
+        final userDoc = await FirebaseFirestore.instance.collection('Users').doc(user.uid).get();
+        
+        if (userDoc.exists && userDoc.data() != null) {
+          var userInterests = userDoc.data()!['selected_interests']; 
+
+          if (userInterests != null) {
+            if (userInterests is String) {
+              queryInterest = userInterests;
+            } else if (userInterests is List && userInterests.isNotEmpty) {
+              // Joins multiple interests (e.g. "Museums and Heritage") for the AI backend
+              queryInterest = userInterests.join(" and "); 
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("WASEL: Error fetching user interests: $e");
+    }
+
+    // Sends the dynamic interest string to your Python FastAPI backend
+    return _aiSource.fetchRecommendations(queryInterest);
   }
 
   @override
@@ -86,20 +122,18 @@ class _HomeScreenState extends State<HomeScreen> {
             const HomeTopBar(),
             
             // Hero Slider: The auto-playing trending images at the top.
-            // We pass the data future into it so it manages its own loading spinner.
             HeroSlider(isMobile: isMobile, trendingFuture: _trendingEventsFuture),
             
             // Categories: Static list of buttons (Museums, Libraries, etc.)
-            // Marked as 'const' so Flutter only draws it once to save battery/CPU.
             const CategoriesSection(),
             
             // Happening Now: Uses the same trending data as the slider
             HappeningNowSection(trendingFuture: _trendingEventsFuture),
             
-            // Near You: The section that calculates distance using the user's GPS and shows nearby events
+            // Near You: Calculations for distance using GPS to show nearby events
             NearYouSection(eventsFuture: _trendingEventsFuture),
             
-            // Recommended: Uses the AI logic to fetch personalized events
+            // Recommended: Uses the dynamic AI logic based on user interests
             RecommendedSection(recommendedFuture: _recommendedEventsFuture), 
             
             // Smart Tour Banner: The call-to-action block at the very bottom
