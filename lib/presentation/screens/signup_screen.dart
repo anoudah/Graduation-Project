@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'verification_screen.dart';
-import 'dart:math'; // ضروري لتوليد الأرقام العشوائية
+
 // --- Core Imports ---
 import '../../core/theme.dart'; // تأكد من المسار الصحيح لملف الثيم
 
@@ -43,6 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _handleSignUp() async {
+    // 1. Validation for inputs and terms
     if (_formKey.currentState!.validate()) {
       if (!_isDeclared || !_isAgreed) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,29 +60,104 @@ class _SignUpScreenState extends State<SignUpScreen> {
         return;
       }
 
-      // --- بداية التعديل الدقيق ---
+      setState(() => _isLoading = true);
 
-      // 1. توليد رمز عشوائي من 4 أرقام
-      String otpCode = (Random().nextInt(9000) + 1000).toString();
+      try {
+        // 2. Create account in Firebase Auth
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+              email: _emailController.text.trim(),
+              password: _passwordController.text.trim(),
+            );
 
-      // 2. طباعة الرمز في الـ Console (للتجربة)
-      print("Your OTP Code is: $otpCode");
+        // 3. Send the verification link to the email
+        await userCredential.user!.sendEmailVerification();
 
-      // 3. الانتقال لصفحة التحقق مع إرسال كافة البيانات التي أدخلها المستخدم
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VerificationScreen(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-            referral: _referralController.text.trim(),
-            correctOtp: otpCode, // نرسل الرمز ليتم مقارنته هناك
+        // 4. Save data to Firestore
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userCredential.user!.uid)
+            .set({
+              'User_Id': userCredential.user!.uid,
+              'Full_Name': _nameController.text.trim(),
+              'Email': _emailController.text.trim(),
+              'Created_At': FieldValue.serverTimestamp(),
+              'referral_code': _referralController.text.trim(),
+              'Profile_Image': "default_url",
+              'dob': "",
+              'gender': "",
+              'is_admin': false,
+              'selected_interests': [],
+            });
+
+        if (!mounted) return;
+
+        // 5. Show verification dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Cannot close by clicking outside
+          builder: (context) => AlertDialog(
+            title: const Text("Verify Your Email"),
+            content: const Text(
+              "We've sent a verification link to your email. "
+              "Please check your inbox, verify your account, then click 'Done'.",
+            ),
+            actions: [
+              // Resend Button (To ensure the link is active and sent)
+              TextButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.currentUser
+                      ?.sendEmailVerification();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Verification link resent!")),
+                  );
+                },
+                child: const Text("Resend"),
+              ),
+              // Done Button (Checks the actual status)
+              TextButton(
+                onPressed: () async {
+                  // Refresh user status from Firebase server
+                  await FirebaseAuth.instance.currentUser?.reload();
+                  User? user = FirebaseAuth.instance.currentUser;
+
+                  if (user != null && user.emailVerified) {
+                    if (!context.mounted) return;
+                    Navigator.pop(context); // Close dialog
+
+                    // Move to Interests Screen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const InterestsScreen(),
+                      ),
+                    );
+                  } else {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Email not verified yet. Please click the link in your email.",
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                child: const Text("Done"),
+              ),
+            ],
           ),
-        ),
-      );
-
-      // --- نهاية التعديل ---
+        );
+      } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message ?? "Error occurred")));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
