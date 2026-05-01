@@ -7,6 +7,7 @@ import '../../data/datasources/ai_remote_source.dart';
 // --- Screen Imports ---
 // These are the full-page screens that the user navigates to from the home page
 import 'chat_screen.dart';
+import 'global_chat_button.dart'; // NEW: Imports the Overlay manager for the floating bot
 
 // --- Widget Imports (The Modular Architecture) ---
 // By importing these sections instead of writing them here, 
@@ -21,7 +22,7 @@ import '../widgets/recommended_section.dart';
 import '../widgets/smart_tour_banner.dart'; 
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -52,6 +53,14 @@ class _HomeScreenState extends State<HomeScreen> {
     // Secretly download the search suggestions in the background so the 
     // Search Screen loads instantly when the user eventually clicks it.
     _aiSource.getSearchSuggestions(); 
+
+    // 5. INJECT GLOBAL CHAT BUTTON
+    // addPostFrameCallback waits until the HomeScreen has completely finished drawing 
+    // its very first frame. Once drawing is done, we inject the floating chat button 
+    // into the global Overlay layer so it hovers above everything.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      GlobalChatButton.show(context);
+    });
   }
 
   // --- THE SMART FETCH LOGIC ---
@@ -89,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 5. RESPONSIVE DESIGN CHECK
+    // 6. RESPONSIVE DESIGN CHECK
     // Determines if the user is on a phone or a wider screen (like web/tablet)
     final isMobile = MediaQuery.of(context).size.width < 768;
 
@@ -100,17 +109,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // The hamburger menu slides this drawer out.
       drawer: const AppDrawer(), 
       
-      // --- FLOATING CHAT BUTTON ---
-      // The AI assistant button that hovers in the bottom right corner.
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
-        elevation: 4,
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatScreen()));
-        },
-        child: const Icon(Icons.chat_bubble_outline),
-      ),
+      // NOTE: The static 'floatingActionButton' property was removed from here.
+      // The chat button is now managed globally by the Overlay system triggered in initState!
       
       // --- MAIN CONTENT AREA ---
       // SingleChildScrollView allows the user to scroll vertically if the screen is small.
