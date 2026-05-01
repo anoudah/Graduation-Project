@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization/localization_extension.dart';
+import '../../application/providers/language_provider.dart';
 import '../../core/utils.dart';
 import '../../application/services/location_service.dart';
-import '../screens/nearyou_screen.dart'; 
+import '../screens/nearyou_screen.dart';
 import 'near_you_card.dart';
 
 /// A dynamic widget that calculates the distance between the user's physical
@@ -138,16 +140,18 @@ class _NearYouSectionState extends State<NearYouSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 40, 0, 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- HEADER & NAVIGATION ---
-          Padding(
-            padding: const EdgeInsets.only(right: 40),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, _) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(40, 40, 0, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- HEADER & NAVIGATION ---
+              Padding(
+                padding: const EdgeInsets.only(right: 40),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Builder(
@@ -181,6 +185,8 @@ class _NearYouSectionState extends State<NearYouSection> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 

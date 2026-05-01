@@ -1,33 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../screens/route_suggestion_screen.dart';
 import '../../core/localization/localization_extension.dart';
+import '../../application/providers/language_provider.dart';
 
 class SmartTourBanner extends StatelessWidget {
   const SmartTourBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      // Reduced outer padding slightly so the card has more room to breathe on screen
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
-        children: [
-          const Divider(color: AppColors.divider, thickness: 1, height: 32),
-          const SizedBox(height: 16),
-          
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(24), // Softer, more modern corners
-              boxShadow: [
-                // Premium colored glow shadow instead of harsh black
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.08), 
-                  blurRadius: 32, 
-                  offset: const Offset(0, 12),
-                )
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, _) {
+        return Padding(
+          // Reduced outer padding slightly so the card has more room to breathe on screen
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            children: [
+              const Divider(color: AppColors.divider, thickness: 1, height: 32),
+              const SizedBox(height: 16),
+              
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(24), // Softer, more modern corners
+                  boxShadow: [
+                    // Premium colored glow shadow instead of harsh black
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.08), 
+                      blurRadius: 32, 
+                      offset: const Offset(0, 12),
+                    )
               ],
             ),
             child: Column(
@@ -106,6 +110,6 @@ class SmartTourBanner extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    );      },
+    );  }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization/localization_extension.dart';
+import '../../application/providers/language_provider.dart';
 import 'compact_event_card.dart';
 import '../screens/recommended_full_screen.dart';
 
@@ -12,22 +14,22 @@ class RecommendedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 0, 0, 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- HEADER: Title & See More Button ---
-          Padding(
-            padding: const EdgeInsets.only(right: 40.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Builder(
-                    builder: (context) => Text(context.loc.recommended, style: AppTextStyles.sectionTitle),
-                  ),
-                ),
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, _) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(40, 0, 0, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- HEADER: Title & See More Button ---
+              Padding(
+                padding: const EdgeInsets.only(right: 40.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(context.loc.recommended, style: AppTextStyles.sectionTitle),
+                    ),
                 const SizedBox(width: 16),
                 // تم التعديل هنا ليطابق شكل Near You
                 Builder(
@@ -103,6 +105,8 @@ class RecommendedSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+      },
     );
   }
 }

@@ -14,20 +14,22 @@ class HomeTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. THE MAGIC RESPONSIVE CHECK
-    bool isMobile = MediaQuery.of(context).size.width < 600;
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, _) {
+        // 1. THE MAGIC RESPONSIVE CHECK
+        bool isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          // 1. المنيو الجانبية
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: AppColors.textMain, size: 28),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(), // Reduces default icon padding for more space
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Row(
+            children: [
+              // 1. المنيو الجانبية
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: AppColors.textMain, size: 28),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(), // Reduces default icon padding for more space
             ),
           ),
           const SizedBox(width: 16),
@@ -151,6 +153,6 @@ class HomeTopBar extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    );      },
+    );  }
 }

@@ -17,6 +17,22 @@ class AppLocalizations {
   String get nearYou => locale.languageCode == 'ar' ? 'بالقرب منك' : 'Near You';
   String get recommended => locale.languageCode == 'ar' ? 'موصى به' : 'Recommended';
   
+  // Categories
+  String get libraries => locale.languageCode == 'ar' ? 'المكتبات' : 'Libraries';
+  String get heritageTradition => locale.languageCode == 'ar' ? 'التراث والتقاليد' : 'Heritage and\nTradition';
+  String get museums => locale.languageCode == 'ar' ? 'المتاحف' : 'Museums';
+  String get conferencesForums => locale.languageCode == 'ar' ? 'المؤتمرات والمنتديات' : 'Conferences\nand Forums';
+  String get culturalInstitutions => locale.languageCode == 'ar' ? 'المؤسسات الثقافية' : 'Cultural\nInstitutions';
+  String get exhibitionConvention => locale.languageCode == 'ar' ? 'المعارض والمؤتمرات' : 'Exhibition and\nConvention';
+  
+  // Full category names
+  String get librariesFull => locale.languageCode == 'ar' ? 'المكتبات' : 'Libraries';
+  String get heritageTraditionFull => locale.languageCode == 'ar' ? 'التراث والتقاليد' : 'Heritage and Tradition';
+  String get museumsFull => locale.languageCode == 'ar' ? 'المتاحف' : 'Museums';
+  String get conferencesForumsFull => locale.languageCode == 'ar' ? 'المؤتمرات والمنتديات' : 'Conferences and Forums';
+  String get culturalInstitutionsFull => locale.languageCode == 'ar' ? 'المؤسسات الثقافية' : 'Cultural Institutions';
+  String get exhibitionConventionFull => locale.languageCode == 'ar' ? 'مركز المعارض والمؤتمرات' : 'Exhibition and Convention Centre';
+  
   // Navigation
   String get menu => locale.languageCode == 'ar' ? 'القائمة' : 'Menu';
   String get profile => locale.languageCode == 'ar' ? 'الملف الشخصي' : 'Profile';
