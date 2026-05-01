@@ -7,8 +7,7 @@ extension LocalizationExtension on BuildContext {
   /// Easy access to localization strings
   /// Usage: context.loc.home (instead of AppLocalizations.of(...).home)
   AppLocalizations get loc {
-    final languageProvider = read<LanguageProvider>();
-    return AppLocalizations.of(languageProvider.currentLocale);
+    return AppLocalizations.of(this);
   }
   
   /// Check if current language is Arabic
