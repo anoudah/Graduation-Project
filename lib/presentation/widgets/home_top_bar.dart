@@ -50,12 +50,13 @@ class HomeTopBar extends StatelessWidget {
                     builder: (context) => TextField(
                       readOnly: true,
                       decoration: InputDecoration(
-                        hintText: context.loc.search,
-                        hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), // Tighter padding
-                        suffixIcon: const Icon(Icons.search, color: AppColors.iconGrey, size: 20),
-                      ),
+                      hintText: context.loc.search,
+                      hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
+                      border: InputBorder.none,
+                      // Center the text vertically by aligning contentPadding with the icon height
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12), 
+                      prefixIcon: const Icon(Icons.search, color: AppColors.iconGrey, size: 20),
+                    ),
                     ),
                   ),
                 ),

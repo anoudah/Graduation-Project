@@ -64,10 +64,10 @@ class _HomeScreenState extends State<HomeScreen> {
       
       if (user != null) {
         // Access the specific user's document in the Firestore 'users' collection
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final userDoc = await FirebaseFirestore.instance.collection('Users').doc(user.uid).get();
         
         if (userDoc.exists && userDoc.data() != null) {
-          var userInterests = userDoc.data()!['interests']; 
+          var userInterests = userDoc.data()!['selected_interests']; 
 
           if (userInterests != null) {
             if (userInterests is String) {

@@ -242,9 +242,10 @@ class _NearYouScreenState extends State<NearYouScreen> {
             },
           ),
           children: [
-            // Uses free OpenStreetMap tiles instead of paid Google Maps API
+            // Uses free OpenStreetMap tiles 
             TileLayer(
               urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.wasel.riyadh_app',
               subdomains: const ['a', 'b', 'c'],
             ),
             MarkerLayer(markers: _buildMapMarkers()),
@@ -350,7 +351,6 @@ class _NearYouScreenState extends State<NearYouScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        // Replace 'EventDetailsScreen' with your actual details screen name!
                                         builder: (context) => EventDetailsScreen(eventData: location),
                                       ),
                                     );
@@ -392,7 +392,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
                                   // FEATURE 2: The "Navigate" button lives here now!
                                   trailing: GestureDetector(
                                     onTap: () {
-                                      // This opens Google/Apple Maps
+                                      // This opens Google
                                       LocationService.openMapRoute(location['targetLat'], location['targetLng']);
                                     },
                                     child: Column(

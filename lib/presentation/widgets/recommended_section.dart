@@ -7,7 +7,6 @@ import 'compact_event_card.dart';
 import '../screens/recommended_full_screen.dart';
 
 class RecommendedSection extends StatelessWidget {
-  // Pass the Future from the Home Screen into this widget
   final Future<List<dynamic>> recommendedFuture;
 
   const RecommendedSection({super.key, required this.recommendedFuture});
@@ -32,25 +31,52 @@ class RecommendedSection extends StatelessWidget {
                     ),
                 const SizedBox(width: 16),
                 // تم التعديل هنا ليطابق شكل Near You
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(40, 0, 0, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // --- HEADER: Title & See More Button (Fixed for Mobile) ---
+          Padding(
+            padding: const EdgeInsets.only(right: 40.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Builder(
+                    builder: (context) => Text(
+                      context.loc.recommended, 
+                      style: AppTextStyles.sectionTitle,
+                      maxLines: 1,           // Forces one line
+                      softWrap: false,       // Prevents the "d" from dropping
+                      overflow: TextOverflow.ellipsis, // Adds "..." if it's too tight
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12), // Small gap between text and button
                 Builder(
                   builder: (context) => ElevatedButton.icon(
                     onPressed: () {
-                     Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
-                      ),
-                    );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RecommendedFullScreen(recommendedFuture: recommendedFuture),
+                        ),
+                      );
                     },
-                    icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: Text(context.loc.seeMore),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: Text(
+                      context.loc.seeMore,
+                      style: const TextStyle(fontSize: 12), // Slightly smaller text for mobile
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
                       elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      minimumSize: Size.zero, // Allows button to be as small as its content
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
                 ),
@@ -61,15 +87,13 @@ class RecommendedSection extends StatelessWidget {
           
           // --- CONTENT: The FutureBuilder ---
           SizedBox(
-            height: 250, // Matches your CompactEventCard height
+            height: 250, 
             child: FutureBuilder<List<dynamic>>(
               future: recommendedFuture,
               builder: (context, snapshot) {
-                // 1. Loading State
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(color: AppColors.primary));
                 } 
-                // 2. Error State
                 else if (snapshot.hasError) {
                   return Builder(
                     builder: (context) => Center(
@@ -77,7 +101,6 @@ class RecommendedSection extends StatelessWidget {
                     ),
                   );
                 } 
-                // 3. Empty State
                 else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Builder(
                     builder: (context) => Center(
@@ -86,7 +109,6 @@ class RecommendedSection extends StatelessWidget {
                   );
                 }
 
-                // 4. Success State!
                 final recommendations = snapshot.data!;
 
                 return ListView.builder(
@@ -96,7 +118,7 @@ class RecommendedSection extends StatelessWidget {
                     final eventData = Map<String, dynamic>.from(recommendations[index]);
                     return CompactEventCard(
                       eventData: eventData,
-                      isFullWidth: false, // Ensures it stays compact for the horizontal scroll
+                      isFullWidth: false, 
                     );
                   },
                 );
