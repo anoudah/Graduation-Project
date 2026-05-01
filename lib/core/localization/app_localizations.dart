@@ -103,6 +103,7 @@ class AppLocalizations {
   
   // Contact
   String get contactUs => locale.languageCode == 'ar' ? 'اتصل بنا' : 'Contact Us';
+  String get faq => locale.languageCode == 'ar' ? 'الأسئلة الشائعة' : 'FAQ';
   String get email => locale.languageCode == 'ar' ? 'البريد الإلكتروني' : 'Email';
   String get phone => locale.languageCode == 'ar' ? 'الهاتف' : 'Phone';
 }

@@ -96,7 +96,7 @@ class AppDrawer extends StatelessWidget {
               
               const Divider(), 
               
-              _buildDrawerTile(context, Icons.help_outline, localizations.contactUs, const FAQPage()),
+              _buildDrawerTile(context, Icons.help_outline, localizations.faq, const FAQPage()),
               _buildDrawerTile(context, Icons.mail_outline, localizations.contactUs, const ContactUsScreen()),
             ],
           ),
