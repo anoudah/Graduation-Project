@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization/localization_extension.dart';
 import '../../application/providers/language_provider.dart';
-import '../../core/utils.dart';
+import '../../core/utils/geo_utils.dart';
 import '../../application/services/location_service.dart';
 import '../screens/nearyou_screen.dart';
 import 'near_you_card.dart';

@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
-import '../../core/utils.dart';
+import '../../core/utils/geo_utils.dart';
 import '../../application/services/location_service.dart';
 import '../../core/localization/app_localizations.dart';
 import 'event_details_screen.dart';

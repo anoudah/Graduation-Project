@@ -1,36 +1,41 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart'; 
 import '../screens/event_details_screen.dart';
+import '../../core/utils/bilingual_helper.dart';
 
-/// A reusable visual component representing a single location card.
-/// It displays an image, the location title, and the dynamically calculated distance.
+/// [NearYouCard] is a specialized UI component used to display localized 
+/// event data in a horizontal list. It features a layout optimized for 
+/// quick scannability of distance and travel time.
 class NearYouCard extends StatelessWidget {
-  // We use <String, dynamic> here so the card can accept both text (like the title)
-  // and math outputs (like the raw distance number) without Dart throwing a type error.
+  /// The [locationData] map contains all Firestore attributes for the event,
+  /// including bilingual titles and calculated distance metrics.
   final Map<String, dynamic> locationData;
 
   const NearYouCard({super.key, required this.locationData});
 
   @override
   Widget build(BuildContext context) {
-    // 1. BULLETPROOF DATA EXTRACTION:
-    final String title = locationData['Title']?.toString() ?? 'Unknown Location';
-    final String distance = locationData['distance']?.toString() ?? 'Unknown distance';
-    final String time = locationData['time']?.toString() ?? 'Unknown time';
-    final String imageUrl = locationData['Image']?.toString() ?? locationData['Image_Url']?.toString() ?? 'https://placehold.co/100x100/png?text=No+Image';
+    // 1. DYNAMIC DATA RESOLUTION:
+    // Resolves bilingual fields (Maps) into localized Strings based on active locale.
+    final String title = BilingualHelper.getText(locationData['Title'], context);
+    final String distance = locationData['distance']?.toString() ?? '---';
+    final String time = locationData['time']?.toString() ?? '---';
+    
+    // Resolves image source, supporting multiple potential database keys.
+    final String imageUrl = BilingualHelper.getText(
+      locationData['Image'] ?? locationData['Image_Url'], 
+      context
+    );
 
-    // 2. MAIN CARD CONTAINER: 
-    // Wrap the entire card in a GestureDetector so tapping anywhere opens the details!
     return GestureDetector(
       onTap: () {
+        // Navigation: Routes the user to the detailed view, passing the raw data map.
         Navigator.push(
           context,
           MaterialPageRoute(
-            // We pass 'locationData' so the details screen knows which event to show.
             builder: (context) => EventDetailsScreen(eventData: locationData),
           ),
         );
-        debugPrint("WASEL: Opening Details for $title"); 
       },
       child: Container(
         width: 310, 
@@ -39,29 +44,32 @@ class NearYouCard extends StatelessWidget {
           color: AppColors.white, 
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04), // Barely visible color
-            blurRadius: 24, // Huge blur for softness
-            offset: const Offset(0, 8), // Pushed down slightly
-          )
-        ],
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            )
+          ],
         ),
         child: Row(
           children: [
-            // --- IMAGE SECTION ---
+            // --- VISUAL SECTION ---
+            // Displays the event thumbnail with a rounded corner treatment.
             Container(
               width: 100,
               margin: const EdgeInsets.all(12), 
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 image: DecorationImage(
-                  image: NetworkImage(imageUrl), 
+                  image: NetworkImage(
+                    imageUrl.isNotEmpty ? imageUrl : 'https://placehold.co/100x100/png?text=No+Image'
+                  ), 
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             
-            // --- TEXT SECTION ---
+            // --- CONTENT SECTION ---
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -69,6 +77,7 @@ class NearYouCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start, 
                   mainAxisAlignment: MainAxisAlignment.center, 
                   children: [
+                    // Title: Constrained to 2 lines for UI consistency.
                     Text(
                       title,
                       maxLines: 2, 
@@ -81,7 +90,8 @@ class NearYouCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8), 
                     
-                    // --- Distance & Time Stack ---
+                    // Proximity Metrics:
+                    // Displays calculated distance and estimated drive-time (Riyadh traffic context).
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -106,7 +116,11 @@ class NearYouCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               time,
-                              style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontSize: 11, 
+                                color: Colors.grey, 
+                                fontWeight: FontWeight.w500
+                              ),
                             ),
                           ],
                         ),
