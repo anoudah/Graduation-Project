@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../data/datasources/ai_remote_source.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ChatMessage {
   final String text;
@@ -107,32 +108,53 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildChatBubble(ChatMessage message) {
+Widget _buildChatBubble(ChatMessage message) {
+    final bool isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(message.text);
+
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: message.isUser ? AppColors.primary : AppColors.white,
+          color: message.isUser ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(message.isUser ? 20 : 5),
-            bottomRight: Radius.circular(message.isUser ? 5 : 20),
+            topLeft: const Radius.circular(24),
+            topRight: const Radius.circular(24),
+            bottomLeft: Radius.circular(message.isUser ? 24 : 0), // Sharp corner on the speaker's side
+            bottomRight: Radius.circular(message.isUser ? 0 : 24),
           ),
           boxShadow: [
             if (!message.isUser)
-              const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04), // Soft, matte shadow
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              )
           ],
         ),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: message.isUser ? AppColors.white : AppColors.textMain,
-            fontSize: 15,
-            height: 1.4,
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.82),
+        // Directionality fixes the Arabic punctuation alignment we solved earlier!
+        child: Directionality(
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          child: MarkdownBody(
+            data: message.text,
+            styleSheet: MarkdownStyleSheet(
+              p: TextStyle(
+                fontFamily: 'Poppins',
+                color: message.isUser ? Colors.white : AppColors.textMain,
+                fontSize: 15,
+                height: 1.6, 
+              ),
+              strong: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w700,
+                color: message.isUser ? Colors.white : AppColors.primary, // Makes bot's bold text pop in brand colors
+              ),
+              listBullet: TextStyle(
+                color: message.isUser ? Colors.white : AppColors.primary,
+              ),
+            ),
           ),
         ),
       ),
