@@ -46,6 +46,30 @@ class AppLocalizations {
   String get switchLanguage => locale.languageCode == 'ar' ? 'تبديل إلى العربية' : 'Switch to English';
   String get login => locale.languageCode == 'ar' ? 'دخول' : 'Log in';
   String get signup => locale.languageCode == 'ar' ? 'إنشاء حساب' : 'Sign up';
+  String get resetPassword => locale.languageCode == 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password';
+  String get resetPasswordInstructions => locale.languageCode == 'ar' ? 'أدخل بريدك الإلكتروني لتلقي رابط إعادة تعيين كلمة المرور.' : 'Enter your email to receive a password reset link.';
+  String get forgotPassword => locale.languageCode == 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?';
+  String get send => locale.languageCode == 'ar' ? 'إرسال' : 'Send';
+  String get resetLinkSent => locale.languageCode == 'ar' ? 'تم إرسال رابط إعادة التعيين! راجع بريدك الإلكتروني.' : 'Reset link sent! Check your email.';
+  String get emailAddress => locale.languageCode == 'ar' ? 'البريد الإلكتروني' : 'Email Address';
+  String get welcomeBack => locale.languageCode == 'ar' ? 'مرحبًا بعودتك!' : 'Welcome Back!';
+  String get loginToYourAccount => locale.languageCode == 'ar' ? 'سجل الدخول إلى حسابك' : 'Login to your account';
+  String get dontHaveAnAccount => locale.languageCode == 'ar' ? 'لا تملك حساباً؟' : "Don't have an account?";
+  String get requiredField => locale.languageCode == 'ar' ? 'حقل مطلوب' : 'Required field';
+  String get noUserFound => locale.languageCode == 'ar' ? 'لم يتم العثور على مستخدم بهذا البريد الإلكتروني' : 'No user found with this email';
+  String get wrongPasswordProvided => locale.languageCode == 'ar' ? 'كلمة المرور المدخلة خاطئة' : 'Wrong password provided';
+  String get stepOne => locale.languageCode == 'ar' ? 'الخطوة الأولى' : 'Step One';
+  String get fillInYourInformation => locale.languageCode == 'ar' ? 'املأ معلوماتك' : 'Fill in your information';
+  String get fullName => locale.languageCode == 'ar' ? 'الاسم الكامل' : 'Full Name';
+  String get password => locale.languageCode == 'ar' ? 'كلمة المرور' : 'Password';
+  String get confirmPassword => locale.languageCode == 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password';
+  String get referralCodeOptional => locale.languageCode == 'ar' ? 'رمز الإحالة (اختياري)' : 'Referral Code (Optional)';
+  String get declareInfoTrue => locale.languageCode == 'ar' ? 'أقر بأن المعلومات المقدمة صحيحة ودقيقة' : 'I declare that the information provided is true and correct';
+  String get agreeToTermsPrivacy => locale.languageCode == 'ar' ? 'لقد قرأت ووافقت على الشروط والأحكام وسياسة الخصوصية' : 'I have read and agree to the Terms & Conditions and Privacy Policy';
+  String get pleaseAgreeToTerms => locale.languageCode == 'ar' ? 'يرجى الموافقة على الشروط والأحكام' : 'Please agree to the terms and conditions';
+  String get passwordsDoNotMatch => locale.languageCode == 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match';
+  String get next => locale.languageCode == 'ar' ? 'التالي' : 'Next';
+  String get alreadyHaveAnAccount => locale.languageCode == 'ar' ? 'هل لديك حساب بالفعل؟' : 'Already have an account?';
   
   // Events
   String get eventDetails => locale.languageCode == 'ar' ? 'تفاصيل الحدث' : 'Event Details';
