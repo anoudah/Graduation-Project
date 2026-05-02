@@ -263,7 +263,8 @@ class AppLocalizations {
       : 'Review submitted successfully!';
   String get attending => locale.languageCode == 'ar' ? 'حاضر' : 'Attending';
   String get imAttending =>
-      locale.languageCode == 'ar' ? 'أنا حاضر' : 'I\'m attending';
+      locale.languageCode == 'ar' ? 'سأحضر' : 'I\'m attending';
+  String get bookNow => locale.languageCode == 'ar' ? 'احجز الآن' : 'Book Now';
   String get noTitle =>
       locale.languageCode == 'ar' ? 'لا يوجد عنوان' : 'No Title';
   String get toBeAnnounced =>

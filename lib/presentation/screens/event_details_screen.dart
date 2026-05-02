@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
+import '../../core/localization/localization_extension.dart';
 import '../../core/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,7 +21,10 @@ class EventDetailsScreen extends StatefulWidget {
   /// The raw event data payload passed from the previous screen (e.g., CategoryScreen).
   final Map<String, dynamic> eventData;
   
-  const EventDetailsScreen({super.key, required this.eventData});
+  /// Whether this is the first event in the heritage and traditions category.
+  final bool isFirstInHeritage;
+
+  const EventDetailsScreen({super.key, required this.eventData, this.isFirstInHeritage = false});
 
   @override
   State<EventDetailsScreen> createState() => _EventDetailsScreenState();
@@ -297,11 +301,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 children: [
                   _buildMainTitle(data),
                   const SizedBox(height: 20),
-                  _buildActionButtons(),
+                  _buildActionButtons(context),
                   const SizedBox(height: 30),
-                  _buildAboutSection(data),
+                  _buildAboutSection(data, context),
                   const SizedBox(height: 30),
-                  _buildDetailsGrid(data),
+                  _buildDetailsGrid(data, context),
                   const SizedBox(height: 40),
                   _buildReviewsSection(data['id'] ?? ''),
                 ],
@@ -352,7 +356,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   /// Renders the interactive row of action buttons (Like, Notify, Comment, Attend).
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
         _iconBtn(
@@ -396,31 +400,32 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
               child: Text(
-                isAttending ? "Attending" : "I'm attending",
+                isAttending ? context.loc.attending : context.loc.imAttending,
                 style: const TextStyle(color: AppColors.white),
               ),
             ),
             const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PaymentScreen(eventData: widget.eventData),
+            if (widget.isFirstInHeritage)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PaymentScreen(eventData: widget.eventData),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  context.loc.bookNow,
+                  style: const TextStyle(color: AppColors.white),
                 ),
               ),
-              child: const Text(
-                "Book Now",
-                style: TextStyle(color: AppColors.white),
-              ),
-            ),
           ],
         ),
       ],
@@ -436,16 +441,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   /// Renders the event description block, safely extracting bilingual text.
-  Widget _buildAboutSection(Map<String, dynamic> data) {
+  Widget _buildAboutSection(Map<String, dynamic> data, BuildContext context) {
     String aboutText = BilingualHelper.getText(data['About'] ?? data['Description'], context);
     if (aboutText.isEmpty) aboutText = "No description available.";
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "About",
-          style: TextStyle(
+        Text(
+          context.loc.about,
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: AppColors.textMain,
@@ -468,7 +473,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   /// 
   /// This method contains robust fallback logic. It attempts to parse native Firestore
   /// Timestamps, ISO Strings from the Python backend, and manual schedule strings.
-  Widget _buildDetailsGrid(Map<String, dynamic> data) {
+  Widget _buildDetailsGrid(Map<String, dynamic> data, BuildContext context) {
     String scheduleText = "To Be Announced";
     try {
       // 1. SAFELY PARSE SCHEDULE
@@ -574,19 +579,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       ),
       child: Column(
         children: [
-          _premiumDetailRow(Icons.calendar_today, "Date & Time", scheduleText),
+          _premiumDetailRow(Icons.calendar_today, context.loc.dateAndTime, scheduleText),
           const SizedBox(height: 16), 
 
           _premiumDetailRow(
             Icons.confirmation_number_outlined,
-            "Ticket Price",
+            context.loc.ticketPrice,
             priceDisplay, 
           ),
           const SizedBox(height: 16),
 
           _premiumDetailRow(
             Icons.location_on_outlined,
-            "Location",
+            context.loc.location,
             locationAddress, 
           ),
 
@@ -621,9 +626,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 LocationService.openMapRoute(targetLat, targetLng);
               },
               icon: const Icon(Icons.directions, color: AppColors.primary),
-              label: const Text(
-                "Navigate to Event",
-                style: TextStyle(
+              label: Text(
+                context.loc.navigateToEvent,
+                style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
