@@ -84,35 +84,60 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
   }
 
-  // 3. فنكشن إرسال التعليق (ما لمستها)
   Future<void> _submitComment() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    // معرف الفعالية المستخدم في قاعدة البيانات
     String eventId = widget.eventData['id'] ?? '';
     if (commentController.text.isEmpty) return;
 
     try {
-      await FirebaseFirestore.instance.collection('Reviews').add({
-        'Event_Id': eventId,
-        'User_Name': user.displayName ?? 'Anonymous',
-        'Comment': commentController.text,
-        'Rating': userRating,
-        'Crowd_Level': selectedCrowd,
-        'Timestamp': Timestamp.now(),
+      // 1. إرسال التعليق لجدول 'Comment Feedback' (مطابق لصورتك تماماً)
+      await FirebaseFirestore.instance.collection('Comment Feedback').add({
+        'Comment_Text': commentController.text, // نص التعليق (String)
+        'Date': Timestamp.now(), // تاريخ الوقت (Timestamp)
+        'Rating': userRating.toInt(), // التقييم (int64) كما في صورتك
+        'User_Id': user.uid, // معرف المستخدم (String)
+        'crowd_report': selectedCrowd, // حالة الزحام (String)
+        'id': eventId, // معرف الفعالية (String)
+        'User_Name': user.displayName ?? 'User', // اسم الشخص الحقيقي[cite: 3]
       });
+
+      // 2. تحديث عدادات الزحام في جدول 'Events' (عشان التنبؤ والذكاء الاصطناعي)
+      String crowdField = '';
+      if (selectedCrowd == 'Low') crowdField = 'report_low_count';
+      if (selectedCrowd == 'Medium') crowdField = 'report_medium_count';
+      if (selectedCrowd == 'High') crowdField = 'report_high_count';
+
+      if (crowdField.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection('Events')
+            .doc(eventId)
+            .update({
+              crowdField: FieldValue.increment(1),
+              'Last_Feedback_Date': Timestamp.now(),
+            });
+      }
+
+      // 3. تنظيف الواجهة وإغلاق النافذة
       commentController.clear();
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).reviewSubmittedSuccessfully,
+
+      // إظهار رسالة نجاح للمستخدم
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).reviewSubmittedSuccessfully,
+            ),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
+        );
+      }
     } catch (e) {
-      print("Error submitting comment: $e");
+      // طباعة الخطأ في حال حدوث مشكلة في الفايربيس
+      print("Detailed Error: $e");
     }
   }
 
