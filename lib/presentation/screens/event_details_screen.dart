@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import '../../application/services/location_service.dart';
+import 'payment_screen.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> eventData;
@@ -324,23 +325,49 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           if (_checkLoginAndShowMessage()) _showCommentsSheet();
         }),
         const Spacer(),
-        ElevatedButton(
-          onPressed: () {
-            if (_checkLoginAndShowMessage()) {
-              setState(() => isAttending = !isAttending);
-              _updateInteraction('Is_Attending', isAttending);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isAttending ? Colors.green : AppColors.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                if (_checkLoginAndShowMessage()) {
+                  setState(() => isAttending = !isAttending);
+                  _updateInteraction('Is_Attending', isAttending);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isAttending ? Colors.green : AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                isAttending ? "Attending" : "I'm attending",
+                style: const TextStyle(color: AppColors.white),
+              ),
             ),
-          ),
-          child: Text(
-            isAttending ? "Attending" : "I'm attending",
-            style: const TextStyle(color: AppColors.white),
-          ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PaymentScreen(eventData: widget.eventData),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text(
+                "Book Now",
+                style: TextStyle(color: AppColors.white),
+              ),
+            ),
+          ],
         ),
       ],
     );
