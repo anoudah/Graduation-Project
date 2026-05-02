@@ -1,151 +1,291 @@
 import 'package:flutter/material.dart';
-import '../widgets/event_card.dart'; 
-import '../../core/theme.dart'; 
-// تأكدي من استيراد ملف الثيم لكي يتعرف الكود على AppColors و AppTextStyles
-// import 'package:your_project_name/theme/theme.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/theme.dart';
+import '../../application/services/location_service.dart';
+import '../widgets/event_card.dart';
+import 'login_screen.dart';
 
+/// --- PRESENTATION LAYER ---
+/// [SmartTourScreen] is a pure consumer component. It manages the dynamic rendering 
+/// of the itinerary, handling price normalization and defensive coordinate parsing.
 class SmartTourScreen extends StatelessWidget {
-  const SmartTourScreen({super.key});
+  
+  final Map<String, dynamic> tourData;
 
-  @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> tourSteps = [
-      {
-        "time_slot": "10:00 AM",
-        "title": "National Museum",
-        "image": "https://pnu.edu.sa/en/Announcements/PublishingImages/museum.jpg",
-        "desc": "Start your day with a cultural trip through history.",
-        "status": "Low",
-      },
-      {
-        "time_slot": "01:30 PM",
-        "title": "Traditional Lunch in Diriyah",
-        "image": "https://www.visitsaudi.com/content/dam/saudi-tourism/media/diriyah/at-turaif.jpg",
-        "desc": "Enjoy authentic Saudi cuisine in the heart of Diriyah.",
-        "status": "Moderate",
-      },
-      {
-        "time_slot": "04:00 PM",
-        "title": "Library & Workshop",
-        "image": "https://example.com/library.jpg",
-        "desc": "Attend an AI workshop and explore modern libraries.",
-        "status": "Low",
-      },
-    ];
+  const SmartTourScreen({super.key, required this.tourData});
 
-    return Scaffold(
-      // استخدام لون الخلفية من كلاس AppColors الخاص بكِ
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          "Your Smart Tour Plan", 
-          style: AppTextStyles.sectionTitle
-        ),
-        backgroundColor: Colors.transparent, 
-        elevation: 0,
-        centerTitle: true,
-        // تأكدي من استخدام لون الأيقونات من الثيم
-        iconTheme: const IconThemeData(color: AppColors.primary),
-      ),
-      body: Column(
-        children: [
-          // الجزء العلوي التوضيحي باستخدام كلاسات الثيم
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+  /// Helper to extract a double from various price formats (Map, String, or num).
+  /// This specifically handles bilingual maps like {en: "10 SAR", ar: "١٠ ريال"}.
+  double _parsePrice(dynamic rawPrice) {
+    if (rawPrice == null) return 0.0;
+    
+    String priceString = '0';
+
+    if (rawPrice is Map) {
+      // Prioritize English key for numeric extraction
+      priceString = rawPrice['en']?.toString() ?? '0';
+    } else {
+      priceString = rawPrice.toString();
+    }
+    
+    // Remove all non-numeric characters except the decimal point
+    final numericOnly = priceString.replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(numericOnly) ?? 0.0;
+  }
+
+  bool _checkLoginAndShowMessage(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Please login to interact with events"),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: "Login",
+            textColor: Colors.white,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
             ),
-            child: Row(
+          ),
+        ),
+      );
+      return false; 
+    }
+    return true; 
+  }
+
+  Widget _buildTransitCard(Map<String, dynamic> stop) {
+    final bool isFarewell = stop['title'].toString().toLowerCase().contains('farewell') || 
+                            stop['title'].toString().toLowerCase().contains('end');
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isFarewell ? Icons.waving_hand : Icons.directions_car, 
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.auto_awesome, color: Colors.amber, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    "This tour was generated by AI based on your interest in Heritage and AI.",
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: AppColors.textMain,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
+                Text(
+                  stop['title'] ?? 'Transit', 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  stop['reasoning'] ?? 'Moving to next destination', 
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
           ),
-          
+          Text(
+            "${stop['duration_minutes'] ?? 0} Mins", 
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stops = tourData['stops'] as List<dynamic>? ?? [];
+
+    // --- LOGIC: Calculate actual total locally to fix AI hallucinations ---
+    double actualTotal = 0;
+    for (var stop in stops) {
+      actualTotal += _parsePrice(stop['price']);
+    }
+
+    final String totalPriceDisplay = actualTotal == actualTotal.toInt() 
+        ? actualTotal.toInt().toString() 
+        : actualTotal.toStringAsFixed(2);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: const BackButton(color: AppColors.primary),
+        title: const Text(
+          "Your Smart Route",
+          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: tourSteps.length,
-              itemBuilder: (context, index) {
-                final step = tourSteps[index];
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tourData['tour_title'] ?? "Your Custom Tour",
+                    style: AppTextStyles.sectionTitle.copyWith(fontSize: 22),
+                  ),
+                  const SizedBox(height: 5),
+                  
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // عمود التايم لاين
-                      SizedBox(
-                        width: 75,
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 10),
-                            Text(
-                              step['time_slot'], 
-                              style: AppTextStyles.subtitle.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                                fontSize: 12,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Expanded(
-                              child: Container(
-                                width: 2,
-                                color: AppColors.divider.withOpacity(0.5),
-                              ),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        "Estimated time: ${tourData['total_estimated_hours']} hours",
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
-                      const SizedBox(width: 12),
-                      // بطاقة الفعالية
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: EventCard(
-                            title: step['title'],
-                            imagePath: step['image'],
-                            description: step['desc'],
-                            schedule: step['time_slot'],
-                            price: "Part of Tour",
-                            crowdStatus: step['status'],
-                            onSuggestRoute: () {},
-                          ),
+                      Text(
+                        // FIX: Displays our calculated total instead of the AI's "Free Tour" string
+                        actualTotal == 0 ? "Free Tour" : "Est. Cost: $totalPriceDisplay SAR",
+                        style: const TextStyle(
+                          color: AppColors.primary, 
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
+                  const SizedBox(height: 30),
+
+                  ...stops.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    var stop = entry.value;
+                    bool isLast = index == stops.length - 1;
+
+                    bool isTransit = stop['type'] == 'transit' || 
+                                     stop['title'].toString().toLowerCase().contains('travel') || 
+                                     stop['title'].toString().toLowerCase().contains('transit') ||
+                                     stop['title'].toString().toLowerCase().contains('farewell');
+
+                    // FIX: Process the stop price to show a clean string "10 SAR" 
+                    // instead of the raw bilingual Map object
+                    double currentPrice = _parsePrice(stop['price']);
+                    String priceDisplay = currentPrice == 0 ? "Free" : "${currentPrice.toInt()} SAR";
+
+                    return IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 60,
+                            child: Column(
+                              children: [
+                                Text(
+                                  stop['arrival_time'] ?? "--:--",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: Container(
+                                    width: 2,
+                                    color: isLast
+                                        ? Colors.transparent
+                                        : AppColors.primary.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 25),
+                              child: isTransit 
+                                ? _buildTransitCard(stop)
+                                : EventCard(
+                                    title: stop['title'] ?? 'Event',
+                                    imagePath: stop['image'] ?? stop['Image'] ?? "https://placehold.co/400x300/png?text=Wasel+AI",
+                                    description: stop['reasoning'] ?? 'AI Selected Path',
+                                    schedule: "${stop['duration_minutes'] ?? 0} Mins",
+                                    price: priceDisplay, // Uses the clean string
+                                    crowdStatus: stop['crowd_status'] ?? "MEDIUM",
+                                    onLike: () async {
+                                      if (_checkLoginAndShowMessage(context)) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text("Event added to your favorites!"),
+                                            backgroundColor: AppColors.primary,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    onSuggestRoute: () async {
+                                      final rawLat = stop['latitude'] ?? stop['lat'] ?? stop['Latitude'] ?? 
+                                                     (stop['location'] != null ? stop['location']['lat'] : null) ??
+                                                     (stop['coordinates'] != null ? stop['coordinates']['latitude'] : null);
+                                                     
+                                      final rawLng = stop['longitude'] ?? stop['lng'] ?? stop['Longitude'] ?? 
+                                                     (stop['location'] != null ? stop['location']['lng'] : null) ??
+                                                     (stop['coordinates'] != null ? stop['coordinates']['longitude'] : null);
+
+                                      final double lat = double.tryParse(rawLat?.toString() ?? '0.0') ?? 0.0;
+                                      final double lng = double.tryParse(rawLng?.toString() ?? '0.0') ?? 0.0;
+
+                                      if (lat != 0.0 && lng != 0.0) {
+                                        try {
+                                          await LocationService.openMapRoute(lat, lng);
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Could not open maps.')),
+                                            );
+                                          }
+                                        }
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Coordinates not available for this location.')),
+                                        );
+                                      }
+                                    },
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Start Over',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        label: const Text("Regenerate Plan", style: AppTextStyles.buttonText),
-        icon: const Icon(Icons.refresh),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
       ),
     );
   }

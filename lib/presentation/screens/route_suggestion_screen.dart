@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
 import '../../application/services/location_service.dart';
-import '../widgets/event_card.dart';
 import '../../data/datasources/ai_remote_source.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
+import 'smart_tour_screen.dart'; 
 
+/// --- PRESENTATION LAYER ---
+/// [RouteSuggestionScreen] acts as the primary input gateway for the AI Tour feature.
+/// 
+/// Responsibilities:
+/// 1. Captures user preferences (Vibes/Categories, Start Time, and Duration).
+/// 2. Manages the asynchronous loading state while the AI computes the route.
+/// 3. Communicates with [LocationService] to append exact GPS coordinates to the request.
+/// 4. Delegates the final rendering of the generated data to [SmartTourScreen].
 class RouteSuggestionScreen extends StatefulWidget {
   const RouteSuggestionScreen({super.key});
 
@@ -15,16 +21,31 @@ class RouteSuggestionScreen extends StatefulWidget {
 }
 
 class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
-  // --- STATE VARIABLES ---
+  // ===========================================================================
+  // --- STATE MANAGEMENT ---
+  // ===========================================================================
+  
+  /// Toggles the loading UI. Essential for preventing duplicate API calls 
+  /// while waiting for the AI response.
   bool _isLoading = false;
-  Map<String, dynamic>? _generatedTour;
+  
+  /// Holds localized error messages to ensure smooth error recovery for the user.
   String? _errorMessage;
 
+  // ===========================================================================
   // --- USER INPUT STATE ---
+  // ===========================================================================
+  
+  /// Maintains the list of selected cultural categories. Defaults to 'Museums'.
   final List<String> _selectedVibes = ['Museums'];
+  
+  /// Determines the constraint for the AI's schedule generation.
   double _availableHours = 4.0;
+  
+  /// Formatted as HH:mm. Used by the AI to factor in venue operating hours and traffic.
   String _startTime = "18:00";
 
+  /// The static taxonomy of cultural events available in Wasel.
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Museums', 'icon': Icons.museum},
     {'name': 'Heritage and Tradition', 'icon': Icons.history_edu},
@@ -34,38 +55,20 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     {'name': 'Exhibition and Convention Centre', 'icon': Icons.storefront},
   ];
 
-  // --- INTERACTIVE PICKER METHODS ---
-  bool _checkLoginAndShowMessage() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Please login to interact with events"),
-          backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 3),
-          action: SnackBarAction(
-            label: "Login",
-            textColor: Colors.white,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            ),
-          ),
-        ),
-      );
-      return false;
-    }
-    return true;
-  }
+  // ===========================================================================
+  // --- INTERACTIVE METHODS ---
+  // ===========================================================================
 
+  /// Opens the native time picker. Parses the string state into integers, 
+  /// and updates the UI only if the user confirms a valid time.
   Future<void> _selectStartTime() async {
-    // Parse current string (e.g., "18:00") into integers for the picker
     int initialHour = int.tryParse(_startTime.split(":")[0]) ?? 18;
     int initialMinute = int.tryParse(_startTime.split(":")[1]) ?? 0;
 
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: initialHour, minute: initialMinute),
+      // Injects the app's primary theme into the native picker for UI consistency.
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -89,6 +92,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     }
   }
 
+  /// Displays a customized bottom sheet to select tour duration (1 to 8 hours).
   void _selectDuration() {
     showModalBottomSheet(
       context: context,
@@ -126,7 +130,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                         setState(() {
                           _availableHours = hours.toDouble();
                         });
-                        Navigator.pop(context);
+                        Navigator.pop(context); // Dismiss sheet safely
                       },
                     );
                   },
@@ -139,35 +143,8 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     );
   }
 
-  Future<void> _generateAiTour() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      Position? pos = await LocationService.getCurrentLocation();
-
-      final tourData = await AiRemoteSource().generateSmartTour(
-        lat: pos?.latitude ?? 24.7136,
-        lng: pos?.longitude ?? 46.6753,
-        availableHours: _availableHours,
-        preferences: _selectedVibes.join(", "),
-        startTime: _startTime,
-      );
-
-      setState(() {
-        _generatedTour = tourData;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = "Could not generate tour. Please try again.";
-        _isLoading = false;
-      });
-    }
-  }
-
+  /// Adds or removes a category constraint. Keeps the UI state in sync 
+  /// with the internal list payload.
   void _toggleCategory(String category) {
     setState(() {
       if (_selectedVibes.contains(category)) {
@@ -178,8 +155,53 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     });
   }
 
-  // --- UI RENDERERS ---
+  /// The primary orchestration method bridging the UI, Hardware, and AI logic.
+  Future<void> _generateAiTour() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null; // Clear stale errors on retry
+    });
 
+    try {
+      // 1. Fetch Location natively via our dedicated Service class
+      Position? pos = await LocationService.getCurrentLocation();
+
+      // 2. Trigger the AI Backend, falling back to Riyadh coordinates if GPS is denied
+      final tourData = await AiRemoteSource().generateSmartTour(
+        lat: pos?.latitude ?? 24.7136, 
+        lng: pos?.longitude ?? 46.6753,
+        availableHours: _availableHours,
+        preferences: _selectedVibes.join(", "),
+        startTime: _startTime,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // 3. Delegation: Push to the next screen and hand off the successful JSON payload.
+      // We check if (mounted) to prevent memory leaks if the user navigated away during the API call.
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SmartTourScreen(tourData: tourData),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Could not generate tour. Please try again.";
+        _isLoading = false;
+      });
+    }
+  }
+
+  // ===========================================================================
+  // --- UI COMPONENTS ---
+  // ===========================================================================
+  
+  /// Builds a dynamic, tappable filter pill for categories.
   Widget _buildCategoryChip(String label, IconData icon) {
     bool isSelected = _selectedVibes.contains(label);
     return GestureDetector(
@@ -216,222 +238,6 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     );
   }
 
-  /// Builds the input form before the AI generates the tour
-  Widget _buildInputForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Design your perfect evening",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        const Text(
-          "What are you in the mood for?",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: _categories
-              .map((cat) => _buildCategoryChip(cat['name'], cat['icon']))
-              .toList(),
-        ),
-
-        const SizedBox(height: 30),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // --- INTERACTIVE START TIME BOX ---
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Start Time",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 5),
-                  InkWell(
-                    onTap: _selectStartTime,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.primary),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _startTime,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const Icon(
-                            Icons.access_time,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 15),
-
-            // --- INTERACTIVE DURATION BOX ---
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Duration",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 5),
-                  InkWell(
-                    onTap: _selectDuration,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.primary),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "${_availableHours.toInt()} Hours",
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const Icon(
-                            Icons.keyboard_arrow_down,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAiTimeline() {
-    final stops = _generatedTour!['stops'] as List<dynamic>;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _generatedTour!['tour_title'] ?? "Your Custom Tour",
-          style: AppTextStyles.sectionTitle.copyWith(fontSize: 22),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          "Estimated time: ${_generatedTour!['total_estimated_hours']} hours",
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 30),
-
-        ...stops.asMap().entries.map((entry) {
-          int index = entry.key;
-          var stop = entry.value;
-          bool isLast = index == stops.length - 1;
-
-          return IntrinsicHeight(
-            // يضمن أن الخط يمتد حسب طول الكارد تلقائياً
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // التوقيت والخط العمودي
-                SizedBox(
-                  width: 60,
-                  child: Column(
-                    children: [
-                      Text(
-                        stop['arrival_time'] ?? "--:--",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: Container(
-                          width: 2,
-                          // يتوقف الخط عند آخر عنصر
-                          color: isLast
-                              ? Colors.transparent
-                              : AppColors.primary.withValues(alpha: 0.2),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                // الكارد الخاص بالفعالية
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 25,
-                    ), // مسافة بين الكروت
-                    child: EventCard(
-                      title: stop['title'] ?? 'Event',
-                      imagePath:
-                          stop['image'] ??
-                          stop['Image'] ??
-                          "https://placehold.co/400x300/png?text=Wasel+AI",
-                      description: stop['reasoning'] ?? 'AI Selected Path',
-                      schedule: "${stop['duration_minutes'] ?? 0} Mins",
-                      price: "Tour Included",
-                      crowdStatus:
-                          stop['crowd_status'] ??
-                          "MEDIUM", // ربط حالة الزحام من الـ AI
-                      onLike: () {
-                        if (_checkLoginAndShowMessage()) {
-                          // كود الحفظ في المفضلة
-                        }
-                      },
-                      onSuggestRoute: () {
-                        // هنا نضع كود فتح الخريطة بالإحداثيات
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -442,10 +248,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
         leading: const BackButton(color: AppColors.primary),
         title: const Text(
           "AI Route Generator",
-          style: TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -454,6 +257,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
+              // Conditional rendering based on the async state machine (_isLoading).
               child: _isLoading
                   ? const Center(
                       child: Column(
@@ -470,20 +274,104 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                         ],
                       ),
                     )
-                  : _errorMessage != null
-                  ? Center(
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    )
-                  : (_generatedTour == null)
-                  ? _buildInputForm()
-                  : _buildAiTimeline(),
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_errorMessage != null) ...[
+                          Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                          const SizedBox(height: 20),
+                        ],
+                        const Text(
+                          "Design your perfect evening",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          "What are you in the mood for?",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        // Wrap allows the chips to natively overflow to the next line 
+                        // making it highly responsive across different screen widths.
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: _categories
+                              .map((cat) => _buildCategoryChip(cat['name'], cat['icon']))
+                              .toList(),
+                        ),
+                        const SizedBox(height: 30),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("Start Time", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 5),
+                                  InkWell(
+                                    onTap: _selectStartTime,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: AppColors.primary),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(_startTime, style: const TextStyle(fontSize: 16)),
+                                          const Icon(Icons.access_time, size: 18, color: AppColors.primary),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("Duration", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 5),
+                                  InkWell(
+                                    onTap: _selectDuration,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: AppColors.primary),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text("${_availableHours.toInt()} Hours", style: const TextStyle(fontSize: 16)),
+                                          const Icon(Icons.keyboard_arrow_down, size: 18, color: AppColors.primary),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
             ),
           ),
-
-          if (_generatedTour == null && !_isLoading)
+          
+          // Action button fixed to the bottom of the screen.
+          if (!_isLoading)
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: SizedBox(
@@ -492,44 +380,12 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: _generateAiTour,
                   child: const Text(
                     'Generate Smart Route',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          if (_generatedTour != null)
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () => setState(() => _generatedTour = null),
-                  child: const Text(
-                    'Start Over',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
