@@ -57,7 +57,7 @@ class CompactEventCard extends StatelessWidget {
           color: AppColors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            // Soft elevation shadow for depth, updated to fix previous image warnings.
+            // Soft elevation shadow for depth
             BoxShadow(
               color: AppColors.textMain.withValues(alpha: 0.1),
               blurRadius: 8,
@@ -86,9 +86,6 @@ class CompactEventCard extends StatelessWidget {
   }
 
   /// Constructs the visual thumbnail of the event.
-  /// 
-  /// Adjusts the [BorderRadius] dynamically depending on whether the image 
-  /// sits at the top of a Column or on the left side of a Row.
   Widget _buildImage(String url, bool isRow) {
     return ClipRRect(
       borderRadius: isRow
@@ -114,25 +111,28 @@ class CompactEventCard extends StatelessWidget {
   }
 
   /// Constructs the textual information block (Title, Category, Price, Rating).
-  /// 
-  /// Requires [BuildContext] to allow the [BilingualHelper] to check the 
-  /// current application locale for accurate translations.
   Widget _buildTextContent(BuildContext context) {
     // 2. FINANCIAL DATA FORMATTING:
-    // Normalizes various "free" database states (null, 0, "0") into a clean UI string.
-    final priceValue = eventData['Price'];
-    final priceDisplay =
-        (priceValue == null || priceValue == 0 || priceValue == "0")
-        ? 'Free'
-        : '$priceValue SAR';
+    // FIX: Pass the price through the BilingualHelper to prevent JSON dictionary crashes!
+    String rawPrice = BilingualHelper.getText(eventData['Price'] ?? eventData['price'], context);
+    bool isArabic = Directionality.of(context) == TextDirection.rtl;
+    
+    String priceDisplay;
+    if (rawPrice.isEmpty || rawPrice == "0") {
+      priceDisplay = isArabic ? 'مجاني' : 'Free';
+    } else {
+      // If the database string already contains SAR or ريال, use it directly, otherwise append it
+      priceDisplay = rawPrice.contains(RegExp(r'(SAR|ريال)', caseSensitive: false)) 
+          ? rawPrice 
+          : '$rawPrice ${isArabic ? "ريال" : "SAR"}';
+    }
 
     // 3. BILINGUAL TEXT EXTRACTION:
-    // Flattens the Map<String, dynamic> language dictionary into the active locale String.
     String title = BilingualHelper.getText(eventData['Title'], context);
-    if (title.isEmpty) title = 'Unknown Event';
+    if (title.isEmpty) title = isArabic ? 'حدث غير معروف' : 'Unknown Event';
 
     String category = BilingualHelper.getText(eventData['Category'], context);
-    if (category.isEmpty) category = 'General';
+    if (category.isEmpty) category = isArabic ? 'عام' : 'General';
 
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -164,13 +164,19 @@ class CompactEventCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                priceDisplay,
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
+              // FIX: Wrapped Price in Expanded to stop RenderFlex Overflow!
+              Expanded(
+                child: Text(
+                  priceDisplay,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Row(
                 children: [
                   const Icon(Icons.star, color: Colors.amber, size: 14),

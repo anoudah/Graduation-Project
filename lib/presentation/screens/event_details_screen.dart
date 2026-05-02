@@ -6,9 +6,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import '../../application/services/location_service.dart';
 import 'payment_screen.dart';
+import '../../core/utils/bilingual_helper.dart';
 
+/// --- PRESENTATION LAYER ---
+/// [EventDetailsScreen] acts as the deep-dive view for a specific event.
+/// 
+/// Responsibilities:
+/// 1. Parse and display bilingual event data safely to prevent JSON mapping crashes.
+/// 2. Handle user interactions (Favorites, Reminders, Attendance, and Reviews).
+/// 3. Read and write real-time data to Firebase Firestore.
+/// 4. Provide native routing intents to Google Maps/Apple Maps.
 class EventDetailsScreen extends StatefulWidget {
+  /// The raw event data payload passed from the previous screen (e.g., CategoryScreen).
   final Map<String, dynamic> eventData;
+  
   const EventDetailsScreen({super.key, required this.eventData});
 
   @override
@@ -16,14 +27,21 @@ class EventDetailsScreen extends StatefulWidget {
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  // --- STATE VARIABLES ---
+  // Tracks the interactive states of the event for the current user.
   bool isFavorite = false;
   bool isReminder = false;
   bool isAttending = false;
+  
+  // State for the review/comment bottom sheet.
   double userRating = 5.0;
   String selectedCrowd = 'Low';
   TextEditingController commentController = TextEditingController();
 
-  // 1. فنكشن التأكد من تسجيل الدخول (ما لمستها)
+  /// Authentication Gatekeeper.
+  /// 
+  /// Prevents anonymous users from modifying the database. If no user is logged in,
+  /// it halts the action and prompts them to navigate to the [LoginScreen].
   bool _checkLoginAndShowMessage() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -48,7 +66,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     return true;
   }
 
-  // 2. فنكشن التفاعل مع الفايربيس (حفظ البيانات - ما لمستها)
+  /// Updates the user's interaction (Favorite, Reminder, Attending) in Firestore.
+  /// 
+  /// Creates or merges a document in the `User_Interactions` collection using a 
+  /// composite ID (`userId_eventId`). If the user marks "Attending", it also 
+  /// increments/decrements the global `attendance_count` on the main Event document.
   Future<void> _updateInteraction(String field, bool value) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -59,6 +81,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     String docId = "${user.uid}_$eventId";
 
     try {
+      // 1. Update the user's personal interaction log
       await FirebaseFirestore.instance
           .collection('User_Interactions')
           .doc(docId)
@@ -69,6 +92,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             'Last_Update': Timestamp.now(),
           }, SetOptions(merge: true));
 
+      // 2. Update the global event statistics if attendance changed
       if (field == 'Is_Attending') {
         await FirebaseFirestore.instance
             .collection('Events')
@@ -80,36 +104,41 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             });
       }
     } catch (e) {
-      print("Error updating interaction: $e");
+      debugPrint("Error updating interaction: $e");
     }
   }
 
+  /// Submits a user review and crowd report to the Firestore database.
+  /// 
+  /// Writes the comment to the `Comment Feedback` collection and increments 
+  /// the respective crowd counter (Low, Medium, High) on the main Event document
+  /// to feed data into the AI crowd estimation model.
   Future<void> _submitComment() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // معرف الفعالية المستخدم في قاعدة البيانات
     String eventId = widget.eventData['id'] ?? '';
     if (commentController.text.isEmpty) return;
 
     try {
-      // 1. إرسال التعليق لجدول 'Comment Feedback' (مطابق لصورتك تماماً)
+      // 1. Push the comment to the feedback collection
       await FirebaseFirestore.instance.collection('Comment Feedback').add({
-        'Comment_Text': commentController.text, // نص التعليق (String)
-        'Date': Timestamp.now(), // تاريخ الوقت (Timestamp)
-        'Rating': userRating.toInt(), // التقييم (int64) كما في صورتك
-        'User_Id': user.uid, // معرف المستخدم (String)
-        'crowd_report': selectedCrowd, // حالة الزحام (String)
-        'id': eventId, // معرف الفعالية (String)
-        'User_Name': user.displayName ?? 'User', // اسم الشخص الحقيقي[cite: 3]
+        'Comment_Text': commentController.text, 
+        'Date': Timestamp.now(), 
+        'Rating': userRating.toInt(), 
+        'User_Id': user.uid, 
+        'crowd_report': selectedCrowd, 
+        'id': eventId, 
+        'User_Name': user.displayName ?? 'User', 
       });
 
-      // 2. تحديث عدادات الزحام في جدول 'Events' (عشان التنبؤ والذكاء الاصطناعي)
+      // 2. Determine which crowd metric to increment
       String crowdField = '';
       if (selectedCrowd == 'Low') crowdField = 'report_low_count';
       if (selectedCrowd == 'Medium') crowdField = 'report_medium_count';
       if (selectedCrowd == 'High') crowdField = 'report_high_count';
 
+      // 3. Update the global event crowd statistics
       if (crowdField.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('Events')
@@ -120,11 +149,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             });
       }
 
-      // 3. تنظيف الواجهة وإغلاق النافذة
+      // 4. Cleanup UI state
       commentController.clear();
       Navigator.pop(context);
 
-      // إظهار رسالة نجاح للمستخدم
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -136,12 +164,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         );
       }
     } catch (e) {
-      // طباعة الخطأ في حال حدوث مشكلة في الفايربيس
-      print("Detailed Error: $e");
+      debugPrint("Detailed Error: $e");
     }
   }
 
-  // 4. واجهة كتابة التعليق (BottomSheet - ما لمستها)
+  /// Displays an interactive BottomSheet allowing the user to write a review.
   void _showCommentsSheet() {
     showModalBottomSheet(
       context: context,
@@ -181,7 +208,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 maxLines: 3,
               ),
               const SizedBox(height: 15),
-              // تقييم النجوم
+              // Interactive Star Rating Builder
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
@@ -216,33 +243,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  // Helper to make dates look premium (e.g., "Apr 6")
+  /// Helper to make raw DateTimes look premium (e.g., "Apr 6").
   String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return "${months[date.month - 1]} ${date.day}";
   }
 
-  // Helper to make times look premium (e.g., "9:30 AM")
+  /// Helper to convert 24h DateTimes to readable 12h formats (e.g., "9:30 PM").
   String _formatTime(DateTime date) {
     int hour = date.hour;
     int minute = date.minute;
     String ampm = hour >= 12 ? 'PM' : 'AM';
 
     hour = hour % 12;
-    if (hour == 0) hour = 12; // Handles midnight and noon
+    if (hour == 0) hour = 12; 
 
     String minuteStr = minute < 10 ? '0$minute' : '$minute';
     return "$hour:$minuteStr $ampm";
@@ -251,6 +265,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final data = widget.eventData;
+    
+    // UI SAFETY: Safely extract AppBar Category Title using the BilingualHelper.
+    // This prevents the app from crashing if 'Category' is a Map instead of a String.
+    String categoryTitle = BilingualHelper.getText(data['Category'], context);
+    if (categoryTitle.isEmpty) categoryTitle = "Details";
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -262,7 +281,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          data['Category'] ?? "Details",
+          categoryTitle, 
           style: const TextStyle(color: AppColors.textMain),
         ),
         centerTitle: true,
@@ -294,27 +313,36 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  // --- Widgets البناء (كلها مرتبطة بالثيم) ---
-
+  /// Builds the large cover image for the event.
   Widget _buildHeaderImage(Map<String, dynamic> data) {
+    // ASSET SAFETY: Checks multiple DB keys for the image.
+    // It also intercepts known bad CORS domains (via.placeholder.com) and swaps 
+    // them with safe alternatives to prevent Flutter Web CanvasKit crashes.
+    String imageUrl = BilingualHelper.getText(data['Image_Url'] ?? data['image'] ?? data['Image'], context);
+    if (imageUrl.isEmpty || imageUrl.contains('via.placeholder.com')) {
+      imageUrl = 'https://placehold.co/400x300/png?text=Culture+Event';
+    }
+
     return Container(
       height: 250,
       width: double.infinity,
       decoration: BoxDecoration(
+        color: AppColors.avatarBg,
         image: DecorationImage(
-          image: NetworkImage(
-            // التعديل هنا: يبحث عن كل المسميات المحتملة للصورة
-            data['Image_Url'] ?? data['image'] ?? data['Image'] ?? '',
-          ),
+          image: NetworkImage(imageUrl), 
           fit: BoxFit.cover,
         ),
       ),
     );
   }
 
+  /// Builds the primary title of the event safely handling bilingual maps.
   Widget _buildMainTitle(Map<String, dynamic> data) {
+    String title = BilingualHelper.getText(data['Title'], context);
+    if (title.isEmpty) title = "Unknown Event";
+
     return Text(
-      data['Title'] ?? "No Title",
+      title, 
       style: const TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
@@ -323,6 +351,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+  /// Renders the interactive row of action buttons (Like, Notify, Comment, Attend).
   Widget _buildActionButtons() {
     return Row(
       children: [
@@ -398,6 +427,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+  /// Small UI helper for the circular action icons.
   Widget _iconBtn(IconData icon, Color color, VoidCallback onTap) {
     return IconButton(
       icon: Icon(icon, color: color, size: 26),
@@ -405,7 +435,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+  /// Renders the event description block, safely extracting bilingual text.
   Widget _buildAboutSection(Map<String, dynamic> data) {
+    String aboutText = BilingualHelper.getText(data['About'] ?? data['Description'], context);
+    if (aboutText.isEmpty) aboutText = "No description available.";
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -419,7 +453,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          data['About'] ?? "No description.",
+          aboutText,
           style: const TextStyle(
             color: AppColors.textMain,
             height: 1.5,
@@ -430,23 +464,25 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+  /// Builds the critical details block containing Schedule, Price, and Location logic.
+  /// 
+  /// This method contains robust fallback logic. It attempts to parse native Firestore
+  /// Timestamps, ISO Strings from the Python backend, and manual schedule strings.
   Widget _buildDetailsGrid(Map<String, dynamic> data) {
-    // --- BEAUTIFUL DATE FORMATTER ---
     String scheduleText = "To Be Announced";
     try {
-      // --- THE MANUAL OVERRIDE (For complex or weird schedules) ---
-      // If the database has a specific text string for 'Schedule', we trust it blindly and skip the math!
-      if (data['Schedule'] != null &&
-          data['Schedule'].toString().trim().isNotEmpty) {
-        // We replace '\\n' so you can actually type line breaks directly into the Firebase console!
-        scheduleText = data['Schedule'].toString().replaceAll('\\n', '\n');
-      }
-      // --- NORMAL AUTOMATIC MATH (For standard events) ---
-      else {
+      // 1. SAFELY PARSE SCHEDULE
+      // We check for a hardcoded string first, bypassing complex math if it exists.
+      String rawSchedule = BilingualHelper.getText(data['Schedule'], context);
+
+      if (rawSchedule.trim().isNotEmpty) {
+        scheduleText = rawSchedule.replaceAll('\\n', '\n');
+      } else {
+        // Fallback: Calculate schedule from Start/End dates
         var start = data['start_time'] ?? data['Start_Time'] ?? data['start'];
         var end = data['end_time'] ?? data['End_Time'] ?? data['end'];
 
-        // --- SCENARIO 1: Native Firebase Timestamps ---
+        // Handle Firestore Timestamp objects
         if (start != null && start is Timestamp) {
           DateTime startDate = start.toDate();
           String startTime = _formatTime(startDate);
@@ -455,25 +491,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             DateTime endDate = end.toDate();
             String endTime = _formatTime(endDate);
 
-            if (startDate.day != endDate.day ||
-                startDate.month != endDate.month) {
+            if (startDate.day != endDate.day || startDate.month != endDate.month) {
               if (startTime == endTime) {
-                scheduleText =
-                    "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime everyday";
+                scheduleText = "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime everyday";
               } else {
-                scheduleText =
-                    "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime - $endTime everyday";
+                scheduleText = "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime - $endTime everyday";
               }
             } else {
-              scheduleText =
-                  "${_formatDate(startDate)}, ${startDate.year}\n$startTime — $endTime";
+              scheduleText = "${_formatDate(startDate)}, ${startDate.year}\n$startTime — $endTime";
             }
           } else {
-            scheduleText =
-                "${_formatDate(startDate)}, ${startDate.year}\n$startTime";
+            scheduleText = "${_formatDate(startDate)}, ${startDate.year}\n$startTime";
           }
         }
-        // --- SCENARIO 2: Python/FastAPI ISO Strings ---
+        // Handle Python backend ISO string formats
         else if (start is String) {
           DateTime? parsedStart = DateTime.tryParse(start);
 
@@ -487,26 +518,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 parsedEnd = parsedEnd.toLocal();
                 String endTime = _formatTime(parsedEnd);
 
-                if (parsedStart.day != parsedEnd.day ||
-                    parsedStart.month != parsedEnd.month) {
+                if (parsedStart.day != parsedEnd.day || parsedStart.month != parsedEnd.month) {
                   if (startTime == endTime) {
-                    scheduleText =
-                        "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime everyday";
+                    scheduleText = "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime everyday";
                   } else {
-                    scheduleText =
-                        "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime - $endTime everyday";
+                    scheduleText = "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime - $endTime everyday";
                   }
                 } else {
-                  scheduleText =
-                      "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime — $endTime";
+                  scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime — $endTime";
                 }
               } else {
-                scheduleText =
-                    "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
+                scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
               }
             } else {
-              scheduleText =
-                  "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
+              scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
             }
           } else {
             scheduleText = start.split('T').first;
@@ -517,6 +542,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       debugPrint("WASEL SCHEDULE PARSING ERROR: $e");
     }
 
+    // 2. SAFELY PARSE BILINGUAL PRICE
+    String rawPrice = BilingualHelper.getText(data['Price'] ?? data['price'], context);
+    bool isArabic = Directionality.of(context) == TextDirection.rtl;
+    
+    String priceDisplay;
+    if (rawPrice.isEmpty || rawPrice == "0") {
+      priceDisplay = isArabic ? 'مجاني' : 'Free Entry';
+    } else {
+      priceDisplay = rawPrice.contains(RegExp(r'(SAR|ريال)', caseSensitive: false)) 
+          ? rawPrice 
+          : '$rawPrice ${isArabic ? "ريال" : "SAR"}';
+    }
+
+    // 3. SAFELY PARSE LOCATION NAME
+    String locationAddress = BilingualHelper.getText(data['Location_Address'] ?? data['Location_Name'], context);
+    if (locationAddress.isEmpty) locationAddress = isArabic ? "الرياض" : "Riyadh";
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -524,7 +566,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04), // Soft matte shadow
+            color: Colors.black.withOpacity(0.04), 
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -532,26 +574,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       ),
       child: Column(
         children: [
-          // Using the new Premium Rows!
           _premiumDetailRow(Icons.calendar_today, "Date & Time", scheduleText),
-          const SizedBox(height: 16), // Replaced dividers with clean spacing
+          const SizedBox(height: 16), 
 
           _premiumDetailRow(
             Icons.confirmation_number_outlined,
             "Ticket Price",
-            data['Price']?.toString() ?? "Free Entry",
+            priceDisplay, 
           ),
           const SizedBox(height: 16),
 
           _premiumDetailRow(
             Icons.location_on_outlined,
             "Location",
-            data['Location_Address'] ?? "Riyadh",
+            locationAddress, 
           ),
 
           const SizedBox(height: 24),
 
           // --- FULL-WIDTH NAVIGATE BUTTON ---
+          // Uses defensive coordinate parsing before handing off to native intents.
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -565,24 +607,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     targetLat = geo.latitude;
                     targetLng = geo.longitude;
                   } else {
-                    var fallbackLat =
-                        data['latitude'] ??
-                        data['targetLat'] ??
-                        data['Latitude'];
-                    var fallbackLng =
-                        data['longitude'] ??
-                        data['targetLng'] ??
-                        data['Longitude'];
+                    var fallbackLat = data['latitude'] ?? data['targetLat'] ?? data['Latitude'];
+                    var fallbackLng = data['longitude'] ?? data['targetLng'] ?? data['Longitude'];
                     if (fallbackLat != null && fallbackLng != null) {
-                      targetLat =
-                          double.tryParse(fallbackLat.toString()) ?? 24.7136;
-                      targetLng =
-                          double.tryParse(fallbackLng.toString()) ?? 46.6753;
+                      targetLat = double.tryParse(fallbackLat.toString()) ?? 24.7136;
+                      targetLng = double.tryParse(fallbackLng.toString()) ?? 46.6753;
                     }
                   }
                 } catch (e) {
                   debugPrint("WASEL DETAILS PARSING ERROR: $e");
                 }
+                // Trigger the device's native mapping application (Google/Apple Maps)
                 LocationService.openMapRoute(targetLat, targetLng);
               },
               icon: const Icon(Icons.directions, color: AppColors.primary),
@@ -608,11 +643,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  // Modern App Store style data rows
+  /// A highly reusable UI component for creating clean, icon-based info rows.
   Widget _premiumDetailRow(IconData icon, String title, String value) {
     return Row(
       children: [
-        // Soft colored container for the icon
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -622,8 +656,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           child: Icon(icon, color: AppColors.primary, size: 22),
         ),
         const SizedBox(width: 16),
-
-        // Stacked text
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,6 +684,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+  /// Binds a live Firestore stream to display user reviews for this specific event.
   Widget _buildReviewsSection(String eventId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -665,6 +698,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           ),
         ),
         const SizedBox(height: 15),
+        // Real-time listener pointing to the 'Reviews' collection filtering by Event_Id.
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('Reviews')

@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart'; // norah
-import 'event_details_screen.dart'; // norah
-// Alanoud added: Import the AI source to talk to Python
+import 'event_details_screen.dart'; 
 import '../../data/datasources/ai_remote_source.dart';
-// استدعاء ملف الثيم - تأكدي من صحة المسار في مشروعك
 import '../../core/theme.dart';
+import '../../core/utils/bilingual_helper.dart';
 
+/// A screen that displays a localized, dynamic list of events for a specific category.
+/// 
+/// This screen connects to the Python AI backend to fetch real-time event data,
+/// including crowd estimations. It handles asynchronous loading states, robust 
+/// bilingual data extraction, and network image CORS fallbacks.
 class CategoryScreen extends StatefulWidget {
+  /// The localized display name of the category (e.g., "Museums", "المتاحف").
   final String categoryName;
+  
+  /// The unique identifier used to fetch data from the backend (e.g., "MUS").
   final String categoryId;
+  
+  /// The visual icon representing this category in the header.
   final IconData categoryIcon;
 
   const CategoryScreen({
@@ -24,15 +32,16 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
+  /// The service responsible for communicating with the AI backend.
   final AiRemoteSource _aiSource = AiRemoteSource();
+  
+  /// A future that holds the list of events fetched from the backend.
   late Future<List<dynamic>> _categoryEventsFuture;
 
   @override
   void initState() {
     super.initState();
-
-    // 1. We ONLY ask the Python AI Backend for the data.
-    // 2. We use the new ID-based function (e.g., passing "MUS" instead of "Museums").
+    // Initialize the network request immediately when the screen loads.
     _categoryEventsFuture = _aiSource.fetchEventsByCategoryId(
       widget.categoryId,
     );
@@ -40,18 +49,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Determines if the screen is running on a compact mobile layout.
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
-      backgroundColor: AppColors.background, // مناداة الثيم
+      backgroundColor: AppColors.background, 
       body: SingleChildScrollView(
         child: Column(
           children: [
             _buildTopBar(context),
 
+            // Handles the asynchronous data fetching pipeline.
             FutureBuilder<List<dynamic>>(
               future: _categoryEventsFuture,
               builder: (context, snapshot) {
+                // 1. Loading State
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   final localizations = AppLocalizations.of(context);
                   return Padding(
@@ -61,7 +73,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         children: [
                           const CircularProgressIndicator(
                             color: AppColors.primary,
-                          ), // مناداة الثيم
+                          ),
                           const SizedBox(height: 16),
                           Text(localizations.waselAICalculatingCrowds),
                         ],
@@ -70,6 +82,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   );
                 }
 
+                // 2. Error State
                 if (snapshot.hasError) {
                   final localizations = AppLocalizations.of(context);
                   return Padding(
@@ -80,6 +93,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   );
                 }
 
+                // 3. Success State
                 final liveItems = snapshot.data ?? [];
 
                 return Column(
@@ -98,6 +112,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  /// Builds the custom navigation bar containing the back button, title, and action icons.
   Widget _buildTopBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -106,7 +121,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           IconButton(
             icon: const Icon(
               Icons.arrow_back,
-              color: AppColors.textMain, // مناداة الثيم
+              color: AppColors.textMain, 
               size: 28,
             ),
             onPressed: () => Navigator.pop(context),
@@ -117,7 +132,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               widget.categoryName,
               style: AppTextStyles.sectionTitle.copyWith(
                 fontSize: 20,
-              ), // مناداة الثيم
+              ), 
             ),
           ),
           IconButton(
@@ -138,6 +153,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  /// Builds the large header section displaying the category icon and total item count.
   Widget _buildCategoryHeader(
     BuildContext context,
     bool isMobile,
@@ -155,7 +171,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primaryLight, // مناداة الثيم
+                  color: AppColors.primaryLight, 
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -194,11 +210,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  /// Iterates through the fetched events and generates a responsive list of interactive cards.
+  /// 
+  /// This method actively protects against runtime crashes by routing all 
+  /// JSON dictionary fields through the [BilingualHelper] and injecting safe 
+  /// fallbacks for blocked or missing network images.
   Widget _buildCategoryItemsList(
     BuildContext context,
     bool isMobile,
     List<dynamic> categoryItems,
   ) {
+    // Empty state fallback
     if (categoryItems.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(40),
@@ -213,6 +235,20 @@ class _CategoryScreenState extends State<CategoryScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         children: categoryItems.map((item) {
+          
+          // Data Extraction: Safely parse localized bilingual maps.
+          String title = BilingualHelper.getText(item['Title'], context);
+          if (title.isEmpty) title = AppLocalizations.of(context).unknownEvent;
+
+          String about = BilingualHelper.getText(item['About'] ?? item['Category'], context);
+
+          // Asset Extraction: Fallback for empty or CORS-blocked images.
+          String imageUrl = BilingualHelper.getText(item['Image_Url'] ?? item['Image'], context);
+          if (imageUrl.isEmpty || imageUrl.contains('via.placeholder.com')) {
+            imageUrl = 'https://placehold.co/120x120/png?text=No+Image'; 
+          }
+
+          // Dynamic styling based on AI crowd estimation.
           String crowdStatus = item['Live_Crowd_Status'] ?? "LOW";
           Color crowdColor = Colors.green;
           if (crowdStatus == "MEDIUM") crowdColor = Colors.orange;
@@ -234,6 +270,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
+                // Navigate to deep view, passing the specific event map forward.
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -245,6 +282,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               },
               child: Row(
                 children: [
+                  // Event Thumbnail
                   Container(
                     width: 120,
                     height: 120,
@@ -256,18 +294,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        item['Image_Url'] ??
-                            'https://via.placeholder.com/120x120?text=No+Image',
+                        imageUrl, 
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(
-                              Icons.image_not_supported,
-                              color: AppColors.iconGrey,
-                            ),
+                          Icons.image_not_supported,
+                          color: AppColors.iconGrey,
+                        ),
                       ),
                     ),
                   ),
 
+                  // Event Details Block
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -279,8 +317,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            item['Title'] ??
-                                AppLocalizations.of(context).unknownEvent,
+                            title, 
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.sectionTitle.copyWith(
@@ -289,7 +326,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            item['About'] ?? item['Category'] ?? '',
+                            about, 
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.subtitle.copyWith(
@@ -298,6 +335,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           ),
                           const SizedBox(height: 8),
 
+                          // Footer row containing distance and crowd status
                           Row(
                             children: [
                               const Icon(
@@ -306,7 +344,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 color: AppColors.primary,
                               ),
                               const SizedBox(width: 4),
-                              Text(
+                              const Text(
                                 '-- km',
                                 style: TextStyle(
                                   fontSize: 12,
@@ -342,6 +380,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ),
                   ),
 
+                  // End Indicator
                   const Padding(
                     padding: EdgeInsets.only(right: 16),
                     child: Icon(
