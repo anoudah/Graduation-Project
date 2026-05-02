@@ -16,9 +16,9 @@ import 'domain/usecases/get_all_events_usecase.dart';
 import 'application/providers/event_provider.dart';
 import 'application/providers/language_provider.dart';
 
-// UI Imports
+// UI and Theme Imports
 import 'presentation/screens/home_screen.dart';
-// import 'presentation/screens/museums_screen.dart';
+import 'core/theme.dart'; 
 
 void main() async {
   // Ensure Firebase and Flutter are initialized before the app runs
@@ -66,21 +66,17 @@ class WaselApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6B4B8A)), 
-            useMaterial3: true,
-            fontFamily: 'Poppins',
-          ),
+          // Apply your new global AppTheme here!
+          theme: AppTheme.lightTheme, 
           builder: (context, child) {
-        return SafeArea(
-          // This ensures the notch/status bar never covers your app anywhere
-          child: child!, 
-        );
-      },
+            return SafeArea(
+              // This ensures the notch/status bar never covers your app anywhere
+              child: child!, 
+            );
+          },
           home: const HomeScreen(),
         );
       },
     );
   }
-  
 }

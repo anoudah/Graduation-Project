@@ -542,17 +542,44 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       debugPrint("WASEL SCHEDULE PARSING ERROR: $e");
     }
 
-    // 2. SAFELY PARSE BILINGUAL PRICE
+    // 2. SAFELY PARSE BILINGUAL PRICE (Updated for Image Symbol)
     String rawPrice = BilingualHelper.getText(data['Price'] ?? data['price'], context);
     bool isArabic = Directionality.of(context) == TextDirection.rtl;
     
-    String priceDisplay;
-    if (rawPrice.isEmpty || rawPrice == "0") {
-      priceDisplay = isArabic ? 'مجاني' : 'Free Entry';
-    } else {
-      priceDisplay = rawPrice.contains(RegExp(r'(SAR|ريال)', caseSensitive: false)) 
-          ? rawPrice 
-          : '$rawPrice ${isArabic ? "ريال" : "SAR"}';
+    bool isFree = rawPrice.isEmpty || rawPrice == "0";
+    String priceDisplay = isFree ? (isArabic ? 'مجاني' : 'Free Entry') : rawPrice;
+
+    // Create a custom widget for the price if it's not free
+    Widget? customPriceWidget;
+    if (!isFree) {
+      customPriceWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            priceDisplay,
+            style: const TextStyle(
+              color: AppColors.textMain,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Image.asset(
+            'assets/images/riyal_symbol.png',
+            height: 12, // Scaled to match the fontSize 15
+            color: AppColors.textMain, // Tints the symbol to match the detail text
+            errorBuilder: (context, error, stackTrace) => const Text(
+              ' SAR',
+              style: TextStyle(
+                color: AppColors.textMain,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
     }
 
     // 3. SAFELY PARSE LOCATION NAME
@@ -581,6 +608,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             Icons.confirmation_number_outlined,
             "Ticket Price",
             priceDisplay, 
+            customValueWidget: customPriceWidget, // Pass our new image row here!
           ),
           const SizedBox(height: 16),
 
@@ -644,7 +672,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   /// A highly reusable UI component for creating clean, icon-based info rows.
-  Widget _premiumDetailRow(IconData icon, String title, String value) {
+  /// Added [customValueWidget] to support injecting the custom PNG symbol.
+  Widget _premiumDetailRow(IconData icon, String title, String value, {Widget? customValueWidget}) {
     return Row(
       children: [
         Container(
@@ -669,7 +698,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
+              // Use the custom widget if provided, otherwise default to standard Text
+              customValueWidget ?? Text(
                 value,
                 style: const TextStyle(
                   color: AppColors.textMain,

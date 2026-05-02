@@ -73,6 +73,18 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  
+  # Add these two lines to register the folder!
+  assets:
+    - assets/images/
+  fonts:
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Regular.ttf
+    
+    - family: NotoSansSymbols
+      fonts:
+        - asset: assets/fonts/NotoSansSymbols-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -6,7 +6,6 @@ import '../../data/datasources/ai_remote_source.dart';
 
 // --- Screen Imports ---
 // These are the full-page screens that the user navigates to from the home page
-import 'chat_screen.dart';
 import 'global_chat_button.dart'; // NEW: Imports the Overlay manager for the floating bot
 
 // --- Widget Imports (The Modular Architecture) ---

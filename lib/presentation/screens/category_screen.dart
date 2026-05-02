@@ -7,7 +7,6 @@ import '../../core/utils/bilingual_helper.dart';
 
 // --- NEW IMPORTS FOR DYNAMIC DISTANCE ---
 import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/utils/geo_utils.dart';
 
 /// A screen that displays a localized, dynamic list of events for a specific category.

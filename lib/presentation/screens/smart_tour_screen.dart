@@ -146,13 +146,30 @@ class SmartTourScreen extends StatelessWidget {
                         "Estimated time: ${tourData['total_estimated_hours']} hours",
                         style: const TextStyle(color: AppColors.textSecondary),
                       ),
-                      Text(
-                        // FIX: Displays our calculated total instead of the AI's "Free Tour" string
-                        actualTotal == 0 ? "Free Tour" : "Est. Cost: $totalPriceDisplay SAR",
-                        style: const TextStyle(
-                          color: AppColors.primary, 
-                          fontWeight: FontWeight.bold,
-                        ),
+                      // TOTAL PRICE ROW
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            actualTotal == 0 ? "Free Tour" : "Est. Cost: $totalPriceDisplay",
+                            style: const TextStyle(
+                              color: AppColors.primary, 
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (actualTotal > 0) ...[
+                            const SizedBox(width: 4),
+                            Image.asset(
+                              'assets/images/riyal_symbol.png',
+                              height: 12,
+                              color: AppColors.primary,
+                              errorBuilder: (context, error, stackTrace) => const Text(
+                                ' SAR', 
+                                style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -168,10 +185,31 @@ class SmartTourScreen extends StatelessWidget {
                                      stop['title'].toString().toLowerCase().contains('transit') ||
                                      stop['title'].toString().toLowerCase().contains('farewell');
 
-                    // FIX: Process the stop price to show a clean string "10 SAR" 
-                    // instead of the raw bilingual Map object
+                    // STOP PRICE PARSING
                     double currentPrice = _parsePrice(stop['price']);
-                    String priceDisplay = currentPrice == 0 ? "Free" : "${currentPrice.toInt()} SAR";
+                    
+                    // Create the custom Widget for the individual EventCard
+                    Widget priceWidget = currentPrice == 0 
+                      ? const Text('Free', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              currentPrice.toInt().toString(),
+                              style: const TextStyle(color: AppColors.textMain, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: 4),
+                            Image.asset(
+                              'assets/images/riyal_symbol.png',
+                              height: 12,
+                              color: AppColors.textMain,
+                              errorBuilder: (context, error, stackTrace) => const Text(
+                                ' SAR', 
+                                style: TextStyle(color: AppColors.textMain, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        );
 
                     return IntrinsicHeight(
                       child: Row(
@@ -212,7 +250,7 @@ class SmartTourScreen extends StatelessWidget {
                                     imagePath: stop['image'] ?? stop['Image'] ?? "https://placehold.co/400x300/png?text=Wasel+AI",
                                     description: stop['reasoning'] ?? 'AI Selected Path',
                                     schedule: "${stop['duration_minutes'] ?? 0} Mins",
-                                    price: priceDisplay, // Uses the clean string
+                                    price: priceWidget, // Passing the WIDGET here instead of a string
                                     crowdStatus: stop['crowd_status'] ?? "MEDIUM",
                                     onLike: () async {
                                       if (_checkLoginAndShowMessage(context)) {

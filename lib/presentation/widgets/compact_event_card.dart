@@ -113,19 +113,12 @@ class CompactEventCard extends StatelessWidget {
   /// Constructs the textual information block (Title, Category, Price, Rating).
   Widget _buildTextContent(BuildContext context) {
     // 2. FINANCIAL DATA FORMATTING:
-    // FIX: Pass the price through the BilingualHelper to prevent JSON dictionary crashes!
     String rawPrice = BilingualHelper.getText(eventData['Price'] ?? eventData['price'], context);
     bool isArabic = Directionality.of(context) == TextDirection.rtl;
     
-    String priceDisplay;
-    if (rawPrice.isEmpty || rawPrice == "0") {
-      priceDisplay = isArabic ? 'مجاني' : 'Free';
-    } else {
-      // If the database string already contains SAR or ريال, use it directly, otherwise append it
-      priceDisplay = rawPrice.contains(RegExp(r'(SAR|ريال)', caseSensitive: false)) 
-          ? rawPrice 
-          : '$rawPrice ${isArabic ? "ريال" : "SAR"}';
-    }
+    // Check if the event is free
+    bool isFree = rawPrice.isEmpty || rawPrice == "0";
+    String priceDisplay = isFree ? (isArabic ? 'مجاني' : 'Free') : rawPrice;
 
     // 3. BILINGUAL TEXT EXTRACTION:
     String title = BilingualHelper.getText(eventData['Title'], context);
@@ -164,19 +157,48 @@ class CompactEventCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // FIX: Wrapped Price in Expanded to stop RenderFlex Overflow!
+              // PRICE COMPONENT WITH IMAGE SUPPORT
               Expanded(
-                child: Text(
-                  priceDisplay,
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // The Number (or "Free" text)
+                    Flexible(
+                      child: Text(
+                        priceDisplay,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    
+                    // Only show the image symbol if it is NOT free
+                    if (!isFree) ...[
+                      const SizedBox(width: 4),
+                      Image.asset(
+                        'assets/images/riyal_symbol.png',
+                        height: 14,
+                        color: AppColors.primary, // Tints the image to match your purple text
+                        // Safe fallback in case you haven't added the image to your folders yet
+                        errorBuilder: (context, error, stackTrace) => const Text(
+                          ' SAR', 
+                          style: TextStyle(
+                            color: AppColors.primary, 
+                            fontSize: 10, 
+                            fontWeight: FontWeight.bold
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
+              
+              // RATING COMPONENT
               Row(
                 children: [
                   const Icon(Icons.star, color: Colors.amber, size: 14),

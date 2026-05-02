@@ -27,7 +27,7 @@ class AppTextStyles {
     fontSize: 24, 
     fontWeight: FontWeight.bold, 
     color: AppColors.textMain,
-    fontFamily: 'Poppins', // Add your font family here if you are using one!
+    // Removed Poppins here so Flutter defaults to its native font + Noto fallback
   );
 
   // Hero Slider Text (Desktop)
@@ -57,4 +57,32 @@ class AppTextStyles {
     fontSize: 16, 
     fontWeight: FontWeight.bold,
   );
+}
+
+/// Global Theme Configuration for the Wasel App.
+/// Apply this in your main.dart file inside the MaterialApp widget!
+class AppTheme {
+  static ThemeData get lightTheme {
+    return ThemeData(
+      // Set the main background color
+      scaffoldBackgroundColor: AppColors.background,
+      
+      // Use the deep purple as the primary seed color
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        primary: AppColors.primary,
+      ),
+
+      // THE MAGIC FIX: Tells Flutter to use this font for Arabic and the ⃁ symbol
+      fontFamilyFallback: const ['NotoSansArabic', 'NotoSansSymbols'],
+
+      // Optional: Clean up standard Material styling to match your matte aesthetic
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.textMain),
+        centerTitle: true,
+      ),
+    );
+  }
 }

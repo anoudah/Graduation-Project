@@ -1,20 +1,48 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart'; // استيراد الثيم لتوحيد الألوان
+import '../../core/theme.dart'; // Imports the centralized theme for consistent styling across the app.
 
+/// A highly reusable UI component that displays detailed information about a specific event or stop.
+///
+/// The [EventCard] is split into a two-column layout:
+/// - **Left Column:** Displays the event image and interactive action buttons (Favorite, Notify, Comment, Attend).
+/// - **Right Column:** Displays the textual data (Title, Description, Schedule, Price, Crowd Status, and Map Route).
 class EventCard extends StatelessWidget {
+  /// The primary name of the event.
   final String title;
+
+  /// The network URL for the event's cover image.
   final String imagePath;
+
+  /// A brief summary or AI-generated reasoning for why this event was selected.
   final String description;
+
+  /// The formatted time/duration string (e.g., "60 Mins" or "9:00 AM - 10:00 AM").
   final String schedule;
-  final String price;
+
+  /// The price display component. 
+  /// Passed as a [Widget] rather than a String to support complex layouts, 
+  /// such as inline custom image assets (e.g., the Saudi Riyal symbol).
+  final Widget price; 
+
+  /// The current AI-estimated crowd level ("LOW", "MEDIUM", or "HIGH").
   final String crowdStatus;
 
-  // الأزرار التفاعلية
+  // --- INTERACTIVE CALLBACKS ---
+  
+  /// Triggered when the user taps the heart icon.
   final VoidCallback? onLike;
+
+  /// Triggered when the user taps the bell icon.
   final VoidCallback? onNotification;
+
+  /// Triggered when the user taps the chat bubble icon.
   final VoidCallback? onComment;
+
+  /// Triggered when the user taps the map icon in the bottom right corner.
+  /// Usually handles routing to native mapping apps (Google/Apple Maps).
   final VoidCallback onSuggestRoute;
 
+  /// Creates an [EventCard].
   const EventCard({
     super.key,
     required this.title,
@@ -32,14 +60,14 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        vertical: 10,
-      ), // إضافة هامش بسيط بين الكروت
+      // Margin to separate multiple cards in a list
+      margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
+          // Soft shadow for a floating, modern aesthetic
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
@@ -47,16 +75,18 @@ class EventCard extends StatelessWidget {
           ),
         ],
       ),
+      // IntrinsicHeight forces the Row's children to match the height of the tallest child.
+      // This is crucial for making the VerticalDivider span the entire height of the card.
       child: IntrinsicHeight(
-        // يضمن أن الفاصل العمودي يأخذ كامل الطول المتاح
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // القسم الأيسر: الصورة والأزرار
+            // --- LEFT COLUMN: Image & Quick Actions ---
             Expanded(
               flex: 1,
               child: Column(
                 children: [
+                  // Event Image with rounded corners
                   ClipRRect(
                     borderRadius: BorderRadius.circular(15),
                     child: Image.network(
@@ -64,27 +94,29 @@ class EventCard extends StatelessWidget {
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      // Graceful fallback if the image URL is broken or missing
                       errorBuilder: (context, error, stackTrace) =>
                           _buildImageError(),
                     ),
                   ),
                   const SizedBox(height: 12),
+                  
+                  // Row of small interactive icons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildIconButton(Icons.favorite_border, onLike),
-                      _buildIconButton(
-                        Icons.notifications_none,
-                        onNotification,
-                      ),
+                      _buildIconButton(Icons.notifications_none, onNotification),
                       _buildIconButton(Icons.comment_outlined, onComment),
                     ],
                   ),
                   const SizedBox(height: 8),
+                  
+                  // Primary Call-to-Action Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {}, // TODO: Implement attendance logic
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
@@ -101,18 +133,20 @@ class EventCard extends StatelessWidget {
               ),
             ),
 
+            // --- CENTER DIVIDER ---
             const VerticalDivider(
               thickness: 1,
               width: 30,
               color: AppColors.divider,
             ),
 
-            // القسم الأيمن: المعلومات
+            // --- RIGHT COLUMN: Information & Details ---
             Expanded(
               flex: 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Main Event Title
                   Text(
                     title,
                     style: AppTextStyles.sectionTitle.copyWith(fontSize: 20),
@@ -120,6 +154,8 @@ class EventCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 10),
+                  
+                  // About Section Header
                   const Text(
                     "About",
                     style: TextStyle(
@@ -128,6 +164,8 @@ class EventCard extends StatelessWidget {
                       color: AppColors.primary,
                     ),
                   ),
+                  
+                  // Description / Reasoning Text
                   Text(
                     description,
                     style: const TextStyle(
@@ -138,6 +176,8 @@ class EventCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 15),
+                  
+                  // Details Section Header
                   const Text(
                     "Details",
                     style: TextStyle(
@@ -146,11 +186,38 @@ class EventCard extends StatelessWidget {
                       color: AppColors.primary,
                     ),
                   ),
+                  
+                  // Schedule Information
                   _buildDetailRow("Schedule:", schedule),
-                  _buildDetailRow("Price:", price),
+                  
+                  // Price Information (Handles the custom Widget row)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Price: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold, 
+                            fontSize: 13, 
+                            color: AppColors.textMain
+                          ),
+                        ),
+                        price, 
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 8),
+                  
+                  // AI Crowd Estimation Chip
                   _buildCrowdRow(crowdStatus),
-                  const Spacer(), // يدفع زر الموقع للأسفل
+                  
+                  // Spacer pushes the map icon to the very bottom right of the column
+                  const Spacer(), 
+                  
+                  // Route Suggestion Button
                   Align(
                     alignment: Alignment.bottomRight,
                     child: IconButton(
@@ -171,7 +238,9 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  // ميثود مساعدة لبناء أيقونات الأكشنز
+  /// Helper method to construct the small circular action icons (like, notify, comment).
+  ///
+  /// Wraps the icon in an [InkWell] to provide material ripple effects upon tapping.
   Widget _buildIconButton(IconData icon, VoidCallback? action) {
     return InkWell(
       onTap: action,
@@ -179,7 +248,12 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  // ميثود لعرض حالة الزحام
+  /// Helper method to build a visually distinct chip representing the crowd status.
+  ///
+  /// Color coding logic:
+  /// - LOW: Green
+  /// - MEDIUM: Orange
+  /// - HIGH (or any other value): Red
   Widget _buildCrowdRow(String status) {
     Color statusColor = status == "LOW"
         ? Colors.green
@@ -210,6 +284,9 @@ class EventCard extends StatelessWidget {
     );
   }
 
+  /// Helper method to build a standard text row for basic details (e.g., Schedule).
+  ///
+  /// Uses [RichText] to make the label bold while keeping the value normal weight.
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -228,6 +305,7 @@ class EventCard extends StatelessWidget {
     );
   }
 
+  /// Provides a safe fallback UI if the `imagePath` URL fails to load or is invalid.
   Widget _buildImageError() {
     return Container(
       height: 180,
