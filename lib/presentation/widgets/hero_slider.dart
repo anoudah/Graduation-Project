@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../core/theme.dart';
 import '../screens/event_details_screen.dart';
 import '../../core/utils/bilingual_helper.dart';
+import '../../core/localization/localization_extension.dart'; // Make sure this is imported!
 
 /// A stateful widget that displays a high-impact, auto-playing carousel 
 /// of trending events. It supports responsive layouts for mobile and 
@@ -84,8 +85,8 @@ class _HeroSliderState extends State<HeroSlider> {
           _eventCount = trendingEvents.length;
           
           return widget.isMobile 
-              ? _buildMobile(trendingEvents) 
-              : _buildDesktop(trendingEvents);
+              ? _buildMobile(trendingEvents, context) // Passed context here
+              : _buildDesktop(trendingEvents, context); // Passed context here
         }
       ),
     );
@@ -222,7 +223,7 @@ class _HeroSliderState extends State<HeroSlider> {
     );
   }
 
-  Widget _buildDesktop(List<dynamic> events) {
+  Widget _buildDesktop(List<dynamic> events, BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -236,9 +237,10 @@ class _HeroSliderState extends State<HeroSlider> {
           )
         ),
         const SizedBox(width: 60),
-        const Expanded(
+        Expanded(
           child: Text(
-            'SEE WHAT\nIS HAPPENING\nHERE', 
+            // Changed this line! Added context.loc
+            context.loc.seeWhatIsHappening, 
             style: AppTextStyles.heroDesktop
           ),
         ),
@@ -246,15 +248,16 @@ class _HeroSliderState extends State<HeroSlider> {
     );
   }
 
-  Widget _buildMobile(List<dynamic> events) {
+  Widget _buildMobile(List<dynamic> events, BuildContext context) {
     return Column(
       children: [
         _buildSlider(250, events),
         const SizedBox(height: 16),
         _buildDots(events.length),
         const SizedBox(height: 30),
-        const Text(
-          'SEE WHAT IS HAPPENING HERE', 
+        Text(
+          // Changed this line! Added context.loc
+          context.loc.seeWhatIsHappening, 
           textAlign: TextAlign.center, 
           style: AppTextStyles.heroMobile
         ),

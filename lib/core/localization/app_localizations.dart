@@ -436,4 +436,8 @@ class AppLocalizations {
       locale.languageCode == 'ar' ? 'رمز غير صحيح!' : 'Incorrect Code!';
   String get errorOccurred =>
       locale.languageCode == 'ar' ? 'حدث خطأ' : 'Error occurred';
+
+      //what's happening now
+      String get seeWhatIsHappening => 
+    locale.languageCode == 'ar' ? 'شاهد ما يحدث هنا' : 'SEE WHAT IS HAPPENING HERE';
 }

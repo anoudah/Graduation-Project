@@ -8,11 +8,10 @@ extension LocalizationExtension on BuildContext {
   /// Usage: context.loc.home (instead of AppLocalizations.of(...).home)
   AppLocalizations get loc {
     // 1. We must use 'watch' so the UI rebuilds when the user changes the language!
-    watch<LanguageProvider>(); 
+    final languageProvider = watch<LanguageProvider>(); 
     
-    // 2. Standard AppLocalizations usually takes the context ('this'), not the locale.
-    return AppLocalizations.of(this);
-    return AppLocalizations.of(this);
+    // 2. Use the provider's locale directly for custom localization
+    return AppLocalizations(languageProvider.currentLocale);
   }
   
   /// Check if current language is Arabic
