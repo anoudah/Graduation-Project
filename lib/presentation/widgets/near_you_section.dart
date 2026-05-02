@@ -96,7 +96,7 @@ class _NearYouSectionState extends State<NearYouSection> {
           debugPrint("WASEL DEBUG: Parsing error: $e");
         }
 
-        // 4. HA-VERSINE FORMULA & TIME CALCULATION
+        // 4. HA-VERSINE FORMULA (Using Utility)
         double distanceInMeters = AppUtils.calculateDistance(
           position.latitude, 
           position.longitude, 
@@ -104,17 +104,14 @@ class _NearYouSectionState extends State<NearYouSection> {
           targetLng
         );
 
-        // Add the new Time Math here!
-        double actualDrivingDistanceMeters = distanceInMeters * 1.2;
-        double distanceInKm = actualDrivingDistanceMeters / 1000;
-        int timeInMinutes = (distanceInKm / 40 * 60).round();
-
-        // 5. MERGE DATA: Combine original event data with the new distance & time math
+        // 5. MERGE DATA (Using Utility for Bilingual Math!)
         calculatedEvents.add({
           ...event, 
           'distance_raw': distanceInMeters, 
-          'distance': '${distanceInKm.toStringAsFixed(1)} km', // Formatted for UI
-          'time': '~$timeInMinutes min drive', // NEW TIME FIELD
+          // Ask the utility for the perfect, translated string
+          'distance': AppUtils.formatDistance(distanceInMeters, context), 
+          // Ask the utility for the perfect, translated driving time
+          'time': AppUtils.calculateDriveTime(distanceInMeters, context), 
         });
       }
 

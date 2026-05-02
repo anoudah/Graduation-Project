@@ -5,6 +5,11 @@ import '../../data/datasources/ai_remote_source.dart';
 import '../../core/theme.dart';
 import '../../core/utils/bilingual_helper.dart';
 
+// --- NEW IMPORTS FOR DYNAMIC DISTANCE ---
+import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/utils/geo_utils.dart';
+
 /// A screen that displays a localized, dynamic list of events for a specific category.
 /// 
 /// This screen connects to the Python AI backend to fetch real-time event data,
@@ -38,6 +43,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
   /// A future that holds the list of events fetched from the backend.
   late Future<List<dynamic>> _categoryEventsFuture;
 
+  // --- NEW: Variable to hold the user's current GPS location ---
+  Position? _userPosition;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +53,36 @@ class _CategoryScreenState extends State<CategoryScreen> {
     _categoryEventsFuture = _aiSource.fetchEventsByCategoryId(
       widget.categoryId,
     );
+    // Fetch the user's location as soon as the screen opens
+    _getUserLocation();
+  }
+
+  // --- NEW: Method to request permissions and get the user's coordinates ---
+  Future<void> _getUserLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      if (permission == LocationPermission.deniedForever) return;
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      
+      // Update the UI once the location is found
+      if (mounted) {
+        setState(() {
+          _userPosition = position;
+        });
+      }
+    } catch (e) {
+      debugPrint("WASEL LOCATION ERROR: $e");
+    }
   }
 
   @override
@@ -254,6 +292,53 @@ class _CategoryScreenState extends State<CategoryScreen> {
           if (crowdStatus == "MEDIUM") crowdColor = Colors.orange;
           if (crowdStatus == "HIGH") crowdColor = Colors.red;
 
+          // --- CLEAN, DYNAMIC DISTANCE CALCULATION ---
+          String distanceText = Directionality.of(context) == TextDirection.rtl ? '-- كم' : '-- km';
+          
+          if (_userPosition != null) {
+            try {
+              double eventLat = 24.7136; 
+              double eventLng = 46.6753;
+
+              var rawLat = item['latitude'] ?? item['Latitude'] ?? item['lat'] ?? item['_latitude'];
+              var rawLng = item['longitude'] ?? item['Longitude'] ?? item['lng'] ?? item['_longitude'];
+
+              var geo = item['location'] ?? item['Location'] ?? item['coordinates'] ?? item['Coordinates'];
+              if (geo != null) {
+                if (geo is Map) {
+                  // If Python sent it as a JSON Dictionary
+                  rawLat = geo['latitude'] ?? geo['Latitude'] ?? geo['lat'] ?? geo['_latitude'] ?? rawLat;
+                  rawLng = geo['longitude'] ?? geo['Longitude'] ?? geo['lng'] ?? geo['_longitude'] ?? rawLng;
+                } else {
+                  // If it actually is a native Firebase GeoPoint
+                  try {
+                    rawLat = geo.latitude;
+                    rawLng = geo.longitude;
+                  } catch (_) {}
+                }
+              }
+
+              if (rawLat != null && rawLng != null) {
+                eventLat = double.tryParse(rawLat.toString()) ?? 24.7136;
+                eventLng = double.tryParse(rawLng.toString()) ?? 46.6753;
+              }
+
+              // 1. Calculate using your AppUtils!
+              double distanceInMeters = AppUtils.calculateDistance(
+                _userPosition!.latitude,
+                _userPosition!.longitude,
+                eventLat,
+                eventLng,
+              );
+
+              // 2. Format using your AppUtils!
+              distanceText = AppUtils.formatDistance(distanceInMeters, context);
+
+            } catch (e) {
+              debugPrint("Error calculating distance: $e");
+            }
+          }
+
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
@@ -344,15 +429,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 color: AppColors.primary,
                               ),
                               const SizedBox(width: 4),
-                              const Text(
-                                '-- km',
-                                style: TextStyle(
+                              
+                              // --- UPDATED: Distance is now fully dynamic and bilingual! ---
+                              Text(
+                                distanceText, 
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: 'Poppins',
                                 ),
                               ),
+                              
                               const Spacer(),
                               Container(
                                 padding: const EdgeInsets.symmetric(

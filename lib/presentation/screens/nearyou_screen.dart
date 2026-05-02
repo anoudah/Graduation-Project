@@ -3,10 +3,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
-import '../../core/utils/geo_utils.dart';
 import '../../application/services/location_service.dart';
 import '../../core/localization/app_localizations.dart';
 import 'event_details_screen.dart';
+
+// --- NEW IMPORTS FOR ARCHITECTURE FIX ---
+import '../../core/utils/geo_utils.dart';
+import '../../core/utils/bilingual_helper.dart';
 
 /// A dedicated full-screen view for the Wasel app that plots the user's location
 /// and nearby cultural events on an interactive OpenStreetMap canvas.
@@ -31,21 +34,18 @@ class _NearYouScreenState extends State<NearYouScreen> {
   Position? _userPosition;
 
   // --- MAP STATE MANAGEMENT ---
-  // Tracks whether the map should expand to hide the list view and app bar
   bool _isFullScreen = false;
-  // Manually tracks the camera's exact center so custom zoom buttons don't pan the screen away
   LatLng _currentMapCenter = const LatLng(24.7136, 46.6753);
-  // Manually tracks zoom level to prevent zooming out into an empty grey screen
   double _currentZoom = 12.0;
 
   @override
   void initState() {
     super.initState();
-    _loadMapData(); // Initialize data fetching exactly when the screen mounts
+    _loadMapData(); 
   }
 
   /// Core logic: Fetches GPS hardware data, processes unpredictable database coordinates,
-  /// and calculates real-time distances.
+  /// and calculates real-time distances using the unified AppUtils.
   Future<void> _loadMapData() async {
     try {
       // 1. Request hardware GPS ping
@@ -55,47 +55,20 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
       // 2. DATA EXTRACTION LOOP
       for (var event in events) {
-        // Safe fallback coordinates (Riyadh City Center) to ensure the map engine always has a valid focal point
         double targetLat = 24.7136;
         double targetLng = 46.6753;
 
         try {
-          // 3. ULTIMATE COORDINATE EXTRACTOR: Bulletproof parsing for NoSQL schemas
-          // Aggressively checks flat structures, nested maps (Python FastAPI), and raw GeoPoints (Firebase SDK)
-          var rawLat =
-              event['latitude'] ??
-              event['Latitude'] ??
-              event['lat'] ??
-              event['_latitude'];
-          var rawLng =
-              event['longitude'] ??
-              event['Longitude'] ??
-              event['lng'] ??
-              event['_longitude'];
+          // 3. ULTIMATE COORDINATE EXTRACTOR
+          var rawLat = event['latitude'] ?? event['Latitude'] ?? event['lat'] ?? event['_latitude'];
+          var rawLng = event['longitude'] ?? event['Longitude'] ?? event['lng'] ?? event['_longitude'];
 
-          var geo =
-              event['location'] ??
-              event['Location'] ??
-              event['coordinates'] ??
-              event['Coordinates'] ??
-              event['GeoPoint'];
+          var geo = event['location'] ?? event['Location'] ?? event['coordinates'] ?? event['Coordinates'] ?? event['GeoPoint'];
           if (geo != null) {
             if (geo is Map) {
-              // Handles JSON dictionary formats
-              rawLat =
-                  geo['latitude'] ??
-                  geo['Latitude'] ??
-                  geo['lat'] ??
-                  geo['_latitude'] ??
-                  rawLat;
-              rawLng =
-                  geo['longitude'] ??
-                  geo['Longitude'] ??
-                  geo['lng'] ??
-                  geo['_longitude'] ??
-                  rawLng;
+              rawLat = geo['latitude'] ?? geo['Latitude'] ?? geo['lat'] ?? geo['_latitude'] ?? rawLat;
+              rawLng = geo['longitude'] ?? geo['Longitude'] ?? geo['lng'] ?? geo['_longitude'] ?? rawLng;
             } else {
-              // Handles native Firebase Flutter SDK GeoPoint objects
               try {
                 rawLat = geo.latitude;
                 rawLng = geo.longitude;
@@ -108,13 +81,13 @@ class _NearYouScreenState extends State<NearYouScreen> {
             targetLng = double.tryParse(rawLng.toString()) ?? 46.6753;
           }
         } catch (e) {
-          // Logs missing coordinates for backend debugging without crashing the client UI
           debugPrint("WASEL MAP PARSING ERROR: $e");
         }
 
-        // 4. Mathematical Haversine Distance & Time Calculation
+        // 4. MATHEMATICAL HAVERSINE DISTANCE & TIME (Using AppUtils!)
         double distanceInMeters = 0;
         String timeString = 'Unknown time';
+        String distanceString = '---';
 
         if (_userPosition != null) {
           distanceInMeters = AppUtils.calculateDistance(
@@ -124,11 +97,11 @@ class _NearYouScreenState extends State<NearYouScreen> {
             targetLng,
           );
 
-          // Add the driving time calculation
-          double actualDrivingDistanceMeters = distanceInMeters * 1.2;
-          double distanceInKm = actualDrivingDistanceMeters / 1000;
-          int timeInMinutes = (distanceInKm / 40 * 60).round();
-          timeString = '~$timeInMinutes min drive';
+          // Use the Utility to get bilingual strings safely
+          if (mounted) {
+            distanceString = AppUtils.formatDistance(distanceInMeters, context);
+            timeString = AppUtils.calculateDriveTime(distanceInMeters, context);
+          }
         }
 
         // 5. Append processed data to the new list
@@ -137,16 +110,14 @@ class _NearYouScreenState extends State<NearYouScreen> {
           'targetLat': targetLat,
           'targetLng': targetLng,
           'distance_raw': distanceInMeters,
-          'distance': AppUtils.formatDistance(distanceInMeters),
-          'time': timeString, // NEW: Save the time!
+          'distance': distanceString, 
+          'time': timeString, 
         });
       }
 
-      // 6. SORTING: Closest events mathematically sort to the top of the list view
+      // 6. SORTING: Closest events mathematically sort to the top
       calculatedEvents.sort(
-        (a, b) => (a['distance_raw'] as double).compareTo(
-          b['distance_raw'] as double,
-        ),
+        (a, b) => (a['distance_raw'] as double).compareTo(b['distance_raw'] as double),
       );
 
       // 7. Update state and render UI
@@ -154,12 +125,8 @@ class _NearYouScreenState extends State<NearYouScreen> {
         setState(() {
           _nearbyLocations = calculatedEvents;
           _isLoading = false;
-          // Set the map center to the user's location so resizing doesn't abruptly reset it
           if (_userPosition != null) {
-            _currentMapCenter = LatLng(
-              _userPosition!.latitude,
-              _userPosition!.longitude,
-            );
+            _currentMapCenter = LatLng(_userPosition!.latitude, _userPosition!.longitude);
           }
         });
       }
@@ -177,27 +144,19 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
   // --- UX CONTROL METHODS ---
 
-  /// Toggles the UI state between a split-screen (Map + List) and an immersive Fullscreen Map
   void _toggleFullScreen() {
     setState(() {
       _isFullScreen = !_isFullScreen;
     });
   }
 
-  /// Snaps the map camera directly back to the user's physical GPS location
   void _recenterMap() {
     if (_userPosition != null) {
-      _currentMapCenter = LatLng(
-        _userPosition!.latitude,
-        _userPosition!.longitude,
-      );
+      _currentMapCenter = LatLng(_userPosition!.latitude, _userPosition!.longitude);
       _mapController.move(_currentMapCenter, 14.0);
     }
   }
 
-  /// Safely increments or decrements the camera zoom.
-  /// Uses .clamp() to strictly prevent the user from zooming out past the world map (3.0)
-  /// or zooming in closer than the street level (18.0) which causes tile rendering errors.
   void _zoomMap(double zoomDelta) {
     double newZoom = (_currentZoom + zoomDelta).clamp(3.0, 18.0);
     _currentZoom = newZoom;
@@ -206,27 +165,20 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
   // --- UI RENDERERS ---
 
-  /// Dynamically generates map pins based on the processed database coordinates
   List<Marker> _buildMapMarkers() {
     List<Marker> markers = [];
 
-    // Generates red indicator pins for all available cultural events
     for (var location in _nearbyLocations) {
       markers.add(
         Marker(
           width: 40,
           height: 40,
           point: LatLng(location['targetLat'], location['targetLng']),
-          child: const Icon(
-            Icons.location_on,
-            color: AppColors.primary,
-            size: 35,
-          ),
+          child: const Icon(Icons.location_on, color: AppColors.primary, size: 35),
         ),
       );
     }
 
-    // Generates a distinct blue pulsing dot to represent the user's physical device
     if (_userPosition != null) {
       markers.add(
         Marker(
@@ -238,9 +190,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
               color: Colors.blue,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
-              boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 4),
-              ],
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
             ),
           ),
         ),
@@ -249,27 +199,15 @@ class _NearYouScreenState extends State<NearYouScreen> {
     return markers;
   }
 
-  /// A UI helper that constructs the floating circular buttons for the map control panel.
-  /// Ensures perfect design consistency across all map tools.
-  Widget _buildMapControlButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildMapControlButton({required IconData icon, required VoidCallback onPressed}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.white.withOpacity(
-          0.9,
-        ), // Modern semi-transparent glass effect
+        color: AppColors.white.withOpacity(0.9), 
         shape: BoxShape.circle,
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
-        ],
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
       ),
-      child: IconButton(
-        icon: Icon(icon, color: AppColors.primary),
-        onPressed: onPressed,
-      ),
+      child: IconButton(icon: Icon(icon, color: AppColors.primary), onPressed: onPressed),
     );
   }
 
@@ -277,8 +215,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
 
-    // 1. ISOLATED MAP COMPONENT:
-    // We isolate the map inside a variable so we can easily swap it between half-screen and fullscreen
+    // 1. ISOLATED MAP COMPONENT
     final Widget mapSection = Stack(
       children: [
         FlutterMap(
@@ -286,16 +223,9 @@ class _NearYouScreenState extends State<NearYouScreen> {
           options: MapOptions(
             initialCenter: _currentMapCenter,
             initialZoom: _currentZoom,
-            // CRITICAL UX FIX: Automatically track user pan/zoom gestures.
-            // If we don't update state here, clicking the custom +/- buttons will abruptly snap
-            // the camera back to where it started!
-            onPositionChanged: (position, hasGesture) {
-              // if (position.center != null) _currentMapCenter = position.center!;
-              // if (position.zoom != null) _currentZoom = position.zoom!;
-            },
+            onPositionChanged: (position, hasGesture) {},
           ),
           children: [
-            // Uses free OpenStreetMap tiles
             TileLayer(
               urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.wasel.riyadh_app',
@@ -305,8 +235,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
           ],
         ),
 
-        // 2. FLOATING UX CONTROLS (Right side)
-        // Positioned explicitly anchors the buttons to the bottom right corner over the map
+        // 2. FLOATING UX CONTROLS
         Positioned(
           right: 16,
           bottom: 16,
@@ -317,32 +246,21 @@ class _NearYouScreenState extends State<NearYouScreen> {
                 icon: _isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
                 onPressed: _toggleFullScreen,
               ),
-              _buildMapControlButton(
-                icon: Icons.my_location,
-                onPressed: _recenterMap,
-              ),
-              _buildMapControlButton(
-                icon: Icons.add,
-                onPressed: () => _zoomMap(1.0),
-              ),
-              _buildMapControlButton(
-                icon: Icons.remove,
-                onPressed: () => _zoomMap(-1.0),
-              ),
+              _buildMapControlButton(icon: Icons.my_location, onPressed: _recenterMap),
+              _buildMapControlButton(icon: Icons.add, onPressed: () => _zoomMap(1.0)),
+              _buildMapControlButton(icon: Icons.remove, onPressed: () => _zoomMap(-1.0)),
             ],
           ),
         ),
 
-        // 3. SAFETY BACK BUTTON (Left side)
-        // Since fullscreen mode hides the native AppBar, we must provide a custom back button
-        // so iOS users without physical back buttons do not get trapped on this screen.
+        // 3. SAFETY BACK BUTTON
         if (_isFullScreen)
           Positioned(
             top: 16,
             left: 16,
             child: _buildMapControlButton(
               icon: Icons.arrow_back,
-              onPressed: () => Navigator.pop(context), // Safely returns to Home
+              onPressed: () => Navigator.pop(context), 
             ),
           ),
       ],
@@ -350,32 +268,22 @@ class _NearYouScreenState extends State<NearYouScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      // 4. IMMERSIVE UX: Dynamically hide the AppBar entirely when in Full Screen mode
       appBar: _isFullScreen
           ? null
           : AppBar(
               title: Text(
                 localizations.nearYou,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               backgroundColor: AppColors.primary,
               centerTitle: true,
               iconTheme: const IconThemeData(color: Colors.white),
             ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          // SafeArea prevents the map from rendering underneath the iPhone Notch or Android status bar
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SafeArea(
               child: Column(
                 children: [
-                  // 5. THE FLUTTER CONTROLLER BUG FIX:
-                  // Flexible ensures the map widget tree never gets destroyed during layout shifts.
-                  // If we swapped widgets here instead, the MapController would disconnect and crash.
                   Flexible(
                     fit: _isFullScreen ? FlexFit.tight : FlexFit.loose,
                     child: SizedBox(
@@ -384,8 +292,6 @@ class _NearYouScreenState extends State<NearYouScreen> {
                     ),
                   ),
 
-                  // 6. LIST VIEW TOGGLE
-                  // We only render the list of cards if the user is NOT in fullscreen mode.
                   if (!_isFullScreen)
                     Expanded(
                       child: _errorMessage != null
@@ -397,44 +303,31 @@ class _NearYouScreenState extends State<NearYouScreen> {
                                 itemBuilder: (context, index) {
                                   final location = _nearbyLocations[index];
 
-                                  // Bulletproof title extraction to prevent "Null" strings in the UI
-                                  final String title =
-                                      location['Title']?.toString() ??
-                                      location['title']?.toString() ??
-                                      location['Name']?.toString() ??
-                                      location['name']?.toString() ??
-                                      localizations.unknownLocation;
+                                  // --- THE BILINGUAL FIX: Safely unpack the title map! ---
+                                  String title = BilingualHelper.getText(
+                                    location['Title'] ?? location['Name'], 
+                                    context
+                                  );
+                                  if (title.isEmpty) title = localizations.unknownLocation;
 
                                   return Card(
                                     elevation: 2,
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
+                                    margin: const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                                     child: ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 8,
-                                          ),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
 
-                                      // FEATURE 1: Click the card to go to Details
                                       onTap: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                EventDetailsScreen(
-                                                  eventData: location,
-                                                ),
+                                            builder: (context) => EventDetailsScreen(eventData: location),
                                           ),
                                         );
                                       },
 
                                       title: Text(
-                                        title,
+                                        title, // Safe Bilingual Title!
                                         style: AppTextStyles.subtitle.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.textMain,
@@ -442,76 +335,44 @@ class _NearYouScreenState extends State<NearYouScreen> {
                                       ),
                                       subtitle: _userPosition != null
                                           ? Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 6.0,
-                                              ),
+                                              padding: const EdgeInsets.only(top: 6.0),
                                               child: Row(
                                                 children: [
-                                                  const Icon(
-                                                    Icons.location_on,
-                                                    size: 14,
-                                                    color: AppColors.primary,
-                                                  ),
+                                                  const Icon(Icons.location_on, size: 14, color: AppColors.primary),
                                                   const SizedBox(width: 4),
                                                   Text(
-                                                    '${location['distance']}',
-                                                    style: const TextStyle(
-                                                      color: AppColors.primary,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
+                                                    '${location['distance']}', // Safe Bilingual Distance!
+                                                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
                                                   ),
                                                   const SizedBox(width: 16),
-                                                  const Icon(
-                                                    Icons.directions_car,
-                                                    size: 14,
-                                                    color: Colors.grey,
-                                                  ),
+                                                  const Icon(Icons.directions_car, size: 14, color: Colors.grey),
                                                   const SizedBox(width: 4),
                                                   Text(
-                                                    '${location['time']}',
-                                                    style: const TextStyle(
-                                                      color: Colors.grey,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
+                                                    '${location['time']}', // Safe Bilingual Time!
+                                                    style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
                                                   ),
                                                 ],
                                               ),
                                             )
                                           : Text(
                                               localizations.locationUnavailable,
-                                              style: const TextStyle(
-                                                color: Colors.grey,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
                                             ),
 
-                                      // FEATURE 2: The "Navigate" button lives here now!
                                       trailing: GestureDetector(
                                         onTap: () {
-                                          // This opens Google
                                           LocationService.openMapRoute(
                                             location['targetLat'],
                                             location['targetLng'],
                                           );
                                         },
                                         child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            const Icon(
-                                              Icons.directions,
-                                              color: AppColors.primary,
-                                              size: 24,
-                                            ),
+                                            const Icon(Icons.directions, color: AppColors.primary, size: 24),
                                             Text(
                                               localizations.navigate,
-                                              style: const TextStyle(
-                                                color: AppColors.primary,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
