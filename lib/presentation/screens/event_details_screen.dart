@@ -276,7 +276,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: NetworkImage(data['Image_Url'] ?? ''),
+          image: NetworkImage(
+            // التعديل هنا: يبحث عن كل المسميات المحتملة للصورة
+            data['Image_Url'] ?? data['image'] ?? data['Image'] ?? '',
+          ),
           fit: BoxFit.cover,
         ),
       ),

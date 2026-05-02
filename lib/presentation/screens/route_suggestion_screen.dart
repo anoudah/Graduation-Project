@@ -40,11 +40,11 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("يرجى تسجيل الدخول للتفاعل مع الفعاليات"),
+          content: const Text("Please login to interact with events"),
           backgroundColor: AppColors.primary,
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
-            label: "دخول",
+            label: "Login",
             textColor: Colors.white,
             onPressed: () => Navigator.push(
               context,
