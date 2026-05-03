@@ -30,21 +30,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          context.loc.resetPassword,
+          dialogContext.loc.resetPassword,
           style: const TextStyle(color: AppColors.primary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(context.loc.resetPasswordInstructions),
+            Text(dialogContext.loc.resetPasswordInstructions),
             const SizedBox(height: 15),
             TextField(
               controller: resetEmailController,
               decoration: InputDecoration(
-                hintText: context.loc.emailAddress,
+                hintText: dialogContext.loc.emailAddress,
                 prefixIcon: const Icon(Icons.email, color: AppColors.primary),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -55,9 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
-              context.loc.cancel,
+              dialogContext.loc.cancel,
               style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
@@ -70,24 +70,32 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             onPressed: () async {
               if (resetEmailController.text.isNotEmpty) {
+                final resetLinkSentMessage = dialogContext.loc.resetLinkSent;
+                final errorLabel = dialogContext.loc.error;
+
                 try {
                   await FirebaseAuth.instance.sendPasswordResetEmail(
                     email: resetEmailController.text.trim(),
                   );
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
-                      content: Text(context.loc.resetLinkSent),
+                      content: Text(resetLinkSentMessage),
                     ),
                   );
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("${context.loc.error}: ${e.toString()}")),
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(content: Text("$errorLabel: ${e.toString()}")),
                   );
                 }
               }
             },
-            child: Text(context.loc.send, style: const TextStyle(color: Colors.white)),
+            child: Text(
+              dialogContext.loc.send,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -104,6 +112,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+      final defaultErrorMessage = context.loc.error;
+      final noUserFoundMessage = context.loc.noUserFound;
+      final wrongPasswordMessage = context.loc.wrongPasswordProvided;
+
       try {
         // ١. عملية تسجيل الدخول في Auth
         UserCredential userCredential = await FirebaseAuth.instance
@@ -120,31 +132,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (userDoc.exists) {
           // إذا البيانات موجودة، ننتقل للهوم
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-              (route) => false,
-            );
-          }
+          if (!context.mounted) return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
         } else {
           // إذا الشخص مسجل دخول بس ماله بيانات في Firestore (مثل حالة الـ Add User اليدوي)
           throw "User data not found in Database";
         }
       } on FirebaseAuthException catch (e) {
         // معالجة أخطاء الفايربيس (مثل باسوورد غلط)
-        String message = context.loc.error;
+        String message = defaultErrorMessage;
         if (e.code == 'user-not-found') {
-          message = context.loc.noUserFound;
+          message = noUserFoundMessage;
         } else if (e.code == 'wrong-password') {
-          message = context.loc.wrongPasswordProvided;
+          message = wrongPasswordMessage;
         }
 
+        if (!context.mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
       } catch (e) {
         // معالجة أي خطأ آخر
+        if (!context.mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(e.toString())));

@@ -12,7 +12,7 @@ class ProfileColors {
 
 class ProfilePage extends StatefulWidget {
   final String? uid;
-  const ProfilePage({Key? key, this.uid}) : super(key: key);
+  const ProfilePage({super.key, this.uid});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -41,6 +41,8 @@ class _ProfilePageState extends State<ProfilePage> {
           .doc(user.uid)
           .get();
 
+      if (!mounted) return;
+
       if (userDoc.exists) {
         setState(() {
           fullNameController.text = userDoc['Full_Name'] ?? '';
@@ -59,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
         });
       }
     } catch (e) {
-      print("Error loading user data: $e");
+      debugPrint("Error loading user data: $e");
     }
   }
 
@@ -106,6 +108,8 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () async {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null) return;
+                final successMessage = AppLocalizations.of(context).profileUpdatedSuccessfully;
+                final failureMessage = AppLocalizations.of(context).couldNotSaveChanges;
 
                 try {
                   await FirebaseFirestore.instance.collection('Users').doc(user.uid).update({
@@ -114,18 +118,18 @@ class _ProfilePageState extends State<ProfilePage> {
                     'Last_Update': Timestamp.now(),
                   });
 
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(AppLocalizations.of(context).profileUpdatedSuccessfully),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  print("Error updating profile: $e");
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(AppLocalizations.of(context).couldNotSaveChanges)),
+                    SnackBar(
+                      content: Text(successMessage),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint("Error updating profile: $e");
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(failureMessage)),
                   );
                 }
               },

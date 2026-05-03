@@ -22,7 +22,7 @@ void main() {
       final provider = LanguageProvider();
 
       // Allow the asynchronous SharedPreferences load to finish.
-      await Future<void>.delayed(Duration.zero);
+      await _flushAsyncWork();
 
       expect(provider.currentLocale, const Locale('en'));
       expect(provider.currentLanguage, 'en');
@@ -32,6 +32,8 @@ void main() {
 
     test('setLanguage stores Arabic preference and notifies listeners', () async {
       final provider = LanguageProvider();
+      await _flushAsyncWork();
+
       var notificationCount = 0;
       provider.addListener(() => notificationCount++);
 
@@ -165,6 +167,14 @@ void main() {
       expect(provider.errorMessage, contains('Firebase unavailable'));
     });
   });
+}
+
+Future<void> _flushAsyncWork() async {
+  // SharedPreferences is loaded asynchronously by LanguageProvider's constructor.
+  // Flushing the microtask queue keeps these tests deterministic without
+  // changing production code.
+  await Future<void>.delayed(Duration.zero);
+  await Future<void>.delayed(Duration.zero);
 }
 
 EventModel _event({
