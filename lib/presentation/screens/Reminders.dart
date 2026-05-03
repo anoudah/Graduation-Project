@@ -2,19 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/localization/app_localizations.dart';
-// استدعاء ملف الثيم
+import '../../core/utils/bilingual_helper.dart'; 
 import '../../core/theme.dart';
 
+/// A screen that displays a list of events the user has marked for reminders.
+/// 
+/// This screen implements a "Nested Fetch" pattern:
+/// 1. It listens to a real-time stream of the 'User_Interactions' collection.
+/// 2. For each interaction found, it fetches the corresponding event details 
+///    from the 'Events' collection using the event ID.
 class RemindersScreen extends StatelessWidget {
-  const RemindersScreen({Key? key}) : super(key: key);
+  const RemindersScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // جلب الـ ID الخاص بالمستخدم المسجل حالياً
+    // Retrieves the unique ID of the currently authenticated Firebase user.
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return Scaffold(
-      backgroundColor: AppColors.background, // ربط خلفية الشاشة بالثيم
+      backgroundColor: AppColors.background, 
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context).yourReminders,
@@ -23,20 +29,24 @@ class RemindersScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.primary, // ربط لون الـ AppBar بالثيم
+        backgroundColor: AppColors.primary, 
         centerTitle: true,
       ),
-      // 1. نبدأ بـ StreamBuilder لمراقبة التذكيرات في جدول User_Interactions
+      // --- DATA LAYER: User Interactions Stream ---
+      // Monitors User_Interactions for documents where 'Reminder' is true for this user.
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('User_Interactions')
-            .where('User_Id', isEqualTo: currentUserId) // فلترة المستخدم
-            .where('Reminder', isEqualTo: true) // جلب التذكيرات فقط
+            .where('User_Id', isEqualTo: currentUserId) 
+            .where('Reminder', isEqualTo: true) 
             .snapshots(),
         builder: (context, snapshot) {
+          // Standard loading state while the stream initializes.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          
+          // Empty state handling if no reminders are found.
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
               child: Text(AppLocalizations.of(context).noRemindersCurrently),
@@ -50,17 +60,27 @@ class RemindersScreen extends StatelessWidget {
             itemCount: reminderDocs.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
+              // Extract the individual interaction document.
               final interaction =
                   reminderDocs[index].data() as Map<String, dynamic>;
+              
+              // --- THE FIX: Extract and validate the event ID ---
+              // If 'id' is null or empty, we must skip the fetch to avoid the ArgumentError.
               final String eventId = interaction['id'] ?? '';
 
-              // 2. لكل تذكير، نستخدم FutureBuilder لجلب "اسم" الفعالية من جدول Events
+              if (eventId.isEmpty) {
+                return const SizedBox.shrink(); // Silently skip broken database records.
+              }
+
+              // --- DATA LAYER: Event Details Fetch ---
+              // Fetches full Event details (Title, Schedule) from the 'Events' collection.
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
                     .collection('Events')
-                    .doc(eventId)
+                    .doc(eventId) // Validated non-empty string path.
                     .get(),
                 builder: (context, eventSnapshot) {
+                  // Show a small loader within the list item while fetching details.
                   if (!eventSnapshot.hasData) {
                     return const SizedBox(
                       height: 50,
@@ -71,17 +91,24 @@ class RemindersScreen extends StatelessWidget {
                   final eventData =
                       eventSnapshot.data?.data() as Map<String, dynamic>?;
 
-                  // الأسماء كما هي في الـ Firestore عندك (Title و Schedule)
-                  final String title =
-                      eventData?['Title'] ??
-                      AppLocalizations.of(context).unknownEvent;
-                  final String subtitle =
-                      eventData?['Schedule'] ??
-                      AppLocalizations.of(context).scheduleNotSet;
+                  // Defensive check: If the event document no longer exists in Firestore.
+                  if (eventData == null) {
+                    return const SizedBox.shrink(); 
+                  }
+
+                  // Resolve bilingual text (Arabic/English) based on the app's current locale.
+                  String title = BilingualHelper.getText(eventData['Title'], context);
+                  if (title.isEmpty) {
+                    title = AppLocalizations.of(context).unknownEvent;
+                  }
+
+                  String subtitle = BilingualHelper.getText(eventData['Schedule'], context);
+                  if (subtitle.isEmpty) {
+                    subtitle = AppLocalizations.of(context).scheduleNotSet;
+                  }
 
                   return Card(
-                    elevation:
-                        0, // خليتها 0 عشان تتماشى مع تصميم الـ Cards في الثيم الجديد
+                    elevation: 0, // Flat design consistent with the matte theme.
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -94,33 +121,30 @@ class RemindersScreen extends StatelessWidget {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: AppColors
-                              .primaryLight, // مناداة اللون الفاتح من الثيم
+                          color: AppColors.primaryLight, 
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.event,
-                          color: AppColors
-                              .primary, // مناداة اللون الأساسي للأيقونة
+                          color: AppColors.primary, 
                         ),
                       ),
                       title: Text(
                         title,
                         style: AppTextStyles.subtitle.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors
-                              .textMain, // استخدمت textMain حسب ملف الثيم حقك
+                          color: AppColors.textMain, 
                         ),
                       ),
                       subtitle: Text(
                         subtitle,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.textSecondary,
-                        ), // مناداة لون الوصف
+                        ), 
                       ),
-                      trailing: Icon(
+                      trailing: const Icon(
                         Icons.notifications,
-                        color: AppColors.primary, // مناداة لون أيقونة التنبيه
+                        color: AppColors.primary, 
                       ),
                     ),
                   );

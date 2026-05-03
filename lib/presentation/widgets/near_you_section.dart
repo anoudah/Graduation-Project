@@ -121,7 +121,7 @@ class _NearYouSectionState extends State<NearYouSection> {
       // 7. UI UPDATE: Redraw the widget with the top 5 closest locations
       if (mounted) {
         setState(() {
-          _nearbyLocations = calculatedEvents.take(5).toList();
+          _nearbyLocations = calculatedEvents.take(7).toList();
           _isLoading = false;
         });
       }

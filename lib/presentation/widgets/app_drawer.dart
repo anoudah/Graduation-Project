@@ -8,7 +8,7 @@ import '../../core/localization/app_localizations.dart';
 // --- Screen Imports ---
 import '../screens/profile.dart';
 import '../screens/favorites_screen.dart';
-import '../screens/Reminders.dart';
+import '../screens/reminders.dart';
 import '../screens/faq.dart';
 import '../screens/contactus.dart';
 import '../screens/login_screen.dart'; // NEW: Needed to redirect logged-out users
