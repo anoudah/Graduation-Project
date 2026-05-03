@@ -1,10 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'home_screen.dart'; // عشان ننتقل للهوم بعد الاختيار
-// استدعاء ملف الثيم
+import 'home_screen.dart';
 import '../../core/theme.dart';
-import '../../core/localization/app_localizations.dart'; 
+import '../../core/localization/app_localizations.dart';
+
+/// Data model to handle localizations and selection logic together
+class InterestItem {
+  final String id;
+  final String label;
+  InterestItem({required this.id, required this.label});
+}
 
 class InterestsScreen extends StatefulWidget {
   const InterestsScreen({super.key});
@@ -14,160 +20,248 @@ class InterestsScreen extends StatefulWidget {
 }
 
 class _InterestsScreenState extends State<InterestsScreen> {
-  // قائمة لحفظ الاهتمامات اللي اختارها المستخدم
-  final List<String> selectedInterests = [];
+  final Set<String> _selectedIds = {};
+  bool _isLoading = false;
+
+  /// Saves the selected interests to Firestore and navigates home
+  Future<void> _finishAccountCreation(AppLocalizations loc) async {
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.pleaseLoginFirst)),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await FirebaseFirestore.instance.collection('Users').doc(user.uid).set({
+        'selected_interests': _selectedIds.toList(),
+        'Selection_Date': FieldValue.serverTimestamp(),
+        'setup_complete': true,
+      }, SetOptions(merge: true));
+
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${loc.databaseError}: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _toggleInterest(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    
-    // قائمة الاهتمامات المتاحة
-    final List<String> categories = [
-      localizations.museums,
-      localizations.libraries,
-      localizations.heritage,
-      localizations.arts,
-      localizations.technology,
-      localizations.conferences,
-      localizations.traditionalFood,
-      localizations.festivals,
+    final loc = AppLocalizations.of(context);
+
+    // Dynamic list based on your localizations
+    final List<InterestItem> categories = [
+      InterestItem(id: 'museums', label: loc.museums),
+      InterestItem(id: 'libraries', label: loc.libraries),
+      InterestItem(id: 'heritage', label: loc.heritage),
+      InterestItem(id: 'arts', label: loc.arts),
+      InterestItem(id: 'technology', label: loc.technology),
+      InterestItem(id: 'conferences', label: loc.conferences),
+      InterestItem(id: 'food', label: loc.traditionalFood),
+      InterestItem(id: 'festivals', label: loc.festivals),
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.white, // تم الربط بالثيم
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              Text(
-                localizations.welcomeToWasel,
-                style: AppTextStyles.sectionTitle.copyWith(
-                  fontSize: 28,
-                  color: const Color(0xFF1A237E), // حافظت على اللون الكحلي الخاص بالترحيب
+      backgroundColor: AppColors.white,
+      body: Row(
+        children: [
+          // --- LEFT SECTION: BRANDING & PROGRESS ---
+          Expanded(
+            flex: 3,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  "WASEL",
+                  style: TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                    letterSpacing: 10,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                localizations.pickYourInterests,
-                style: AppTextStyles.subtitle.copyWith(fontSize: 16),
-              ),
-              const SizedBox(height: 30),
+                const SizedBox(height: 60),
+                Text(
+                  loc.welcomeToWasel,
+                  style: const TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textMain,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "STEP 02",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                    color: AppColors.primary.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 48),
+                Text(
+                  loc.pickYourInterests,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-              // عرض الاهتمامات بشكل شبكة مرنة
-              Expanded(
-                child: Wrap(
-                  spacing: 12, // المسافة الأفقية
-                  runSpacing: 12, // المسافة الرأسية
-                  children: categories.map((interest) {
-                    final isSelected = selectedInterests.contains(interest);
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            selectedInterests.remove(interest);
-                          } else {
-                            selectedInterests.add(interest);
-                          }
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary // تم الربط بالثيم
-                              : const Color(0xFFF0F2F5),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : Colors.transparent,
-                          ),
-                        ),
-                        child: Text(
-                          interest,
+          // Vertical structural divider
+          Container(
+            width: 1.5,
+            color: AppColors.divider.withOpacity(0.5),
+            height: MediaQuery.of(context).size.height * 0.7,
+          ),
+
+          // --- RIGHT SECTION: INTERESTS GRID ---
+          Expanded(
+            flex: 7,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 60),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Interests",
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
+                            fontSize: 42,
                             fontWeight: FontWeight.bold,
+                            color: AppColors.textMain,
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-              // زر الحفظ والانتقال للهوم
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: selectedInterests.isEmpty
-                      ? null
-                      : () async {
-                          // 1. التأكد من هوية اليوزر (للحماية)
-                          final user = FirebaseAuth.instance.currentUser;
-
-                          if (user == null) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(localizations.pleaseLoginFirst),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "Select multiple options to personalize your Riyadh experience.",
+                          style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 48),
+                        
+                        // --- GRID ---
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 800),
+                          child: GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 24,
+                              mainAxisSpacing: 24,
+                              childAspectRatio: 2.8,
+                            ),
+                            itemCount: categories.length,
+                            itemBuilder: (context, index) {
+                              final item = categories[index];
+                              final isSelected = _selectedIds.contains(item.id);
+                              return _buildModernCard(item, isSelected);
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 60),
+                        
+                        // --- ACTION BUTTON ---
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 800),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 62,
+                            child: ElevatedButton(
+                              onPressed: _selectedIds.isNotEmpty 
+                                  ? () => _finishAccountCreation(loc) 
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                              );
-                            }
-                            return;
-                          }
-
-                          final String uid = user.uid;
-
-                          try {
-                            // 2. حفظ الاهتمامات في Firestore (تأكدي من المسمى المطابق لصورتك)
-                            await FirebaseFirestore.instance
-                                .collection('Users')
-                                .doc(uid)
-                                .set({
-                                  'selected_interests':
-                                      selectedInterests, // الاسم المطابق للداتابيز عندك
-                                  'Selection_Date':
-                                      FieldValue.serverTimestamp(),
-                                }, SetOptions(merge: true));
-
-                            // 3. الانتقال للهوم بعد نجاح الحفظ
-                            if (context.mounted) {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomeScreen(),
+                              ),
+                              child: Text(
+                                loc.continueToHome,
+                                style: const TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              );
-                            }
-                          } catch (e) {
-                            print("${localizations.databaseError}: $e");
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary, // تم الربط بالثيم
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 5,
-                  ),
-                  child: Text(
-                    localizations.continueToHome,
-                    style: AppTextStyles.buttonText.copyWith(
-                      color: Colors.white,
-                      fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernCard(InterestItem item, bool isSelected) {
+    return GestureDetector(
+      onTap: () => _toggleInterest(item.id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected 
+                  ? AppColors.primary.withOpacity(0.2) 
+                  : Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Text(
+          item.label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? AppColors.white : AppColors.textMain,
+            fontSize: 16,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
         ),
       ),

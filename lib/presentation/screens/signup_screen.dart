@@ -3,13 +3,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // --- Core Imports ---
-import '../../core/theme.dart'; // تأكد من المسار الصحيح لملف الثيم
+import '../../core/theme.dart'; 
 
 // --- Screen Imports ---
 import 'interests_screen.dart';
-
 import 'login_screen.dart';
 
+/// --- PRESENTATION LAYER ---
+/// [SignUpScreen] handles the initial registration phase for new users.
+///
+/// It facilitates account creation via Firebase Auth, enforces legal declarations,
+/// initializes the user document in Firestore, and manages the email verification flow.
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -18,21 +22,29 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  // --- STATE VARIABLES ---
+  
+  /// GlobalKey used to validate the multiple input fields and checkboxes.
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
 
+  /// Controls the visual loading state during the registration/Firestore process.
   bool _isLoading = false;
+  
+  /// tracks if the user has confirmed the truthfulness of their data.
   bool _isDeclared = false;
+  
+  /// Tracks if the user has accepted legal terms and privacy policies.
   bool _isAgreed = false;
 
   @override
   void dispose() {
+    // Free up memory by disposing controllers when the screen is removed from the tree.
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -41,6 +53,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  // --- REGISTRATION LOGIC ---
+
+  /// Orchestrates the sign-up process.
+  /// 
+  /// Validates inputs, creates the Auth credentials, sends a verification email,
+  /// and initializes the Firestore document with default 'Wasel' user attributes.
   Future<void> _handleSignUp() async {
     // 1. Validation for inputs and terms
     if (_formKey.currentState!.validate()) {
@@ -54,9 +72,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
 
       if (_passwordController.text != _confirmPasswordController.text) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Passwords do not match")),
+        );
         return;
       }
 
@@ -73,7 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // 3. Send the verification link to the email
         await userCredential.user!.sendEmailVerification();
 
-        // 4. Save data to Firestore
+        // 4. Save data to Firestore with default "Wasel" project schema
         await FirebaseFirestore.instance
             .collection('Users')
             .doc(userCredential.user!.uid)
@@ -92,83 +110,89 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
         if (!mounted) return;
 
-        // 5. Show verification dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false, // Cannot close by clicking outside
-          builder: (context) => AlertDialog(
-            title: const Text("Verify Your Email"),
-            content: const Text(
-              "We've sent a verification link to your email. "
-              "Please check your inbox, verify your account, then click 'Done'.",
-            ),
-            actions: [
-              // Resend Button (To ensure the link is active and sent)
-              TextButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.currentUser
-                      ?.sendEmailVerification();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Verification link resent!")),
-                  );
-                },
-                child: const Text("Resend"),
-              ),
-              // Done Button (Checks the actual status)
-              TextButton(
-                onPressed: () async {
-                  // Refresh user status from Firebase server
-                  await FirebaseAuth.instance.currentUser?.reload();
-                  User? user = FirebaseAuth.instance.currentUser;
+        // 5. Show verification dialog (Locks user until verification is checked)
+        _showVerificationDialog();
 
-                  if (user != null && user.emailVerified) {
-                    if (!context.mounted) return;
-                    Navigator.pop(context); // Close dialog
-
-                    // Move to Interests Screen
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const InterestsScreen(),
-                      ),
-                    );
-                  } else {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Email not verified yet. Please click the link in your email.",
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-                child: const Text("Done"),
-              ),
-            ],
-          ),
-        );
       } on FirebaseAuthException catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message ?? "Error occurred")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Error occurred")),
+        );
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
     }
   }
 
+  /// Displays the modal dialog that prevents navigation until email is verified.
+  void _showVerificationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Verify Your Email"),
+        content: const Text(
+          "We've sent a verification link to your email. "
+          "Please check your inbox, verify your account, then click 'Done'.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Verification link resent!")),
+              );
+            },
+            child: const Text("Resend"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await FirebaseAuth.instance.currentUser?.reload();
+              User? user = FirebaseAuth.instance.currentUser;
+
+              if (user != null && user.emailVerified) {
+                if (!context.mounted) return;
+                Navigator.pop(context); 
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const InterestsScreen()),
+                );
+              } else {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Email not verified yet. Please check your inbox."),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text("Done"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // استخدام الثيم للخلفية
       backgroundColor: AppColors.background,
+      
+      // --- BACK BUTTON ---
+      extendBodyBehindAppBar: true, 
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textMain),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+
       body: _isLoading
           ? const Center(
-              // استخدام الثيم للون التحميل
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : SingleChildScrollView(
@@ -178,8 +202,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      const SizedBox(height: 60),
-                      // استخدام الثيم للعنوان الرئيسي
+                      const SizedBox(height: 80), // Adjusted for back button
                       const Text(
                         "WASEL",
                         style: TextStyle(
@@ -249,7 +272,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       const SizedBox(height: 30),
 
-                      // استخدام الثيم لزر التسجيل
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -278,14 +300,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             style: TextStyle(color: AppColors.textMain),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginScreen(),
-                                ),
-                              );
-                            },
+                            onTap: () => Navigator.of(context).pop(),
                             child: const Text(
                               "Login",
                               style: TextStyle(
@@ -304,6 +319,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
+  /// Builds a uniform text field with validation.
   Widget _buildTextField(
     String hint,
     IconData icon,
@@ -323,7 +339,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textHint),
-        // استخدام الثيم للأيقونات
         prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
         fillColor: AppColors.white,
@@ -335,13 +350,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
+  /// Builds a row containing a checkbox and associated descriptive text.
   Widget _buildCheckboxRow(String text, bool value, Function(bool?) onChanged) {
     return Row(
       children: [
         Checkbox(
           value: value,
           onChanged: onChanged,
-          // استخدام الثيم لعلامة الصح
           activeColor: AppColors.primary,
           checkColor: AppColors.white,
         ),
