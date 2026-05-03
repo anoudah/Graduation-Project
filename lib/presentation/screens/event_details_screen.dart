@@ -42,6 +42,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   String selectedCrowd = 'Low';
   TextEditingController commentController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    debugPrint("🎯 EventDetailsScreen: isFirstInHeritage = ${widget.isFirstInHeritage}");
+  }
+
   /// Authentication Gatekeeper.
   /// 
   /// Prevents anonymous users from modifying the database. If no user is logged in,
@@ -405,27 +411,35 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            if (widget.isFirstInHeritage)
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PaymentScreen(eventData: widget.eventData),
+            if (widget.isFirstInHeritage) ...[
+              Container(
+                color: Colors.yellow.withOpacity(0.3),
+                child: SizedBox(
+                  width: 120,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      debugPrint("📚 Book Now button tapped!");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PaymentScreen(eventData: widget.eventData),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    child: Text(
+                      context.loc.bookNow,
+                      style: const TextStyle(color: AppColors.white),
+                    ),
                   ),
                 ),
-                child: Text(
-                  context.loc.bookNow,
-                  style: const TextStyle(color: AppColors.white),
-                ),
               ),
+            ],
           ],
         ),
       ],

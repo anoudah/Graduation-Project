@@ -274,6 +274,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
         children: categoryItems.asMap().entries.map((entry) {
           int index = entry.key;
           var item = entry.value;
+          bool isFirstHeritage = index == 0 && widget.categoryId == 'HER';
+          
+          debugPrint("📍 CategoryScreen: index=$index, categoryId=${widget.categoryId}, isFirstHeritage=$isFirstHeritage");
           
           // Data Extraction: Safely parse localized bilingual maps.
           String title = BilingualHelper.getText(item['Title'], context);
@@ -362,7 +365,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   MaterialPageRoute(
                     builder: (context) => EventDetailsScreen(
                       eventData: item as Map<String, dynamic>,
-                      isFirstInHeritage: index == 0 && widget.categoryId == 'HER',
+                      isFirstInHeritage: isFirstHeritage,
                     ),
                   ),
                 );

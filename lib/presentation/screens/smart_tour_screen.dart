@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/theme.dart';
+import '../../core/localization/localization_extension.dart';
+import '../../core/utils/bilingual_helper.dart';
 import '../../application/services/location_service.dart';
 import '../widgets/event_card.dart';
 import 'login_screen.dart';
@@ -38,11 +40,11 @@ class SmartTourScreen extends StatelessWidget {
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Please login to interact with events"),
+          content: Text(context.loc.pleaseLoginToInteract),
           backgroundColor: AppColors.primary,
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
-            label: "Login",
+            label: context.loc.login,
             textColor: Colors.white,
             onPressed: () => Navigator.push(
               context,
@@ -56,7 +58,7 @@ class SmartTourScreen extends StatelessWidget {
     return true; 
   }
 
-  Widget _buildTransitCard(Map<String, dynamic> stop) {
+  Widget _buildTransitCard(BuildContext context, Map<String, dynamic> stop) {
     final bool isFarewell = stop['title'].toString().toLowerCase().contains('farewell') || 
                             stop['title'].toString().toLowerCase().contains('end');
     
@@ -79,19 +81,23 @@ class SmartTourScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  stop['title'] ?? 'Transit', 
+                  BilingualHelper.getText(stop['title'], context).isNotEmpty 
+                      ? BilingualHelper.getText(stop['title'], context) 
+                      : context.loc.transit, 
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  stop['reasoning'] ?? 'Moving to next destination', 
+                  BilingualHelper.getText(stop['reasoning'], context).isNotEmpty 
+                      ? BilingualHelper.getText(stop['reasoning'], context) 
+                      : context.loc.movingToNextDestination, 
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
           ),
           Text(
-            "${stop['duration_minutes'] ?? 0} Mins", 
+            "${stop['duration_minutes'] ?? 0} ${context.loc.minutes}", 
             style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
           ),
         ],
@@ -119,9 +125,9 @@ class SmartTourScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: const BackButton(color: AppColors.primary),
-        title: const Text(
-          "Your Smart Route",
-          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+        title: Text(
+          context.loc.yourSmartRoute,
+          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -134,7 +140,9 @@ class SmartTourScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tourData['tour_title'] ?? "Your Custom Tour",
+                    BilingualHelper.getText(tourData['tour_title'], context).isNotEmpty 
+                        ? BilingualHelper.getText(tourData['tour_title'], context) 
+                        : context.loc.yourCustomTour,
                     style: AppTextStyles.sectionTitle.copyWith(fontSize: 22),
                   ),
                   const SizedBox(height: 5),
@@ -143,7 +151,7 @@ class SmartTourScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Estimated time: ${tourData['total_estimated_hours']} hours",
+                        "${context.loc.estimatedTimeLabel}: ${tourData['total_estimated_hours']} ${context.loc.hours.toLowerCase()}",
                         style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       // TOTAL PRICE ROW
@@ -151,7 +159,7 @@ class SmartTourScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            actualTotal == 0 ? "Free Tour" : "Est. Cost: $totalPriceDisplay",
+                            actualTotal == 0 ? context.loc.freeTour : "${context.loc.estCost}: $totalPriceDisplay",
                             style: const TextStyle(
                               color: AppColors.primary, 
                               fontWeight: FontWeight.bold,
@@ -190,7 +198,7 @@ class SmartTourScreen extends StatelessWidget {
                     
                     // Create the custom Widget for the individual EventCard
                     Widget priceWidget = currentPrice == 0 
-                      ? const Text('Free', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
+                      ? Text(context.loc.free, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -244,19 +252,23 @@ class SmartTourScreen extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 25),
                               child: isTransit 
-                                ? _buildTransitCard(stop)
+                                ? _buildTransitCard(context, stop)
                                 : EventCard(
-                                    title: stop['title'] ?? 'Event',
+                                    title: BilingualHelper.getText(stop['title'], context).isNotEmpty 
+                                        ? BilingualHelper.getText(stop['title'], context) 
+                                        : context.loc.event,
                                     imagePath: stop['image'] ?? stop['Image'] ?? "https://placehold.co/400x300/png?text=Wasel+AI",
-                                    description: stop['reasoning'] ?? 'AI Selected Path',
-                                    schedule: "${stop['duration_minutes'] ?? 0} Mins",
+                                    description: BilingualHelper.getText(stop['reasoning'], context).isNotEmpty 
+                                        ? BilingualHelper.getText(stop['reasoning'], context) 
+                                        : context.loc.aiSelectedPath,
+                                    schedule: "${stop['duration_minutes'] ?? 0} ${context.loc.minutes}",
                                     price: priceWidget, // Passing the WIDGET here instead of a string
                                     crowdStatus: stop['crowd_status'] ?? "MEDIUM",
                                     onLike: () async {
                                       if (_checkLoginAndShowMessage(context)) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text("Event added to your favorites!"),
+                                          SnackBar(
+                                            content: Text(context.loc.eventAddedToFavorites),
                                             backgroundColor: AppColors.primary,
                                           ),
                                         );
@@ -280,13 +292,13 @@ class SmartTourScreen extends StatelessWidget {
                                         } catch (e) {
                                           if (context.mounted) {
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Could not open maps.')),
+                                              SnackBar(content: Text(context.loc.couldNotOpenMaps)),
                                             );
                                           }
                                         }
                                       } else {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Coordinates not available for this location.')),
+                                          SnackBar(content: Text(context.loc.coordinatesNotAvailable)),
                                         );
                                       }
                                     },
@@ -312,9 +324,9 @@ class SmartTourScreen extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Start Over',
-                  style: TextStyle(
+                child: Text(
+                  context.loc.startOver,
+                  style: const TextStyle(
                     fontSize: 18,
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,

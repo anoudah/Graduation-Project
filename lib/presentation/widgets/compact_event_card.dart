@@ -18,11 +18,16 @@ class CompactEventCard extends StatelessWidget {
   /// Determines the structural layout of the card. 
   /// Defaults to false (Column-based layout).
   final bool isFullWidth;
+  
+  /// Whether this is the first event in the Heritage and Traditions category.
+  /// Used to determine if the "Book Now" button should be shown in the details screen.
+  final bool isFirstInHeritage;
 
   const CompactEventCard({
     super.key,
     required this.eventData,
     this.isFullWidth = false,
+    this.isFirstInHeritage = false,
   });
 
   @override
@@ -45,7 +50,10 @@ class CompactEventCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EventDetailsScreen(eventData: eventData),
+            builder: (context) => EventDetailsScreen(
+              eventData: eventData,
+              isFirstInHeritage: isFirstInHeritage,
+            ),
           ),
         );
       },

@@ -91,8 +91,13 @@ class AppDrawer extends StatelessWidget {
 
               // 2. STANDARD MENU BUTTONS
               _buildDrawerTile(context, Icons.favorite_border, localizations.favorites, const FavoritesScreen()),
-              _buildDrawerTile(context, Icons.notifications_none, localizations.nearYou, const RemindersScreen()),
-              
+// In AppDrawer.dart
+_buildDrawerTile(
+  context, 
+  Icons.notifications_none, 
+  localizations.yourReminders, // Use 'yourReminders', not 'reminders'
+  const RemindersScreen()
+),              
               const Divider(), 
               
               _buildDrawerTile(context, Icons.help_outline, localizations.faq, const FAQPage()),

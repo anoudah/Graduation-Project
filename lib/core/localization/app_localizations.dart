@@ -361,7 +361,7 @@ class AppLocalizations {
 
   // Reminders
   String get yourReminders =>
-      locale.languageCode == 'ar' ? 'تذكيراتك' : 'Your Reminders';
+      locale.languageCode == 'ar' ? 'تذكيراتك' : 'Reminders';
   String get noRemindersCurrently => locale.languageCode == 'ar'
       ? 'لا توجد تذكيرات حالياً'
       : 'No reminders currently';
@@ -411,6 +411,31 @@ class AppLocalizations {
       locale.languageCode == 'ar' ? 'إنشاء مسار ذكي' : 'Generate Smart Route';
   String get startOver =>
       locale.languageCode == 'ar' ? 'البدء من جديد' : 'Start Over';
+
+  // Smart Tour Screen
+  String get yourSmartRoute =>
+      locale.languageCode == 'ar' ? 'مسارك الذكي' : 'Your Smart Route';
+  String get transit => locale.languageCode == 'ar' ? 'التنقل' : 'Transit';
+  String get movingToNextDestination => locale.languageCode == 'ar'
+      ? 'الانتقال إلى الوجهة التالية'
+      : 'Moving to next destination';
+  String get estimatedTimeLabel =>
+      locale.languageCode == 'ar' ? 'الوقت المقدر' : 'Estimated time';
+  String get freeTour => locale.languageCode == 'ar' ? 'جولة مجانية' : 'Free Tour';
+  String get estCost => locale.languageCode == 'ar' ? 'التكلفة المقدرة' : 'Est. Cost';
+  String get eventAddedToFavorites => locale.languageCode == 'ar'
+      ? 'تم إضافة الحدث إلى المفضلة!'
+      : 'Event added to your favorites!';
+  String get couldNotOpenMaps => locale.languageCode == 'ar'
+      ? 'تعذر فتح الخرائط.'
+      : 'Could not open maps.';
+  String get coordinatesNotAvailable => locale.languageCode == 'ar'
+      ? 'الإحداثيات غير متاحة لهذا الموقع.'
+      : 'Coordinates not available for this location.';
+  String get event => locale.languageCode == 'ar' ? 'الحدث' : 'Event';
+  String get aiSelectedPath => locale.languageCode == 'ar'
+      ? 'المسار المختار بالذكاء الاصطناعي'
+      : 'AI Selected Path';
 
   // Search
   String get searchMuseumsEvents => locale.languageCode == 'ar'
