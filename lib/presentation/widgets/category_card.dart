@@ -5,7 +5,7 @@ class CategoryCard extends StatelessWidget {
   // We use dynamic here because the map contains both Strings (labels) and IconData
   final Map<String, dynamic> category;
 
-  const CategoryCard({Key? key, required this.category}) : super(key: key);
+  const CategoryCard({super.key, required this.category});
 
   @override
   Widget build(BuildContext context) {

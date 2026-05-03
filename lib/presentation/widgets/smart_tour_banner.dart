@@ -28,7 +28,7 @@ class SmartTourBanner extends StatelessWidget {
                   boxShadow: [
                     // Premium colored glow shadow instead of harsh black
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.08), 
+                      color: AppColors.primary.withValues(alpha: 0.08), 
                       blurRadius: 32, 
                       offset: const Offset(0, 12),
                     )
@@ -40,7 +40,7 @@ class SmartTourBanner extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

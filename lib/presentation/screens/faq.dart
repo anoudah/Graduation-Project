@@ -5,7 +5,7 @@ import '../../core/theme.dart';
 import '../../core/localization/app_localizations.dart'; 
 
 class FAQPage extends StatelessWidget {
-  const FAQPage({Key? key}) : super(key: key);
+  const FAQPage({super.key});
 
   @override
   Widget build(BuildContext context) {

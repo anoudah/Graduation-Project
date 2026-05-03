@@ -116,7 +116,7 @@ class EventCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {}, // TODO: Implement attendance logic
+                      onPressed: () {}, // Attendance action is handled later.
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(

@@ -123,7 +123,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2,
-                    color: AppColors.primary.withOpacity(0.7),
+                    color: AppColors.primary.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -141,7 +141,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
           // Vertical structural divider
           Container(
             width: 1.5,
-            color: AppColors.divider.withOpacity(0.5),
+            color: AppColors.divider.withValues(alpha: 0.5),
             height: MediaQuery.of(context).size.height * 0.7,
           ),
 
@@ -248,8 +248,8 @@ class _InterestsScreenState extends State<InterestsScreen> {
           boxShadow: [
             BoxShadow(
               color: isSelected 
-                  ? AppColors.primary.withOpacity(0.2) 
-                  : Colors.black.withOpacity(0.03),
+                  ? AppColors.primary.withValues(alpha: 0.2) 
+                  : Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

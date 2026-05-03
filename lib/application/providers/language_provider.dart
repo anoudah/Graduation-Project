@@ -23,7 +23,7 @@ class LanguageProvider extends ChangeNotifier {
       _currentLocale = Locale(savedLanguage);
       notifyListeners();
     } catch (e) {
-      print('Error loading language preference: $e');
+      debugPrint('Error loading language preference: $e');
     }
   }
 
@@ -35,7 +35,7 @@ class LanguageProvider extends ChangeNotifier {
         await prefs.setString('language_code', languageCode);
         notifyListeners();
       } catch (e) {
-        print('Error setting language: $e');
+        debugPrint('Error setting language: $e');
       }
     }
   }

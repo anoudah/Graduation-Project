@@ -15,8 +15,8 @@ class HeroSlider extends StatefulWidget {
   const HeroSlider({
     required this.isMobile, 
     required this.trendingFuture, 
-    Key? key
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<HeroSlider> createState() => _HeroSliderState();

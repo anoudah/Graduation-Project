@@ -6,7 +6,7 @@ import '../../core/theme.dart';
 import '../../core/localization/app_localizations.dart'; 
 
 class ContactUsScreen extends StatefulWidget {
-  const ContactUsScreen({Key? key}) : super(key: key);
+  const ContactUsScreen({super.key});
 
   @override
   State<ContactUsScreen> createState() => _ContactUsScreenState();
@@ -184,13 +184,12 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       });
 
       // 3. Confirm success to the user
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.messageSentSuccessfully),
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.messageSentSuccessfully),
+        ),
+      );
 
       // 4. Clear form fields after successful submission
       _nameController.clear();
@@ -198,6 +197,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       _messageController.clear();
     } catch (e) {
       // 5. Error handling (e.g., connection issues)
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('${localizations.failedToSendMessage} $e')));

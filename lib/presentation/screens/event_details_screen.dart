@@ -129,6 +129,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
     String eventId = widget.eventData['id'] ?? '';
     if (commentController.text.isEmpty) return;
+    final successMessage =
+        AppLocalizations.of(context).reviewSubmittedSuccessfully;
 
     try {
       // 1. Push the comment to the feedback collection
@@ -161,18 +163,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       // 4. Cleanup UI state
       commentController.clear();
+      if (!mounted) return;
       Navigator.pop(context);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).reviewSubmittedSuccessfully,
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(successMessage),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       debugPrint("Detailed Error: $e");
     }
@@ -413,7 +412,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             const SizedBox(height: 8),
             if (widget.isFirstInHeritage) ...[
               Container(
-                color: Colors.yellow.withOpacity(0.3),
+                color: Colors.yellow.withValues(alpha: 0.3),
                 child: SizedBox(
                   width: 120,
                   child: ElevatedButton(
@@ -612,7 +611,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04), 
+            color: Colors.black.withValues(alpha: 0.04), 
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -698,7 +697,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: AppColors.primary, size: 22),

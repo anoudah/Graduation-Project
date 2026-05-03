@@ -203,7 +203,7 @@ class _NearYouScreenState extends State<NearYouScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.white.withOpacity(0.9), 
+        color: AppColors.white.withValues(alpha: 0.9), 
         shape: BoxShape.circle,
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
       ),

@@ -32,7 +32,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     try {
       // Step 1: Validate card details (basic check)
       final cardDetails = controller.details;
-      if (cardDetails?.number == null || cardDetails!.number!.isEmpty) {
+      if (cardDetails.number == null || cardDetails.number!.isEmpty) {
         throw Exception('Please enter valid card details');
       }
 
@@ -40,22 +40,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
       await Future.delayed(const Duration(seconds: 2));
 
       // Step 3: Simulate payment success (in real app, this would be server-side)
-      // For demo purposes, always succeed
-      const isSuccess = true;
-
-      if (isSuccess) {
-        // Step 4: Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Payment successful! Booking confirmed.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context); // Go back to previous screen
-        }
-      } else {
-        throw Exception('Payment declined');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment successful! Booking confirmed.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context); // Go back to previous screen
       }
     } catch (e) {
       // Step 5: Show error message

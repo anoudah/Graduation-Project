@@ -1,5 +1,6 @@
 //:    Contains the specific implementation for connecting to FirebaseFirestore.
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/models/event.dart';
 
 class EventsFirestoreDataSource {
@@ -18,7 +19,7 @@ class EventsFirestoreDataSource {
       }).toList();
     } catch (e) {
       // طباعة الخطأ تساعدك في مرحلة التطوير إذا كانت الـ Rules في فايربيس تمنع الوصول
-      print("Error fetching events: $e");
+      debugPrint("Error fetching events: $e");
       return [];
     }
   }
@@ -32,7 +33,7 @@ class EventsFirestoreDataSource {
 
       return EventModel.fromFirestore(doc.data()!);
     } catch (e) {
-      print("Error fetching event by ID: $e");
+      debugPrint("Error fetching event by ID: $e");
       return null;
     }
   }

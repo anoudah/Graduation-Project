@@ -70,7 +70,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
       if (permission == LocationPermission.deniedForever) return;
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       
       // Update the UI once the location is found
@@ -211,7 +213,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   color: AppColors.primaryLight, 
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -350,7 +352,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -453,7 +455,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: crowdColor.withOpacity(0.15),
+                                  color: crowdColor.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(

@@ -54,6 +54,7 @@ class _NearYouSectionState extends State<NearYouSection> {
 
       // 2. DATABASE READ: Wait for the events to finish downloading
       final events = await widget.eventsFuture;
+      if (!mounted) return;
       List<Map<String, dynamic>> calculatedEvents = [];
 
       // 3. THE MATH LOOP & DATA PARSING

@@ -159,7 +159,7 @@ class _SearchScreenState extends State<SearchScreen> {
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.divider.withOpacity(0.2),
+            color: AppColors.divider.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
           ),
           child: TextField(
@@ -221,7 +221,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -381,7 +381,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   term,
                   style: const TextStyle(color: AppColors.textMain),
                 ),
-                backgroundColor: AppColors.primaryLight.withOpacity(0.5),
+                backgroundColor: AppColors.primaryLight.withValues(alpha: 0.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),

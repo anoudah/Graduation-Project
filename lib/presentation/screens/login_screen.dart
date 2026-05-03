@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
             .get();
 
         if (userDoc.exists) {
-          if (!context.mounted) return;
+          if (!mounted) return;
           // 5. Navigate to Home Screen and clear the back-stack
           Navigator.pushAndRemoveUntil(
             context,
@@ -181,12 +181,12 @@ class _LoginScreenState extends State<LoginScreen> {
           message = "Invalid email or password. Please try again.";
         }
 
-        if (!context.mounted) return;
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
         
       } catch (e) {
         // Catch-all for network or database errors
-        if (!context.mounted) return;
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
         
       } finally {
