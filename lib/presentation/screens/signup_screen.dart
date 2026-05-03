@@ -300,7 +300,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             style: TextStyle(color: AppColors.textMain),
                           ),
                           GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                              );
+                            },
                             child: const Text(
                               "Login",
                               style: TextStyle(
