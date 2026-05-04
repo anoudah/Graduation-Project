@@ -185,17 +185,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         'id': eventId,
       });
 
-      // 3. تحديث عدادات الزحمة
+      // 2. تحديث عدادات الزحمة
       String crowdField = '';
+
       if (selectedCrowd == 'Low') {
         crowdField = 'report_low_count';
-      } else if (selectedCrowd == 'Medium')
-        // ignore: curly_braces_in_flow_control_structures
+      } else if (selectedCrowd == 'Medium') {
         crowdField = 'report_medium_count';
-      else if (selectedCrowd == 'High')
-        // ignore: curly_braces_in_flow_control_structures
+      } else if (selectedCrowd == 'High') {
         crowdField = 'report_high_count';
-
+      }
       if (crowdField.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('Events')
