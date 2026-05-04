@@ -255,7 +255,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               // --- عرض حالة الزحمة بنصوص ثابتة لتجنب إيرور ملفات الترجمة ---
               const Text(
                 "حالة الزحمة",
-                style: TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMain,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -271,7 +274,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   return ChoiceChip(
                     label: Text(label),
                     selected: selectedCrowd == level,
-                    selectedColor: AppColors.primary.withOpacity(0.2),
+                    // استبدلنا withOpacity بـ withValues لتجنب التحذير
+                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
                     onSelected: (bool selected) {
                       if (selected) {
                         // هنا يتم حفظ القيمة الإنجليزية ('Medium') لترسل للداتابيس
@@ -300,7 +304,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               const SizedBox(height: 15),
               ElevatedButton(
-                onPressed: _submitComment,
+                onPressed:
+                    _submitComment, // تأكدي أنكِ حدثتِ دالة _submitComment أيضاً
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   minimumSize: const Size(double.infinity, 50),
