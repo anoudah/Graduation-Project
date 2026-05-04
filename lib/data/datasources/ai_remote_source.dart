@@ -72,8 +72,16 @@ class AiRemoteSource {
   // ===========================================================================
   // --- 2. Fetch Smart Recommendations ---
   // ===========================================================================
-  Future<List<dynamic>> fetchRecommendations(String interest) async {
-    final url = Uri.parse('${AppConstants.aiBaseUrl}/recommend?interest=$interest');
+  // CHANGED HERE: Added optional userId parameter
+  Future<List<dynamic>> fetchRecommendations(String interest, {String? userId}) async {
+    
+    // CHANGED HERE: Append user_id to the URL if it exists
+    var urlString = '${AppConstants.aiBaseUrl}/recommend?interest=$interest';
+    if (userId != null && userId.isNotEmpty) {
+      urlString += '&user_id=$userId';
+    }
+    
+    final url = Uri.parse(urlString);
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'cached_recommendation_$interest';
 

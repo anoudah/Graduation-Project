@@ -63,15 +63,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // --- THE SMART FETCH LOGIC ---
-  // This helper pulls the real interests (like Culture or AI) from the logged-in user's profile.
   Future<List<dynamic>> _fetchPersonalizedRecommendations() async {
     String queryInterest = "Culture"; // Default fallback for guests
+    String? currentUserId; // NEW: Variable to hold the user ID
 
     try {
       final user = FirebaseAuth.instance.currentUser;
       
       if (user != null) {
-        // Access the specific user's document in the Firestore 'users' collection
+        currentUserId = user.uid; // Capture the user ID to pass to the AI
+        
         final userDoc = await FirebaseFirestore.instance.collection('Users').doc(user.uid).get();
         
         if (userDoc.exists && userDoc.data() != null) {
@@ -81,7 +82,6 @@ class _HomeScreenState extends State<HomeScreen> {
             if (userInterests is String) {
               queryInterest = userInterests;
             } else if (userInterests is List && userInterests.isNotEmpty) {
-              // Joins multiple interests (e.g. "Museums and Heritage") for the AI backend
               queryInterest = userInterests.join(" and "); 
             }
           }
@@ -91,8 +91,8 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint("WASEL: Error fetching user interests: $e");
     }
 
-    // Sends the dynamic interest string to your Python FastAPI backend
-    return _aiSource.fetchRecommendations(queryInterest);
+    // CHANGED HERE: Now we pass BOTH the interest AND the specific userId to the backend!
+    return _aiSource.fetchRecommendations(queryInterest, userId: currentUserId);
   }
 
   @override

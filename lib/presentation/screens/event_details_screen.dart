@@ -114,7 +114,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             .collection('Events')
             .doc(eventId)
             .update({
-              'attendance_count': value
+              // CHANGED HERE: Match the Python AI exactly ("attending_count")
+              'attending_count': value
                   ? FieldValue.increment(1)
                   : FieldValue.increment(-1),
             });
