@@ -152,32 +152,42 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Future<void> _submitComment() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user == null) {
-      return; // Enclosed in block
-    }
+    if (user == null) return;
 
     String eventId = widget.eventData['id'] ?? '';
-    if (commentController.text.isEmpty) {
-      return; // Enclosed in block
-    }
+    if (commentController.text.isEmpty) return;
 
     final successMessage = AppLocalizations.of(
       context,
     ).reviewSubmittedSuccessfully;
 
     try {
-      // 1. تخزين التعليق بالأسماء المعتمدة في قاعدة بياناتك
+      // --- الخطوة المضافة: جلب اسمك الحقيقي من جدول المستخدمين ---
+      String finalName = "Wasel User"; // القيمة الافتراضية
+
+      // نقوم بالبحث في مجموعة 'Users' عن الوثيقة التي تحمل نفس الـ UID الخاص بكِ
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(user.uid)
+          .get();
+
+      if (userDoc.exists && userDoc.data() != null) {
+        // نسحب القيمة من حقل 'Full_Name' (تأكدي أن الحقل بهذا الاسم في Firestore)
+        finalName = userDoc['Full_Name'] ?? "Wasel User";
+      }
+
+      // 1. تخزين التعليق بالاسم الحقيقي الذي جلبناه
       await FirebaseFirestore.instance.collection('Comment Feedback').add({
         'Comment_Text': commentController.text,
         'Date': Timestamp.now(),
-        'Full_Name': user.displayName ?? 'Wasel User',
+        'Full_Name': finalName, // تم استبدال user.displayName بـ finalName
         'Rating': userRating.toInt(),
         'User_Id': user.uid,
-        'crowd_report': selectedCrowd, // تخزن برمجياً Low/Medium/High
+        'crowd_report': selectedCrowd,
         'id': eventId,
       });
 
-      // 2. تحديث عدادات الزحمة لخدمة خوارزمية المشروع
+      // 2. تحديث عدادات الزحمة (باقي الكود كما هو تماماً)
       String crowdField = '';
       if (selectedCrowd == 'Low') {
         crowdField = 'report_low_count';
@@ -198,9 +208,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       }
 
       commentController.clear();
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -231,8 +239,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // عنوان "اكتب تعليق" من ملف الترجمة
               Text(
-                AppLocalizations.of(context).writeAReview,
+                context.loc.writeComment,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -243,7 +252,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               TextField(
                 controller: commentController,
                 decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context).shareYourExperience,
+                  hintText: context.loc.shareYourExperience,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -252,10 +261,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               const SizedBox(height: 15),
 
-              // --- عرض حالة الزحمة بنصوص ثابتة لتجنب إيرور ملفات الترجمة ---
-              const Text(
-                "حالة الزحمة",
-                style: TextStyle(
+              // عنوان "حالة الزحمة" من ملف الترجمة
+              Text(
+                context.loc.crowdStatus,
+                style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMain,
                 ),
@@ -264,21 +273,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               Wrap(
                 spacing: 10,
                 children: ['Low', 'Medium', 'High'].map((level) {
-                  // تحويل القيمة البرمجية لنص عربي للعرض فقط
-                  String label = level == 'Low'
-                      ? "منخفضة"
-                      : level == 'Medium'
-                      ? "متوسطة"
-                      : "عالية";
+                  // عرض النص المترجم (منخفضة/متوسطة/عالية) حسب لغة التطبيق
+                  String label = (level == 'Low')
+                      ? context.loc.low
+                      : (level == 'Medium')
+                      ? context.loc.medium
+                      : context.loc.high;
 
                   return ChoiceChip(
                     label: Text(label),
                     selected: selectedCrowd == level,
-                    // استبدلنا withOpacity بـ withValues لتجنب التحذير
                     selectedColor: AppColors.primary.withValues(alpha: 0.2),
                     onSelected: (bool selected) {
                       if (selected) {
-                        // هنا يتم حفظ القيمة الإنجليزية ('Medium') لترسل للداتابيس
+                        // حفظ القيمة الإنجليزية "Low" لتوحيد الداتابيس
                         setSheetState(() => selectedCrowd = level);
                       }
                     },
@@ -287,7 +295,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               const SizedBox(height: 15),
 
-              // Interactive Star Rating Builder
+              // نجوم التقييم التفاعلية
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
@@ -303,16 +311,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
               const SizedBox(height: 15),
+
+              // زر الإرسال
               ElevatedButton(
-                onPressed:
-                    _submitComment, // تأكدي أنكِ حدثتِ دالة _submitComment أيضاً
+                onPressed: () {
+                  _submitComment(); // استدعاء دالة الإرسال
+                  Navigator.pop(context); // إغلاق الواجهة بعد الإرسال
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Text(
-                  AppLocalizations.of(context).submit,
-                  style: const TextStyle(color: AppColors.white),
+                  context.loc.submitReview,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -869,10 +887,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // عنوان القسم بنص ثابت عشان ما يطلع لك خطأ
-        const Text(
-          "التعليقات",
-          style: TextStyle(
+        // 1. عنوان القسم مترجم
+        Text(
+          context.loc.reviews,
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -891,21 +909,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               return const LinearProgressIndicator();
             }
 
+            // 2. رسالة "لا توجد تعليقات" مترجمة
             if (snapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("لا توجد تعليقات بعد"));
+              return Center(child: Text(context.loc.noReviewsYet));
             }
 
             return Column(
               children: snapshot.data!.docs.map((doc) {
-                // ترجمة حالة الزحمة بنصوص ثابتة مؤقتاً لفك الأزمة
+                // 3. ترجمة حالة الزحمة ديناميكياً
                 String crowdValue = doc['crowd_report'] ?? 'Low';
                 String localizedCrowd;
                 if (crowdValue == 'Low') {
-                  localizedCrowd = "منخفضة";
+                  localizedCrowd = context.loc.low;
                 } else if (crowdValue == 'Medium') {
-                  localizedCrowd = "متوسطة";
+                  localizedCrowd = context.loc.medium;
                 } else {
-                  localizedCrowd = "عالية";
+                  localizedCrowd = context.loc.high;
                 }
 
                 return Card(
@@ -920,8 +939,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       children: [
                         Text(doc['Comment_Text'] ?? ''),
                         const SizedBox(height: 5),
+                        // 4. دمج نص "حالة الزحمة" مع القيمة المترجمة
                         Text(
-                          "حالة الزحمة: $localizedCrowd",
+                          "${context.loc.crowdStatus}: $localizedCrowd",
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
