@@ -162,40 +162,39 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     ).reviewSubmittedSuccessfully;
 
     try {
-      // --- الخطوة المضافة: جلب اسمك الحقيقي من جدول المستخدمين ---
-      String finalName = "Wasel User"; // القيمة الافتراضية
-
-      // نقوم بالبحث في مجموعة 'Users' عن الوثيقة التي تحمل نفس الـ UID الخاص بكِ
+      // 1. جلب الاسم (تأكدي من مطابقة حالة الأحرف للصورة)[cite: 1, 2]
+      String finalName = "Wasel User";
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('Users')
           .doc(user.uid)
           .get();
 
       if (userDoc.exists && userDoc.data() != null) {
-        // نسحب القيمة من حقل 'Full_Name' (تأكدي أن الحقل بهذا الاسم في Firestore)
+        // تعديل المسمى ليطابق صورة الـ Firebase (Full_Name)[cite: 1, 2]
         finalName = userDoc['Full_Name'] ?? "Wasel User";
       }
 
-      // 1. تخزين التعليق بالاسم الحقيقي الذي جلبناه
+      // 2. تخزين التعليق (استخدام await هنا يضمن الحفظ)
       await FirebaseFirestore.instance.collection('Comment Feedback').add({
         'Comment_Text': commentController.text,
         'Date': Timestamp.now(),
-        'Full_Name': finalName, // تم استبدال user.displayName بـ finalName
+        'Full_Name': finalName,
         'Rating': userRating.toInt(),
         'User_Id': user.uid,
         'crowd_report': selectedCrowd,
         'id': eventId,
       });
 
-      // 2. تحديث عدادات الزحمة (باقي الكود كما هو تماماً)
+      // 3. تحديث عدادات الزحمة
       String crowdField = '';
       if (selectedCrowd == 'Low') {
         crowdField = 'report_low_count';
-      } else if (selectedCrowd == 'Medium') {
+      } else if (selectedCrowd == 'Medium')
+        // ignore: curly_braces_in_flow_control_structures
         crowdField = 'report_medium_count';
-      } else if (selectedCrowd == 'High') {
+      else if (selectedCrowd == 'High')
+        // ignore: curly_braces_in_flow_control_structures
         crowdField = 'report_high_count';
-      }
 
       if (crowdField.isNotEmpty) {
         await FirebaseFirestore.instance
@@ -207,15 +206,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             });
       }
 
+      // 4. التعديل المطلوب: تنظيف الحقل وإغلاق الشيت فقط[cite: 3]
       commentController.clear();
       if (!mounted) return;
+
+      // يغلق نافذة الكتابة فقط ويتركك في صفحة الفعالية[cite: 3]
       Navigator.pop(context);
 
+      // إظهار رسالة النجاح[cite: 3]
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
     } catch (e) {
-      debugPrint("DATABASE ERROR: $e");
+      debugPrint("DATABASE ERROR: $e"); // لو فشل الحفظ بيطبع السبب هنا[cite: 3]
     }
   }
 
@@ -316,7 +319,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ElevatedButton(
                 onPressed: () {
                   _submitComment(); // استدعاء دالة الإرسال
-                  Navigator.pop(context); // إغلاق الواجهة بعد الإرسال
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
