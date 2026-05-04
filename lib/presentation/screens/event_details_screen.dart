@@ -11,7 +11,7 @@ import '../../core/utils/bilingual_helper.dart';
 
 /// --- PRESENTATION LAYER ---
 /// [EventDetailsScreen] acts as the deep-dive view for a specific event.
-/// 
+///
 /// Responsibilities:
 /// 1. Parse and display bilingual event data safely to prevent JSON mapping crashes.
 /// 2. Handle user interactions (Favorites, Reminders, Attendance, and Reviews).
@@ -20,11 +20,15 @@ import '../../core/utils/bilingual_helper.dart';
 class EventDetailsScreen extends StatefulWidget {
   /// The raw event data payload passed from the previous screen (e.g., CategoryScreen).
   final Map<String, dynamic> eventData;
-  
+
   /// Whether this is the first event in the heritage and traditions category.
   final bool isFirstInHeritage;
 
-  const EventDetailsScreen({super.key, required this.eventData, this.isFirstInHeritage = false});
+  const EventDetailsScreen({
+    super.key,
+    required this.eventData,
+    this.isFirstInHeritage = false,
+  });
 
   @override
   State<EventDetailsScreen> createState() => _EventDetailsScreenState();
@@ -36,7 +40,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool isFavorite = false;
   bool isReminder = false;
   bool isAttending = false;
-  
+
   // State for the review/comment bottom sheet.
   double userRating = 5.0;
   String selectedCrowd = 'Low';
@@ -45,11 +49,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint("🎯 EventDetailsScreen: isFirstInHeritage = ${widget.isFirstInHeritage}");
+    debugPrint(
+      "🎯 EventDetailsScreen: isFirstInHeritage = ${widget.isFirstInHeritage}",
+    );
   }
 
   /// Authentication Gatekeeper.
-  /// 
+  ///
   /// Prevents anonymous users from modifying the database. If no user is logged in,
   /// it halts the action and prompts them to navigate to the [LoginScreen].
   bool _checkLoginAndShowMessage() {
@@ -77,9 +83,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   /// Updates the user's interaction (Favorite, Reminder, Attending) in Firestore.
-  /// 
-  /// Creates or merges a document in the `User_Interactions` collection using a 
-  /// composite ID (`userId_eventId`). If the user marks "Attending", it also 
+  ///
+  /// Creates or merges a document in the `User_Interactions` collection using a
+  /// composite ID (`userId_eventId`). If the user marks "Attending", it also
   /// increments/decrements the global `attendance_count` on the main Event document.
   Future<void> _updateInteraction(String field, bool value) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -119,38 +125,48 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   /// Submits a user review and crowd report to the Firestore database.
-  /// 
-  /// Writes the comment to the `Comment Feedback` collection and increments 
+  ///
+  /// Writes the comment to the `Comment Feedback` collection and increments
   /// the respective crowd counter (Low, Medium, High) on the main Event document
   /// to feed data into the AI crowd estimation model.
   Future<void> _submitComment() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+
+    if (user == null) {
+      return; // Enclosed in block
+    }
 
     String eventId = widget.eventData['id'] ?? '';
-    if (commentController.text.isEmpty) return;
-    final successMessage =
-        AppLocalizations.of(context).reviewSubmittedSuccessfully;
+    if (commentController.text.isEmpty) {
+      return; // Enclosed in block
+    }
+
+    final successMessage = AppLocalizations.of(
+      context,
+    ).reviewSubmittedSuccessfully;
 
     try {
-      // 1. Push the comment to the feedback collection
+      // 1. تخزين التعليق بالأسماء المعتمدة في قاعدة بياناتك
       await FirebaseFirestore.instance.collection('Comment Feedback').add({
-        'Comment_Text': commentController.text, 
-        'Date': Timestamp.now(), 
-        'Rating': userRating.toInt(), 
-        'User_Id': user.uid, 
-        'crowd_report': selectedCrowd, 
-        'id': eventId, 
-        'User_Name': user.displayName ?? 'User', 
+        'Comment_Text': commentController.text,
+        'Date': Timestamp.now(),
+        'Full_Name': user.displayName ?? 'Wasel User',
+        'Rating': userRating.toInt(),
+        'User_Id': user.uid,
+        'crowd_report': selectedCrowd, // تخزن برمجياً Low/Medium/High
+        'id': eventId,
       });
 
-      // 2. Determine which crowd metric to increment
+      // 2. تحديث عدادات الزحمة لخدمة خوارزمية المشروع
       String crowdField = '';
-      if (selectedCrowd == 'Low') crowdField = 'report_low_count';
-      if (selectedCrowd == 'Medium') crowdField = 'report_medium_count';
-      if (selectedCrowd == 'High') crowdField = 'report_high_count';
+      if (selectedCrowd == 'Low') {
+        crowdField = 'report_low_count';
+      } else if (selectedCrowd == 'Medium') {
+        crowdField = 'report_medium_count';
+      } else if (selectedCrowd == 'High') {
+        crowdField = 'report_high_count';
+      }
 
-      // 3. Update the global event crowd statistics
       if (crowdField.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('Events')
@@ -161,19 +177,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             });
       }
 
-      // 4. Cleanup UI state
       commentController.clear();
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(successMessage),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
     } catch (e) {
-      debugPrint("Detailed Error: $e");
+      debugPrint("DATABASE ERROR: $e");
     }
   }
 
@@ -254,7 +268,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   /// Helper to make raw DateTimes look premium (e.g., "Apr 6").
   String _formatDate(DateTime date) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return "${months[date.month - 1]} ${date.day}";
   }
 
@@ -265,7 +292,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     String ampm = hour >= 12 ? 'PM' : 'AM';
 
     hour = hour % 12;
-    if (hour == 0) hour = 12; 
+    if (hour == 0) hour = 12;
 
     String minuteStr = minute < 10 ? '0$minute' : '$minute';
     return "$hour:$minuteStr $ampm";
@@ -274,7 +301,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final data = widget.eventData;
-    
+
     // UI SAFETY: Safely extract AppBar Category Title using the BilingualHelper.
     // This prevents the app from crashing if 'Category' is a Map instead of a String.
     String categoryTitle = BilingualHelper.getText(data['Category'], context);
@@ -290,7 +317,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          categoryTitle, 
+          categoryTitle,
           style: const TextStyle(color: AppColors.textMain),
         ),
         centerTitle: true,
@@ -325,9 +352,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   /// Builds the large cover image for the event.
   Widget _buildHeaderImage(Map<String, dynamic> data) {
     // ASSET SAFETY: Checks multiple DB keys for the image.
-    // It also intercepts known bad CORS domains (via.placeholder.com) and swaps 
+    // It also intercepts known bad CORS domains (via.placeholder.com) and swaps
     // them with safe alternatives to prevent Flutter Web CanvasKit crashes.
-    String imageUrl = BilingualHelper.getText(data['Image_Url'] ?? data['image'] ?? data['Image'], context);
+    String imageUrl = BilingualHelper.getText(
+      data['Image_Url'] ?? data['image'] ?? data['Image'],
+      context,
+    );
     if (imageUrl.isEmpty || imageUrl.contains('via.placeholder.com')) {
       imageUrl = 'https://placehold.co/400x300/png?text=Culture+Event';
     }
@@ -338,7 +368,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       decoration: BoxDecoration(
         color: AppColors.avatarBg,
         image: DecorationImage(
-          image: NetworkImage(imageUrl), 
+          image: NetworkImage(imageUrl),
           fit: BoxFit.cover,
         ),
       ),
@@ -351,7 +381,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     if (title.isEmpty) title = "Unknown Event";
 
     return Text(
-      title, 
+      title,
       style: const TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
@@ -421,7 +451,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PaymentScreen(eventData: widget.eventData),
+                          builder: (context) =>
+                              PaymentScreen(eventData: widget.eventData),
                         ),
                       );
                     },
@@ -455,7 +486,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   /// Renders the event description block, safely extracting bilingual text.
   Widget _buildAboutSection(Map<String, dynamic> data, BuildContext context) {
-    String aboutText = BilingualHelper.getText(data['About'] ?? data['Description'], context);
+    String aboutText = BilingualHelper.getText(
+      data['About'] ?? data['Description'],
+      context,
+    );
     if (aboutText.isEmpty) aboutText = "No description available.";
 
     return Column(
@@ -483,7 +517,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   /// Builds the critical details block containing Schedule, Price, and Location logic.
-  /// 
+  ///
   /// This method contains robust fallback logic. It attempts to parse native Firestore
   /// Timestamps, ISO Strings from the Python backend, and manual schedule strings.
   Widget _buildDetailsGrid(Map<String, dynamic> data, BuildContext context) {
@@ -509,17 +543,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             DateTime endDate = end.toDate();
             String endTime = _formatTime(endDate);
 
-            if (startDate.day != endDate.day || startDate.month != endDate.month) {
+            if (startDate.day != endDate.day ||
+                startDate.month != endDate.month) {
               if (startTime == endTime) {
-                scheduleText = "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime everyday";
+                scheduleText =
+                    "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime everyday";
               } else {
-                scheduleText = "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime - $endTime everyday";
+                scheduleText =
+                    "${_formatDate(startDate)} - ${_formatDate(endDate)}, ${startDate.year}\n$startTime - $endTime everyday";
               }
             } else {
-              scheduleText = "${_formatDate(startDate)}, ${startDate.year}\n$startTime — $endTime";
+              scheduleText =
+                  "${_formatDate(startDate)}, ${startDate.year}\n$startTime — $endTime";
             }
           } else {
-            scheduleText = "${_formatDate(startDate)}, ${startDate.year}\n$startTime";
+            scheduleText =
+                "${_formatDate(startDate)}, ${startDate.year}\n$startTime";
           }
         }
         // Handle Python backend ISO string formats
@@ -536,20 +575,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 parsedEnd = parsedEnd.toLocal();
                 String endTime = _formatTime(parsedEnd);
 
-                if (parsedStart.day != parsedEnd.day || parsedStart.month != parsedEnd.month) {
+                if (parsedStart.day != parsedEnd.day ||
+                    parsedStart.month != parsedEnd.month) {
                   if (startTime == endTime) {
-                    scheduleText = "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime everyday";
+                    scheduleText =
+                        "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime everyday";
                   } else {
-                    scheduleText = "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime - $endTime everyday";
+                    scheduleText =
+                        "${_formatDate(parsedStart)} - ${_formatDate(parsedEnd)}, ${parsedStart.year}\n$startTime - $endTime everyday";
                   }
                 } else {
-                  scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime — $endTime";
+                  scheduleText =
+                      "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime — $endTime";
                 }
               } else {
-                scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
+                scheduleText =
+                    "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
               }
             } else {
-              scheduleText = "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
+              scheduleText =
+                  "${_formatDate(parsedStart)}, ${parsedStart.year}\n$startTime";
             }
           } else {
             scheduleText = start.split('T').first;
@@ -561,11 +606,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
 
     // 2. SAFELY PARSE BILINGUAL PRICE (Updated for Image Symbol)
-    String rawPrice = BilingualHelper.getText(data['Price'] ?? data['price'], context);
+    String rawPrice = BilingualHelper.getText(
+      data['Price'] ?? data['price'],
+      context,
+    );
     bool isArabic = Directionality.of(context) == TextDirection.rtl;
-    
+
     bool isFree = rawPrice.isEmpty || rawPrice == "0";
-    String priceDisplay = isFree ? (isArabic ? 'مجاني' : 'Free Entry') : rawPrice;
+    String priceDisplay = isFree
+        ? (isArabic ? 'مجاني' : 'Free Entry')
+        : rawPrice;
 
     // Create a custom widget for the price if it's not free
     Widget? customPriceWidget;
@@ -586,7 +636,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           Image.asset(
             'assets/images/riyal_symbol.png',
             height: 12, // Scaled to match the fontSize 15
-            color: AppColors.textMain, // Tints the symbol to match the detail text
+            color:
+                AppColors.textMain, // Tints the symbol to match the detail text
             errorBuilder: (context, error, stackTrace) => const Text(
               ' SAR',
               style: TextStyle(
@@ -601,8 +652,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
 
     // 3. SAFELY PARSE LOCATION NAME
-    String locationAddress = BilingualHelper.getText(data['Location_Address'] ?? data['Location_Name'], context);
-    if (locationAddress.isEmpty) locationAddress = isArabic ? "الرياض" : "Riyadh";
+    String locationAddress = BilingualHelper.getText(
+      data['Location_Address'] ?? data['Location_Name'],
+      context,
+    );
+    if (locationAddress.isEmpty) {
+      locationAddress = isArabic ? "الرياض" : "Riyadh";
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -611,7 +667,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04), 
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -619,21 +675,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       ),
       child: Column(
         children: [
-          _premiumDetailRow(Icons.calendar_today, context.loc.dateAndTime, scheduleText),
-          const SizedBox(height: 16), 
+          _premiumDetailRow(
+            Icons.calendar_today,
+            context.loc.dateAndTime,
+            scheduleText,
+          ),
+          const SizedBox(height: 16),
 
           _premiumDetailRow(
             Icons.confirmation_number_outlined,
             context.loc.ticketPrice,
-            priceDisplay, 
-            customValueWidget: customPriceWidget, // Pass our new image row here!
+            priceDisplay,
+            customValueWidget:
+                customPriceWidget, // Pass our new image row here!
           ),
           const SizedBox(height: 16),
 
           _premiumDetailRow(
             Icons.location_on_outlined,
             context.loc.location,
-            locationAddress, 
+            locationAddress,
           ),
 
           const SizedBox(height: 24),
@@ -653,11 +714,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     targetLat = geo.latitude;
                     targetLng = geo.longitude;
                   } else {
-                    var fallbackLat = data['latitude'] ?? data['targetLat'] ?? data['Latitude'];
-                    var fallbackLng = data['longitude'] ?? data['targetLng'] ?? data['Longitude'];
+                    var fallbackLat =
+                        data['latitude'] ??
+                        data['targetLat'] ??
+                        data['Latitude'];
+                    var fallbackLng =
+                        data['longitude'] ??
+                        data['targetLng'] ??
+                        data['Longitude'];
                     if (fallbackLat != null && fallbackLng != null) {
-                      targetLat = double.tryParse(fallbackLat.toString()) ?? 24.7136;
-                      targetLng = double.tryParse(fallbackLng.toString()) ?? 46.6753;
+                      targetLat =
+                          double.tryParse(fallbackLat.toString()) ?? 24.7136;
+                      targetLng =
+                          double.tryParse(fallbackLng.toString()) ?? 46.6753;
                     }
                   }
                 } catch (e) {
@@ -691,7 +760,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   /// A highly reusable UI component for creating clean, icon-based info rows.
   /// Added [customValueWidget] to support injecting the custom PNG symbol.
-  Widget _premiumDetailRow(IconData icon, String title, String value, {Widget? customValueWidget}) {
+  Widget _premiumDetailRow(
+    IconData icon,
+    String title,
+    String value, {
+    Widget? customValueWidget,
+  }) {
     return Row(
       children: [
         Container(
@@ -717,14 +791,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               const SizedBox(height: 4),
               // Use the custom widget if provided, otherwise default to standard Text
-              customValueWidget ?? Text(
-                value,
-                style: const TextStyle(
-                  color: AppColors.textMain,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              customValueWidget ??
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      color: AppColors.textMain,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
             ],
           ),
         ),
@@ -737,49 +812,70 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // عنوان القسم بنص ثابت عشان ما يطلع لك خطأ
         const Text(
-          "Reviews",
+          "التعليقات",
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: AppColors.textMain,
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 15),
-        // Real-time listener pointing to the 'Reviews' collection filtering by Event_Id.
+
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('Reviews')
-              .where('Event_Id', isEqualTo: eventId)
+              .collection('Comment Feedback')
+              .where('id', isEqualTo: eventId)
+              .orderBy('Date', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
-            if (!snapshot.hasData) return const LinearProgressIndicator();
+            if (!snapshot.hasData) {
+              return const LinearProgressIndicator();
+            }
+
+            if (snapshot.data!.docs.isEmpty) {
+              return const Center(child: Text("لا توجد تعليقات بعد"));
+            }
+
             return Column(
-              children: snapshot.data!.docs
-                  .map(
-                    (doc) => Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: ListTile(
-                        title: Text(
-                          doc['User_Name'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(doc['Comment']),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 16,
-                            ),
-                            Text(doc['Rating'].toString()),
-                          ],
-                        ),
-                      ),
+              children: snapshot.data!.docs.map((doc) {
+                // ترجمة حالة الزحمة بنصوص ثابتة مؤقتاً لفك الأزمة
+                String crowdValue = doc['crowd_report'] ?? 'Low';
+                String localizedCrowd;
+                if (crowdValue == 'Low') {
+                  localizedCrowd = "منخفضة";
+                } else if (crowdValue == 'Medium') {
+                  localizedCrowd = "متوسطة";
+                } else {
+                  localizedCrowd = "عالية";
+                }
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
+                    title: Text(
+                      doc['Full_Name'] ?? 'User',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  )
-                  .toList(),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(doc['Comment_Text'] ?? ''),
+                        const SizedBox(height: 5),
+                        Text(
+                          "حالة الزحمة: $localizedCrowd",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Text("${doc['Rating']} ⭐"),
+                  ),
+                );
+              }).toList(),
             );
           },
         ),
