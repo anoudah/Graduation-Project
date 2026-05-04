@@ -62,11 +62,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       final localizations = AppLocalizations.of(context);
+      
+      // 1. Instantly remove any stuck snackbars before showing a new one
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      // 2. Show the new, auto-dismissing floating snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(localizations.pleaseLoginToInteract),
+          behavior: SnackBarBehavior.floating, // Makes it hover instead of attaching to the bottom
+          margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20), // Gives it nice rounded breathing room
           backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 3), // GUARANTEES it will vanish after 3 seconds
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10), // Matches your app's modern aesthetic
+          ),
           action: SnackBarAction(
             label: localizations.login,
             textColor: AppColors.white,
