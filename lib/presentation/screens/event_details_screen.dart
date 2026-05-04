@@ -241,7 +241,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // عنوان "اكتب تعليق" من ملف الترجمة
+              // 1. عنوان "اكتب تعليق"
               Text(
                 context.loc.writeComment,
                 style: const TextStyle(
@@ -263,7 +263,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               const SizedBox(height: 15),
 
-              // عنوان "حالة الزحمة" من ملف الترجمة
+              // 2. عنوان "حالة الزحمة"
               Text(
                 context.loc.crowdStatus,
                 style: const TextStyle(
@@ -272,31 +272,42 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
+              // استخدمنا Center و Row بدلاً من Wrap لتنسيق الخيارات في المنتصف
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: ['Low', 'Medium', 'High'].map((level) {
-                  // عرض النص المترجم (منخفضة/متوسطة/عالية) حسب لغة التطبيق
                   String label = (level == 'Low')
                       ? context.loc.low
                       : (level == 'Medium')
                       ? context.loc.medium
                       : context.loc.high;
 
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: selectedCrowd == level,
-                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                    onSelected: (bool selected) {
-                      if (selected) {
-                        // حفظ القيمة الإنجليزية "Low" لتوحيد الداتابيس
-                        setSheetState(() => selectedCrowd = level);
-                      }
-                    },
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ChoiceChip(
+                      label: Text(label),
+                      selected: selectedCrowd == level,
+                      selectedColor: AppColors.primary.withOpacity(0.2),
+                      onSelected: (bool selected) {
+                        if (selected) {
+                          setSheetState(() => selectedCrowd = level);
+                        }
+                      },
+                    ),
                   );
                 }).toList(),
               ),
               const SizedBox(height: 15),
 
+              // 3. إضافة عنوان "التقييم" فوق النجوم (التعديل الجديد)
+              const Text(
+                "Rate the Event", // أو يمكنكِ استخدام الترجمة: context.loc.rateEvent
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMain,
+                ),
+              ),
+              const SizedBox(height: 5),
               // نجوم التقييم التفاعلية
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -312,12 +323,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 20),
 
-              // زر الإرسال
+              // 4. زر الإرسال
               ElevatedButton(
-                onPressed: () {
-                  _submitComment(); // استدعاء دالة الإرسال
+                onPressed: () async {
+                  await _submitComment(); // استدعاء دالة الإرسال مع await لضمان الحفظ
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
