@@ -21,13 +21,13 @@ class EventDetailsScreen extends StatefulWidget {
   /// The raw event data payload passed from the previous screen (e.g., CategoryScreen).
   final Map<String, dynamic> eventData;
 
-  /// Whether this is the first event in the heritage and traditions category.
-  final bool isFirstInHeritage;
+  /// The category id from the screen that opened this event, when available.
+  final String? sourceCategoryId;
 
   const EventDetailsScreen({
     super.key,
     required this.eventData,
-    this.isFirstInHeritage = false,
+    this.sourceCategoryId,
   });
 
   @override
@@ -50,9 +50,64 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   void initState() {
     super.initState();
     debugPrint(
-      "🎯 EventDetailsScreen: isFirstInHeritage = ${widget.isFirstInHeritage}",
+      "EventDetailsScreen: sourceCategoryId = ${widget.sourceCategoryId}",
     );
   }
+
+  String _normalizeForMatch(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
+  }
+
+  Iterable<String> _textValues(dynamic field) sync* {
+    if (field == null) return;
+
+    if (field is String) {
+      yield field;
+      return;
+    }
+
+    if (field is Map) {
+      for (final value in field.values) {
+        if (value != null) yield value.toString();
+      }
+      return;
+    }
+
+    yield field.toString();
+  }
+
+  bool get _isHeritageCategory {
+    final categoryIds = [
+      widget.sourceCategoryId,
+      widget.eventData['Category_ID'],
+      widget.eventData['Category_Id'],
+      widget.eventData['categoryId'],
+      widget.eventData['category_id'],
+    ]
+        .where((value) => value != null)
+        .map((value) => value.toString().trim().toUpperCase());
+
+    if (categoryIds.any((value) => value == 'HER')) return true;
+
+    return _textValues(widget.eventData['Category']).any((value) {
+      final normalized = _normalizeForMatch(value);
+      return normalized.contains('heritage') && normalized.contains('tradition');
+    });
+  }
+
+  bool get _isDiriyahHistoricalTour {
+    return _textValues(widget.eventData['Title']).any((value) {
+      final normalized = _normalizeForMatch(value);
+      final hasDiriyah =
+          normalized.contains('diriyah') || normalized.contains('diriyadh');
+      return hasDiriyah &&
+          normalized.contains('historical') &&
+          normalized.contains('tour');
+    });
+  }
+
+  bool get _showBookingButton =>
+      _isHeritageCategory && _isDiriyahHistoricalTour;
 
   /// Authentication Gatekeeper.
   ///
@@ -527,32 +582,29 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            if (widget.isFirstInHeritage) ...[
-              Container(
-                color: Colors.yellow.withValues(alpha: 0.3),
-                child: SizedBox(
-                  width: 120,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      debugPrint("📚 Book Now button tapped!");
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              PaymentScreen(eventData: widget.eventData),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+            if (_showBookingButton) ...[
+              SizedBox(
+                width: 120,
+                child: ElevatedButton(
+                  onPressed: () {
+                    debugPrint("Book Now button tapped!");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PaymentScreen(eventData: widget.eventData),
                       ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      context.loc.bookNow,
-                      style: const TextStyle(color: AppColors.white),
-                    ),
+                  ),
+                  child: Text(
+                    context.loc.bookNow,
+                    style: const TextStyle(color: AppColors.white),
                   ),
                 ),
               ),

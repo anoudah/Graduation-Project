@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../core/theme.dart';
+import '../../core/utils/bilingual_helper.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Map<String, dynamic> eventData;
@@ -64,8 +65,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final eventTitle = widget.eventData['Title'] ?? 'Event';
-    final eventPrice = widget.eventData['Price'] != null ? '${widget.eventData['Price']} SAR' : '150 SAR';
+    final resolvedTitle = BilingualHelper.getText(
+      widget.eventData['Title'],
+      context,
+    );
+    final eventTitle = resolvedTitle.isNotEmpty ? resolvedTitle : 'Event';
+    final rawPrice = BilingualHelper.getText(
+      widget.eventData['Price'] ?? widget.eventData['price'],
+      context,
+    );
+    final eventPrice = rawPrice.trim().isNotEmpty ? '$rawPrice SAR' : '150 SAR';
 
     return Scaffold(
       backgroundColor: AppColors.background,

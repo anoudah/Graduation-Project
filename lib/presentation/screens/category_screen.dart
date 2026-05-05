@@ -273,12 +273,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
-        children: categoryItems.asMap().entries.map((entry) {
-          int index = entry.key;
-          var item = entry.value;
-          bool isFirstHeritage = index == 0 && widget.categoryId == 'HER';
+        children: categoryItems.map((item) {
           
-          debugPrint("📍 CategoryScreen: index=$index, categoryId=${widget.categoryId}, isFirstHeritage=$isFirstHeritage");
+          debugPrint("CategoryScreen: categoryId=${widget.categoryId}");
           
           // Data Extraction: Safely parse localized bilingual maps.
           String title = BilingualHelper.getText(item['Title'], context);
@@ -367,7 +364,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   MaterialPageRoute(
                     builder: (context) => EventDetailsScreen(
                       eventData: item as Map<String, dynamic>,
-                      isFirstInHeritage: isFirstHeritage,
+                      sourceCategoryId: widget.categoryId,
                     ),
                   ),
                 );
