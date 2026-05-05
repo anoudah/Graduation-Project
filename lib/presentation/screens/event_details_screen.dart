@@ -219,7 +219,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     ).reviewSubmittedSuccessfully;
 
     try {
-      // 1. جلب الاسم (تأكدي من مطابقة حالة الأحرف للصورة)[cite: 1, 2]
+      // 1. جلب الاسم
       String finalName = "Wasel User";
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('Users')
@@ -227,11 +227,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           .get();
 
       if (userDoc.exists && userDoc.data() != null) {
-        // تعديل المسمى ليطابق صورة الـ Firebase (Full_Name)[cite: 1, 2]
         finalName = userDoc['Full_Name'] ?? "Wasel User";
       }
 
-      // 2. تخزين التعليق (استخدام await هنا يضمن الحفظ)
+      // 2. تخزين التعليق
       await FirebaseFirestore.instance.collection('Comment Feedback').add({
         'Comment_Text': commentController.text,
         'Date': Timestamp.now(),
@@ -242,7 +241,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         'id': eventId,
       });
 
-      // 2. تحديث عدادات الزحمة
+      // 3. تحديث عدادات الزحمة
       String crowdField = '';
 
       if (selectedCrowd == 'Low') {
@@ -262,19 +261,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             });
       }
 
-      // 4. التعديل المطلوب: تنظيف الحقل وإغلاق الشيت فقط[cite: 3]
+      // 4. التعديل المطلوب: تنظيف الحقل وإغلاق الشيت فقط
       commentController.clear();
       if (!mounted) return;
 
-      // يغلق نافذة الكتابة فقط ويتركك في صفحة الفعالية[cite: 3]
+      // يغلق نافذة الكتابة فقط ويتركك في صفحة الفعالية
       Navigator.pop(context);
 
-      // إظهار رسالة النجاح[cite: 3]
+      // إظهار رسالة النجاح
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
     } catch (e) {
-      debugPrint("DATABASE ERROR: $e"); // لو فشل الحفظ بيطبع السبب هنا[cite: 3]
+      debugPrint("DATABASE ERROR: $e");
     }
   }
 
@@ -357,9 +356,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               const SizedBox(height: 15),
 
-              // 3. إضافة عنوان "التقييم" فوق النجوم (التعديل الجديد)
+              // 3. إضافة عنوان "التقييم" فوق النجوم
               const Text(
-                "Rate the Event", // أو يمكنكِ استخدام الترجمة: context.loc.rateEvent
+                "Rate the Event", 
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMain,
@@ -386,7 +385,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               // 4. زر الإرسال
               ElevatedButton(
                 onPressed: () async {
-                  await _submitComment(); // استدعاء دالة الإرسال مع await لضمان الحفظ
+                  await _submitComment(); 
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -468,27 +467,37 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeaderImage(data),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildMainTitle(data),
-                  const SizedBox(height: 20),
-                  _buildActionButtons(context),
-                  const SizedBox(height: 30),
-                  _buildAboutSection(data, context),
-                  const SizedBox(height: 30),
-                  _buildDetailsGrid(data, context),
-                  const SizedBox(height: 40),
-                  _buildReviewsSection(data['id'] ?? ''),
-                ],
-              ),
+        // =====================================================================
+        // THE RESPONSIVE WEB FIX
+        // Center the content and restrict it to an 800px max width so it 
+        // doesn't stretch infinitely on large web browser windows!
+        // =====================================================================
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              children: [
+                _buildHeaderImage(data),
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildMainTitle(data),
+                      const SizedBox(height: 20),
+                      _buildActionButtons(context),
+                      const SizedBox(height: 30),
+                      _buildAboutSection(data, context),
+                      const SizedBox(height: 30),
+                      _buildDetailsGrid(data, context),
+                      const SizedBox(height: 40),
+                      _buildReviewsSection(data['id'] ?? ''),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -18,7 +18,9 @@ import 'smart_tour_screen.dart';
 /// 3. Communicates with [LocationService] to append exact GPS coordinates to the request.
 /// 4. Delegates the final rendering of the generated data to [SmartTourScreen].
 class RouteSuggestionScreen extends StatefulWidget {
-  const RouteSuggestionScreen({super.key, String? filterCategoryId});
+  final String? filterCategoryId; // Receives the category ID from the banner
+
+  const RouteSuggestionScreen({super.key, this.filterCategoryId});
 
   @override
   State<RouteSuggestionScreen> createState() => _RouteSuggestionScreenState();
@@ -40,7 +42,8 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
   // --- USER INPUT STATE ---
   // ===========================================================================
 
-  /// Maintains the list of selected cultural categories. Defaults to 'Museums'.
+  /// Maintains the list of selected cultural categories. Defaults to 'Museums'
+  /// unless overridden by the initState below.
   final List<String> _selectedVibes = ['Museums'];
 
   /// Determines the constraint for the AI's schedule generation.
@@ -63,6 +66,17 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
   // ===========================================================================
   // --- INTERACTIVE METHODS ---
   // ===========================================================================
+
+  @override
+  void initState() {
+    super.initState();
+    // THE FIX: Check if a category was passed from the previous screen.
+    // If yes, clear the default 'Museums' and use the user's actual selection!
+    if (widget.filterCategoryId != null && widget.filterCategoryId!.isNotEmpty) {
+      _selectedVibes.clear();
+      _selectedVibes.add(widget.filterCategoryId!);
+    }
+  }
 
   /// Opens the native time picker. Parses the string state into integers,
   /// and updates the UI only if the user confirms a valid time.
@@ -110,7 +124,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Text(
                   context.loc.selectTourDuration,
                   style: const TextStyle(
@@ -153,7 +167,10 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
   void _toggleCategory(String category) {
     setState(() {
       if (_selectedVibes.contains(category)) {
-        _selectedVibes.remove(category);
+        // Prevent deselecting the last category to ensure the AI always has a prompt
+        if (_selectedVibes.length > 1) {
+          _selectedVibes.remove(category);
+        }
       } else {
         _selectedVibes.add(category);
       }
