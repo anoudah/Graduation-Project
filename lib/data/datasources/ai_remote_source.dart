@@ -4,20 +4,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wasel/core/constants.dart';
 
 class AiRemoteSource {
-  
   // ===========================================================================
   // --- Chatbot Stream Method ---
   // ===========================================================================
   /// Connects to the FastAPI /chat endpoint and returns a stream of text chunks.
   Stream<String> getChatStream(
     String userQuery, {
-    String? eventId, 
-    required String sessionId, 
+    String? eventId,
+    required String sessionId,
     String? userId,
   }) async* {
-    
     // Construct the URL with the new parameters
-    var urlString = '${AppConstants.aiBaseUrl}/chat?user_query=${Uri.encodeComponent(userQuery)}&session_id=$sessionId';
+    var urlString =
+        '${AppConstants.aiBaseUrl}/chat?user_query=${Uri.encodeComponent(userQuery)}&session_id=$sessionId';
     if (eventId != null) urlString += '&event_id=$eventId';
     if (userId != null) urlString += '&user_id=$userId';
 
@@ -27,7 +26,7 @@ class AiRemoteSource {
       // We use http.Request + send() to handle StreamingResponse
       final request = http.Request('GET', url);
       final response = await http.Client().send(request);
-      
+
       if (response.statusCode == 200) {
         // Transform the byte stream into a readable UTF-8 String stream
         yield* response.stream
@@ -50,15 +49,13 @@ class AiRemoteSource {
     final cacheKey = 'cached_category_$categoryId';
 
     try {
-      final response = await http.get(
-        url,
-      ).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final eventsList = data['events'];
         await prefs.setString(cacheKey, json.encode(eventsList));
-        return eventsList; 
+        return eventsList;
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
@@ -73,22 +70,22 @@ class AiRemoteSource {
   // --- 2. Fetch Smart Recommendations ---
   // ===========================================================================
   // CHANGED HERE: Added optional userId parameter
-  Future<List<dynamic>> fetchRecommendations(String interest, {String? userId}) async {
-    
+  Future<List<dynamic>> fetchRecommendations(
+    String interest, {
+    String? userId,
+  }) async {
     // CHANGED HERE: Append user_id to the URL if it exists
     var urlString = '${AppConstants.aiBaseUrl}/recommend?interest=$interest';
     if (userId != null && userId.isNotEmpty) {
       urlString += '&user_id=$userId';
     }
-    
+
     final url = Uri.parse(urlString);
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'cached_recommendation_$interest';
 
     try {
-      final response = await http.get(
-        url,
-      ).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -114,9 +111,7 @@ class AiRemoteSource {
     final cacheKey = 'cached_event_$eventId';
 
     try {
-      final response = await http.get(
-        url,
-      ).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -142,9 +137,7 @@ class AiRemoteSource {
     final cacheKey = 'cached_trending';
 
     try {
-      final response = await http.get(
-        url,
-      ).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -165,12 +158,12 @@ class AiRemoteSource {
   // --- 5. Search Events ---
   // ===========================================================================
   Future<List<dynamic>> searchEvents(String query) async {
-    final url = Uri.parse('${AppConstants.aiBaseUrl}/search?q=${Uri.encodeComponent(query)}');
-    
+    final url = Uri.parse(
+      '${AppConstants.aiBaseUrl}/search?q=${Uri.encodeComponent(query)}',
+    );
+
     try {
-      final response = await http.get(
-        url,
-      ).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -188,11 +181,9 @@ class AiRemoteSource {
   // ===========================================================================
   Future<List<String>> getSearchSuggestions() async {
     final url = Uri.parse('${AppConstants.aiBaseUrl}/suggestions');
-    
+
     try {
-      final response = await http.get(
-        url,
-      ).timeout(const Duration(seconds: 5));
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -201,7 +192,7 @@ class AiRemoteSource {
         return [];
       }
     } catch (e) {
-      return []; 
+      return [];
     }
   }
 
@@ -213,27 +204,58 @@ class AiRemoteSource {
     required double lng,
     required double availableHours,
     required String preferences,
+    String? localizedPreferences,
+    String languageCode = 'en',
     required String startTime,
   }) async {
-    final url = Uri.parse('${AppConstants.aiBaseUrl}/generate-tour');
+    final url = Uri.parse(
+      '${AppConstants.aiBaseUrl}/generate-tour',
+    ).replace(queryParameters: {'language': languageCode});
+    final effectivePreferences = preferences.trim().isEmpty
+        ? "Riyadh Culture"
+        : preferences.trim();
+    final effectiveLocalizedPreferences =
+        localizedPreferences?.trim().isNotEmpty == true
+        ? localizedPreferences!.trim()
+        : effectivePreferences;
+
+    final legacyPayload = {
+      "user_lat": lat,
+      "user_lng": lng,
+      "available_hours": availableHours,
+      "preferences": effectivePreferences,
+      "start_time": startTime,
+    };
+    final localizedPayload = {
+      ...legacyPayload,
+      "language": languageCode,
+      "response_language": languageCode == 'ar' ? "Arabic" : "English",
+      "localized_preferences": effectiveLocalizedPreferences,
+    };
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "user_lat": lat,
-          "user_lng": lng,
-          "available_hours": availableHours,
-          "preferences": preferences.isEmpty ? "Riyadh Culture" : preferences,
-          "start_time": startTime
-        }),
-      ).timeout(const Duration(seconds: 30)); 
+      var response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(localizedPayload),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 422) {
+        response = await http
+            .post(
+              url,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(legacyPayload),
+            )
+            .timeout(const Duration(seconds: 30));
+      }
 
       if (response.statusCode == 200) {
         final decodedData = jsonDecode(response.body);
         if (decodedData['status'] == 'success') {
-          return decodedData['tour']; 
+          return decodedData['tour'];
         } else {
           throw Exception(decodedData['message']);
         }

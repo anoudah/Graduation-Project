@@ -21,13 +21,13 @@ class EventDetailsScreen extends StatefulWidget {
   /// The raw event data payload passed from the previous screen (e.g., CategoryScreen).
   final Map<String, dynamic> eventData;
 
-  /// Whether this is the first event in the heritage and traditions category.
-  final bool isFirstInHeritage;
+  /// The category id from the screen that opened this event, when available.
+  final String? sourceCategoryId;
 
   const EventDetailsScreen({
     super.key,
     required this.eventData,
-    this.isFirstInHeritage = false,
+    this.sourceCategoryId,
   });
 
   @override
@@ -50,9 +50,66 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   void initState() {
     super.initState();
     debugPrint(
-      "🎯 EventDetailsScreen: isFirstInHeritage = ${widget.isFirstInHeritage}",
+      "EventDetailsScreen: sourceCategoryId = ${widget.sourceCategoryId}",
     );
   }
+
+  String _normalizeForMatch(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
+  }
+
+  Iterable<String> _textValues(dynamic field) sync* {
+    if (field == null) return;
+
+    if (field is String) {
+      yield field;
+      return;
+    }
+
+    if (field is Map) {
+      for (final value in field.values) {
+        if (value != null) yield value.toString();
+      }
+      return;
+    }
+
+    yield field.toString();
+  }
+
+  bool get _isHeritageCategory {
+    final categoryIds =
+        [
+              widget.sourceCategoryId,
+              widget.eventData['Category_ID'],
+              widget.eventData['Category_Id'],
+              widget.eventData['categoryId'],
+              widget.eventData['category_id'],
+            ]
+            .where((value) => value != null)
+            .map((value) => value.toString().trim().toUpperCase());
+
+    if (categoryIds.any((value) => value == 'HER')) return true;
+
+    return _textValues(widget.eventData['Category']).any((value) {
+      final normalized = _normalizeForMatch(value);
+      return normalized.contains('heritage') &&
+          normalized.contains('tradition');
+    });
+  }
+
+  bool get _isDiriyahHistoricalTour {
+    return _textValues(widget.eventData['Title']).any((value) {
+      final normalized = _normalizeForMatch(value);
+      final hasDiriyah =
+          normalized.contains('diriyah') || normalized.contains('diriyadh');
+      return hasDiriyah &&
+          normalized.contains('historical') &&
+          normalized.contains('tour');
+    });
+  }
+
+  bool get _showBookingButton =>
+      _isHeritageCategory && _isDiriyahHistoricalTour;
 
   /// Authentication Gatekeeper.
   ///
@@ -152,33 +209,42 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Future<void> _submitComment() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user == null) {
-      return; // Enclosed in block
-    }
+    if (user == null) return;
 
     String eventId = widget.eventData['id'] ?? '';
-    if (commentController.text.isEmpty) {
-      return; // Enclosed in block
-    }
+    if (commentController.text.isEmpty) return;
 
     final successMessage = AppLocalizations.of(
       context,
     ).reviewSubmittedSuccessfully;
 
     try {
-      // 1. تخزين التعليق بالأسماء المعتمدة في قاعدة بياناتك
+      // 1. جلب الاسم (تأكدي من مطابقة حالة الأحرف للصورة)[cite: 1, 2]
+      String finalName = "Wasel User";
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(user.uid)
+          .get();
+
+      if (userDoc.exists && userDoc.data() != null) {
+        // تعديل المسمى ليطابق صورة الـ Firebase (Full_Name)[cite: 1, 2]
+        finalName = userDoc['Full_Name'] ?? "Wasel User";
+      }
+
+      // 2. تخزين التعليق (استخدام await هنا يضمن الحفظ)
       await FirebaseFirestore.instance.collection('Comment Feedback').add({
         'Comment_Text': commentController.text,
         'Date': Timestamp.now(),
-        'Full_Name': user.displayName ?? 'Wasel User',
+        'Full_Name': finalName,
         'Rating': userRating.toInt(),
         'User_Id': user.uid,
-        'crowd_report': selectedCrowd, // تخزن برمجياً Low/Medium/High
+        'crowd_report': selectedCrowd,
         'id': eventId,
       });
 
-      // 2. تحديث عدادات الزحمة لخدمة خوارزمية المشروع
+      // 2. تحديث عدادات الزحمة
       String crowdField = '';
+
       if (selectedCrowd == 'Low') {
         crowdField = 'report_low_count';
       } else if (selectedCrowd == 'Medium') {
@@ -186,7 +252,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       } else if (selectedCrowd == 'High') {
         crowdField = 'report_high_count';
       }
-
       if (crowdField.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('Events')
@@ -197,17 +262,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             });
       }
 
+      // 4. التعديل المطلوب: تنظيف الحقل وإغلاق الشيت فقط[cite: 3]
       commentController.clear();
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
+
+      // يغلق نافذة الكتابة فقط ويتركك في صفحة الفعالية[cite: 3]
       Navigator.pop(context);
 
+      // إظهار رسالة النجاح[cite: 3]
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
     } catch (e) {
-      debugPrint("DATABASE ERROR: $e");
+      debugPrint("DATABASE ERROR: $e"); // لو فشل الحفظ بيطبع السبب هنا[cite: 3]
     }
   }
 
@@ -231,8 +298,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 1. عنوان "اكتب تعليق"
               Text(
-                AppLocalizations.of(context).writeAReview,
+                context.loc.writeComment,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -243,7 +311,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               TextField(
                 controller: commentController,
                 decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context).shareYourExperience,
+                  hintText: context.loc.shareYourExperience,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -252,42 +320,53 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               const SizedBox(height: 15),
 
-              // --- عرض حالة الزحمة بنصوص ثابتة لتجنب إيرور ملفات الترجمة ---
-              const Text(
-                "حالة الزحمة",
-                style: TextStyle(
+              // 2. عنوان "حالة الزحمة"
+              Text(
+                context.loc.crowdStatus,
+                style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMain,
                 ),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
+              // استخدمنا Center و Row بدلاً من Wrap لتنسيق الخيارات في المنتصف
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: ['Low', 'Medium', 'High'].map((level) {
-                  // تحويل القيمة البرمجية لنص عربي للعرض فقط
-                  String label = level == 'Low'
-                      ? "منخفضة"
-                      : level == 'Medium'
-                      ? "متوسطة"
-                      : "عالية";
+                  String label = (level == 'Low')
+                      ? context.loc.low
+                      : (level == 'Medium')
+                      ? context.loc.medium
+                      : context.loc.high;
 
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: selectedCrowd == level,
-                    // استبدلنا withOpacity بـ withValues لتجنب التحذير
-                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                    onSelected: (bool selected) {
-                      if (selected) {
-                        // هنا يتم حفظ القيمة الإنجليزية ('Medium') لترسل للداتابيس
-                        setSheetState(() => selectedCrowd = level);
-                      }
-                    },
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ChoiceChip(
+                      label: Text(label),
+                      selected: selectedCrowd == level,
+                      // ignore: deprecated_member_use
+                      selectedColor: AppColors.primary.withOpacity(0.2),
+                      onSelected: (bool selected) {
+                        if (selected) {
+                          setSheetState(() => selectedCrowd = level);
+                        }
+                      },
+                    ),
                   );
                 }).toList(),
               ),
               const SizedBox(height: 15),
 
-              // Interactive Star Rating Builder
+              // 3. إضافة عنوان "التقييم" فوق النجوم (التعديل الجديد)
+              const Text(
+                "Rate the Event", // أو يمكنكِ استخدام الترجمة: context.loc.rateEvent
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMain,
+                ),
+              ),
+              const SizedBox(height: 5),
+              // نجوم التقييم التفاعلية
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
@@ -302,17 +381,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 20),
+
+              // 4. زر الإرسال
               ElevatedButton(
-                onPressed:
-                    _submitComment, // تأكدي أنكِ حدثتِ دالة _submitComment أيضاً
+                onPressed: () async {
+                  await _submitComment(); // استدعاء دالة الإرسال مع await لضمان الحفظ
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Text(
-                  AppLocalizations.of(context).submit,
-                  style: const TextStyle(color: AppColors.white),
+                  context.loc.submitReview,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -497,14 +585,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            if (widget.isFirstInHeritage) ...[
-              Container(
-                color: Colors.yellow.withValues(alpha: 0.3),
-                child: SizedBox(
-                  width: 120,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      debugPrint("📚 Book Now button tapped!");
+            if (_showBookingButton) ...[
+              SizedBox(
+                width: 120,
+                child: ElevatedButton(
+                  onPressed: () {
+                    debugPrint("Book Now button tapped!");
+                    if (_checkLoginAndShowMessage()) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -512,17 +599,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               PaymentScreen(eventData: widget.eventData),
                         ),
                       );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      context.loc.bookNow,
-                      style: const TextStyle(color: AppColors.white),
-                    ),
+                  ),
+                  child: Text(
+                    context.loc.bookNow,
+                    style: const TextStyle(color: AppColors.white),
                   ),
                 ),
               ),
@@ -869,10 +956,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // عنوان القسم بنص ثابت عشان ما يطلع لك خطأ
-        const Text(
-          "التعليقات",
-          style: TextStyle(
+        // 1. عنوان القسم مترجم
+        Text(
+          context.loc.reviews,
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -891,21 +978,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               return const LinearProgressIndicator();
             }
 
+            // 2. رسالة "لا توجد تعليقات" مترجمة
             if (snapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("لا توجد تعليقات بعد"));
+              return Center(child: Text(context.loc.noReviewsYet));
             }
 
             return Column(
               children: snapshot.data!.docs.map((doc) {
-                // ترجمة حالة الزحمة بنصوص ثابتة مؤقتاً لفك الأزمة
+                // 3. ترجمة حالة الزحمة ديناميكياً
                 String crowdValue = doc['crowd_report'] ?? 'Low';
                 String localizedCrowd;
                 if (crowdValue == 'Low') {
-                  localizedCrowd = "منخفضة";
+                  localizedCrowd = context.loc.low;
                 } else if (crowdValue == 'Medium') {
-                  localizedCrowd = "متوسطة";
+                  localizedCrowd = context.loc.medium;
                 } else {
-                  localizedCrowd = "عالية";
+                  localizedCrowd = context.loc.high;
                 }
 
                 return Card(
@@ -920,8 +1008,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       children: [
                         Text(doc['Comment_Text'] ?? ''),
                         const SizedBox(height: 5),
+                        // 4. دمج نص "حالة الزحمة" مع القيمة المترجمة
                         Text(
-                          "حالة الزحمة: $localizedCrowd",
+                          "${context.loc.crowdStatus}: $localizedCrowd",
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,

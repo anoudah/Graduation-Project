@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
+import '../../application/providers/language_provider.dart';
+import '../../core/localization/app_localizations.dart';
+import '../../core/localization/localization_extension.dart';
 import '../../core/theme.dart';
 import '../../application/services/location_service.dart';
 import '../../data/datasources/ai_remote_source.dart';
-import 'smart_tour_screen.dart'; 
+import 'smart_tour_screen.dart';
 
 /// --- PRESENTATION LAYER ---
 /// [RouteSuggestionScreen] acts as the primary input gateway for the AI Tour feature.
-/// 
+///
 /// Responsibilities:
 /// 1. Captures user preferences (Vibes/Categories, Start Time, and Duration).
 /// 2. Manages the asynchronous loading state while the AI computes the route.
@@ -24,42 +28,43 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
   // ===========================================================================
   // --- STATE MANAGEMENT ---
   // ===========================================================================
-  
-  /// Toggles the loading UI. Essential for preventing duplicate API calls 
+
+  /// Toggles the loading UI. Essential for preventing duplicate API calls
   /// while waiting for the AI response.
   bool _isLoading = false;
-  
+
   /// Holds localized error messages to ensure smooth error recovery for the user.
   String? _errorMessage;
 
   // ===========================================================================
   // --- USER INPUT STATE ---
   // ===========================================================================
-  
+
   /// Maintains the list of selected cultural categories. Defaults to 'Museums'.
   final List<String> _selectedVibes = ['Museums'];
-  
+
   /// Determines the constraint for the AI's schedule generation.
   double _availableHours = 4.0;
-  
+
   /// Formatted as HH:mm. Used by the AI to factor in venue operating hours and traffic.
   String _startTime = "18:00";
 
   /// The static taxonomy of cultural events available in Wasel.
+  /// Values stay in English for backend compatibility; labels are localized in the UI.
   final List<Map<String, dynamic>> _categories = [
-    {'name': 'Museums', 'icon': Icons.museum},
-    {'name': 'Heritage and Tradition', 'icon': Icons.history_edu},
-    {'name': 'Libraries', 'icon': Icons.local_library},
-    {'name': 'Conferences and Forums', 'icon': Icons.groups},
-    {'name': 'Cultural Institutions', 'icon': Icons.domain},
-    {'name': 'Exhibition and Convention Centre', 'icon': Icons.storefront},
+    {'value': 'Museums', 'icon': Icons.museum},
+    {'value': 'Heritage and Tradition', 'icon': Icons.history_edu},
+    {'value': 'Libraries', 'icon': Icons.local_library},
+    {'value': 'Conferences and Forums', 'icon': Icons.groups},
+    {'value': 'Cultural Institutions', 'icon': Icons.domain},
+    {'value': 'Exhibition and Convention Centre', 'icon': Icons.storefront},
   ];
 
   // ===========================================================================
   // --- INTERACTIVE METHODS ---
   // ===========================================================================
 
-  /// Opens the native time picker. Parses the string state into integers, 
+  /// Opens the native time picker. Parses the string state into integers,
   /// and updates the UI only if the user confirms a valid time.
   Future<void> _selectStartTime() async {
     int initialHour = int.tryParse(_startTime.split(":")[0]) ?? 18;
@@ -104,11 +109,11 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
           height: 300,
           child: Column(
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Text(
-                  "Select Tour Duration",
-                  style: TextStyle(
+                  context.loc.selectTourDuration,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -122,7 +127,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                     int hours = index + 1;
                     return ListTile(
                       title: Text(
-                        "$hours Hours",
+                        "$hours ${context.loc.hours}",
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 16),
                       ),
@@ -143,7 +148,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     );
   }
 
-  /// Adds or removes a category constraint. Keeps the UI state in sync 
+  /// Adds or removes a category constraint. Keeps the UI state in sync
   /// with the internal list payload.
   void _toggleCategory(String category) {
     setState(() {
@@ -155,8 +160,33 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
     });
   }
 
+  String _categoryLabel(AppLocalizations loc, String value) {
+    switch (value) {
+      case 'Museums':
+        return loc.museumsFull;
+      case 'Heritage and Tradition':
+        return loc.heritageAndTradition;
+      case 'Libraries':
+        return loc.librariesFull;
+      case 'Conferences and Forums':
+        return loc.conferencesAndForums;
+      case 'Cultural Institutions':
+        return loc.culturalInstitutionsFull;
+      case 'Exhibition and Convention Centre':
+        return loc.exhibitionAndConvention;
+      default:
+        return value;
+    }
+  }
+
   /// The primary orchestration method bridging the UI, Hardware, and AI logic.
   Future<void> _generateAiTour() async {
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
+    final localizations = AppLocalizations(languageProvider.currentLocale);
+
     setState(() {
       _isLoading = true;
       _errorMessage = null; // Clear stale errors on retry
@@ -168,17 +198,21 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
 
       // 2. Trigger the AI Backend, falling back to Riyadh coordinates if GPS is denied
       final tourData = await AiRemoteSource().generateSmartTour(
-        lat: pos?.latitude ?? 24.7136, 
+        lat: pos?.latitude ?? 24.7136,
         lng: pos?.longitude ?? 46.6753,
         availableHours: _availableHours,
         preferences: _selectedVibes.join(", "),
+        localizedPreferences: _selectedVibes
+            .map((value) => _categoryLabel(localizations, value))
+            .join(", "),
+        languageCode: languageProvider.currentLanguage,
         startTime: _startTime,
       );
 
       setState(() {
         _isLoading = false;
       });
-      
+
       // 3. Delegation: Push to the next screen and hand off the successful JSON payload.
       // We check if (mounted) to prevent memory leaks if the user navigated away during the API call.
       if (mounted) {
@@ -191,7 +225,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = "Could not generate tour. Please try again.";
+        _errorMessage = localizations.couldNotGenerateTour;
         _isLoading = false;
       });
     }
@@ -200,12 +234,12 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
   // ===========================================================================
   // --- UI COMPONENTS ---
   // ===========================================================================
-  
+
   /// Builds a dynamic, tappable filter pill for categories.
-  Widget _buildCategoryChip(String label, IconData icon) {
-    bool isSelected = _selectedVibes.contains(label);
+  Widget _buildCategoryChip(String value, String label, IconData icon) {
+    bool isSelected = _selectedVibes.contains(value);
     return GestureDetector(
-      onTap: () => _toggleCategory(label),
+      onTap: () => _toggleCategory(value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -240,15 +274,20 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.loc;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: const BackButton(color: AppColors.primary),
-        title: const Text(
-          "AI Route Generator",
-          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.aiRouteGenerator,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -259,17 +298,19 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
               padding: const EdgeInsets.all(20.0),
               // Conditional rendering based on the async state machine (_isLoading).
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          SizedBox(height: 100),
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 100),
+                          const CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(height: 20),
                           Text(
-                            "Wasel AI is calculating traffic and crafting your perfect tour...",
+                            loc.waselAICalculatingTour,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ],
                       ),
@@ -278,30 +319,42 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (_errorMessage != null) ...[
-                          Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
                           const SizedBox(height: 20),
                         ],
-                        const Text(
-                          "Design your perfect evening",
-                          style: TextStyle(
+                        Text(
+                          loc.designYourPerfectEvening,
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,
                           ),
                         ),
                         const SizedBox(height: 20),
-                        const Text(
-                          "What are you in the mood for?",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        Text(
+                          loc.whatAreYouInTheMoodFor,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 10),
-                        // Wrap allows the chips to natively overflow to the next line 
+                        // Wrap allows the chips to natively overflow to the next line
                         // making it highly responsive across different screen widths.
                         Wrap(
                           spacing: 10,
                           runSpacing: 10,
                           children: _categories
-                              .map((cat) => _buildCategoryChip(cat['name'], cat['icon']))
+                              .map(
+                                (cat) => _buildCategoryChip(
+                                  cat['value'],
+                                  _categoryLabel(loc, cat['value']),
+                                  cat['icon'],
+                                ),
+                              )
                               .toList(),
                         ),
                         const SizedBox(height: 30),
@@ -312,22 +365,42 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text("Start Time", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    loc.startTime,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   const SizedBox(height: 5),
                                   InkWell(
                                     onTap: _selectStartTime,
                                     borderRadius: BorderRadius.circular(8),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: AppColors.primary),
+                                        border: Border.all(
+                                          color: AppColors.primary,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(_startTime, style: const TextStyle(fontSize: 16)),
-                                          const Icon(Icons.access_time, size: 18, color: AppColors.primary),
+                                          Text(
+                                            _startTime,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const Icon(
+                                            Icons.access_time,
+                                            size: 18,
+                                            color: AppColors.primary,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -340,22 +413,42 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text("Duration", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    loc.duration,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   const SizedBox(height: 5),
                                   InkWell(
                                     onTap: _selectDuration,
                                     borderRadius: BorderRadius.circular(8),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: AppColors.primary),
+                                        border: Border.all(
+                                          color: AppColors.primary,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text("${_availableHours.toInt()} Hours", style: const TextStyle(fontSize: 16)),
-                                          const Icon(Icons.keyboard_arrow_down, size: 18, color: AppColors.primary),
+                                          Text(
+                                            "${_availableHours.toInt()} ${loc.hours}",
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const Icon(
+                                            Icons.keyboard_arrow_down,
+                                            size: 18,
+                                            color: AppColors.primary,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -369,7 +462,7 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                     ),
             ),
           ),
-          
+
           // Action button fixed to the bottom of the screen.
           if (!_isLoading)
             Padding(
@@ -380,12 +473,18 @@ class _RouteSuggestionScreenState extends State<RouteSuggestionScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onPressed: _generateAiTour,
-                  child: const Text(
-                    'Generate Smart Route',
-                    style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                  child: Text(
+                    loc.generateSmartRoute,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

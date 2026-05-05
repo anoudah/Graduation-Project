@@ -244,6 +244,11 @@ class AppLocalizations {
       ? 'يرجى تسجيل الدخول للتفاعل'
       : 'Please log in to interact';
   String get about => locale.languageCode == 'ar' ? 'حول' : 'About';
+  String get details => locale.languageCode == 'ar' ? 'التفاصيل' : 'Details';
+  String get schedule => locale.languageCode == 'ar' ? 'الجدول' : 'Schedule';
+  String get price => locale.languageCode == 'ar' ? 'السعر' : 'Price';
+  String get suggestRoute =>
+      locale.languageCode == 'ar' ? 'اقتراح مسار' : 'Suggest a route';
   String get writeAReview =>
       locale.languageCode == 'ar' ? 'اكتب مراجعة' : 'Write a Review';
   String get shareYourExperience => locale.languageCode == 'ar'
@@ -421,8 +426,10 @@ class AppLocalizations {
       : 'Moving to next destination';
   String get estimatedTimeLabel =>
       locale.languageCode == 'ar' ? 'الوقت المقدر' : 'Estimated time';
-  String get freeTour => locale.languageCode == 'ar' ? 'جولة مجانية' : 'Free Tour';
-  String get estCost => locale.languageCode == 'ar' ? 'التكلفة المقدرة' : 'Est. Cost';
+  String get freeTour =>
+      locale.languageCode == 'ar' ? 'جولة مجانية' : 'Free Tour';
+  String get estCost =>
+      locale.languageCode == 'ar' ? 'التكلفة المقدرة' : 'Est. Cost';
   String get eventAddedToFavorites => locale.languageCode == 'ar'
       ? 'تم إضافة الحدث إلى المفضلة!'
       : 'Event added to your favorites!';
@@ -463,7 +470,29 @@ class AppLocalizations {
   String get errorOccurred =>
       locale.languageCode == 'ar' ? 'حدث خطأ' : 'Error occurred';
 
-      //what's happening now
-      String get seeWhatIsHappening => 
-    locale.languageCode == 'ar' ? 'شاهد ما يحدث هنا' : 'SEE WHAT IS HAPPENING HERE';
+  //what's happening now
+  String get seeWhatIsHappening => locale.languageCode == 'ar'
+      ? 'شاهد ما يحدث هنا'
+      : 'SEE WHAT IS HAPPENING HERE';
+  // --- إضافة الكلمات الجديدة هنا لترتيب الحوسة ---
+
+  // نصوص تقييم الحشود (الزحمة)
+  String get low => locale.languageCode == 'ar' ? 'منخفضة' : 'Low';
+  String get medium => locale.languageCode == 'ar' ? 'متوسطة' : 'Medium';
+  String get high => locale.languageCode == 'ar' ? 'عالية' : 'High';
+
+  // نصوص إضافية للتعليقات
+  String get reviews => locale.languageCode == 'ar' ? 'التعليقات' : 'Reviews';
+  String get noReviewsYet =>
+      locale.languageCode == 'ar' ? 'لا توجد تعليقات بعد' : 'No reviews yet';
+  String get crowdStatus =>
+      locale.languageCode == 'ar' ? 'حالة الزحمة' : 'Crowd Status';
+  // نصوص التقييم وكتابة التعليق
+  String get rating => locale.languageCode == 'ar' ? 'التقييم' : 'Rating';
+  String get writeComment =>
+      locale.languageCode == 'ar' ? 'اكتب تعليق' : 'Write a comment';
+  String get yourReview =>
+      locale.languageCode == 'ar' ? 'مراجعتك' : 'Your Review';
+  String get submitReview =>
+      locale.languageCode == 'ar' ? 'إرسال التقييم' : 'Submit Review';
 }
