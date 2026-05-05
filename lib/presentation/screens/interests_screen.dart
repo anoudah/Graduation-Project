@@ -5,13 +5,21 @@ import 'home_screen.dart';
 import '../../core/theme.dart';
 import '../../core/localization/app_localizations.dart';
 
-/// Data model to handle localizations and selection logic together
+/// A simple data model to pair a unique database ID with a localized label.
+/// 
+/// Using a model instead of a raw Map makes the code type-safe and prevents
+/// typos when accessing the [id] or [label] during rendering or database saves.
 class InterestItem {
   final String id;
   final String label;
   InterestItem({required this.id, required this.label});
 }
 
+/// The Onboarding Screen where new users select their cultural interests.
+/// 
+/// This screen uses a responsive, split-pane layout (branding on the left, 
+/// interactive grid on the right) and saves the user's selections directly 
+/// to their Firestore profile before navigating to the Home Screen.
 class InterestsScreen extends StatefulWidget {
   const InterestsScreen({super.key});
 
@@ -20,13 +28,22 @@ class InterestsScreen extends StatefulWidget {
 }
 
 class _InterestsScreenState extends State<InterestsScreen> {
+  /// Stores the unique [id]s of the interests the user has tapped.
+  /// A [Set] is used instead of a List to guarantee no duplicate entries.
   final Set<String> _selectedIds = {};
+  
+  /// Controls the loading state of the "Continue" button to prevent double-submissions.
   bool _isLoading = false;
 
-  /// Saves the selected interests to Firestore and navigates home
+  /// Finalizes the account creation process by saving data to Firestore.
+  /// 
+  /// 1. Verifies the user is logged in.
+  /// 2. Merges the selected interests into the user's existing Firestore document.
+  /// 3. Navigates the user to the [HomeScreen], removing this setup screen from the navigation stack.
   Future<void> _finishAccountCreation(AppLocalizations loc) async {
     final user = FirebaseAuth.instance.currentUser;
     
+    // Safety check: Prevent database writes if the session expired
     if (user == null) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -39,14 +56,16 @@ class _InterestsScreenState extends State<InterestsScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Write the data to the 'Users' collection matching the specific user's UID
       await FirebaseFirestore.instance.collection('Users').doc(user.uid).set({
-        'selected_interests': _selectedIds.toList(),
+        'selected_interests': _selectedIds.toList(), // Convert Set back to List for JSON
         'Selection_Date': FieldValue.serverTimestamp(),
         'setup_complete': true,
-      }, SetOptions(merge: true));
+      }, SetOptions(merge: true)); // merge: true protects existing data like Name/Email
 
       if (!mounted) return;
 
+      // Navigate to Home and clear the back-history so the user can't swipe back to onboarding
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -62,6 +81,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
     }
   }
 
+  /// Adds or removes an interest ID from the user's current selection.
   void _toggleInterest(String id) {
     setState(() {
       if (_selectedIds.contains(id)) {
@@ -76,7 +96,8 @@ class _InterestsScreenState extends State<InterestsScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
 
-    // Dynamic list based on your localizations
+    // Initialize the list using the dynamic localized strings from the app's context.
+    // The 'id' is what goes to the database, the 'label' is what the user sees.
     final List<InterestItem> categories = [
       InterestItem(id: 'museums', label: loc.museums),
       InterestItem(id: 'libraries', label: loc.libraries),
@@ -92,136 +113,159 @@ class _InterestsScreenState extends State<InterestsScreen> {
       backgroundColor: AppColors.white,
       body: Row(
         children: [
-          // --- LEFT SECTION: BRANDING & PROGRESS ---
+          // =================================================================
+          // LEFT SECTION: Branding & Onboarding Progress
+          // Occupies 30% of the screen width (flex: 3).
+          // =================================================================
           Expanded(
             flex: 3,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "WASEL",
-                  style: TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                    letterSpacing: 10,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center, // Keeps all text perfectly centered
+                children: [
+                  const Text(
+                    "WASEL",
+                    style: TextStyle(
+                      fontSize: 42, 
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                      letterSpacing: 8,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 60),
-                Text(
-                  loc.welcomeToWasel,
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textMain,
+                  const SizedBox(height: 40),
+                  Text(
+                    loc.welcomeToWasel,
+                    textAlign: TextAlign.center, 
+                    style: const TextStyle(
+                      fontSize: 32, 
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textMain,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "STEP 02",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                    color: AppColors.primary.withValues(alpha: 0.7),
+                  const SizedBox(height: 8),
+                  Text(
+                    "STEP 02",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                      color: AppColors.primary.withValues(alpha: 0.7),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 48),
-                Text(
-                  loc.pickYourInterests,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: AppColors.textSecondary,
+                  const SizedBox(height: 32),
+                  Text(
+                    loc.pickYourInterests,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16, 
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
-          // Vertical structural divider
+          // =================================================================
+          // VERTICAL DIVIDER: Visual separator between branding and action
+          // =================================================================
           Container(
             width: 1.5,
             color: AppColors.divider.withValues(alpha: 0.5),
             height: MediaQuery.of(context).size.height * 0.7,
           ),
 
-          // --- RIGHT SECTION: INTERESTS GRID ---
+          // =================================================================
+          // RIGHT SECTION: The Interactive Selection Grid
+          // Occupies 70% of the screen width (flex: 7).
+          // =================================================================
           Expanded(
             flex: 7,
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 60),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Interests",
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textMain,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          "Select multiple options to personalize your Riyadh experience.",
-                          style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 48),
-                        
-                        // --- GRID ---
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 800),
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 24,
-                              mainAxisSpacing: 24,
-                              childAspectRatio: 2.8,
-                            ),
-                            itemCount: categories.length,
-                            itemBuilder: (context, index) {
-                              final item = categories[index];
-                              final isSelected = _selectedIds.contains(item.id);
-                              return _buildModernCard(item, isSelected);
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 60),
-                        
-                        // --- ACTION BUTTON ---
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 800),
-                          child: SizedBox(
-                            width: double.infinity,
-                            height: 62,
-                            child: ElevatedButton(
-                              onPressed: _selectedIds.isNotEmpty 
-                                  ? () => _finishAccountCreation(loc) 
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: Text(
-                                loc.continueToHome,
-                                style: const TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                // SingleChildScrollView prevents the "RenderFlex overflow" yellow tape error
+                // if the screen is resized vertically.
+                : SingleChildScrollView( 
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 40),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Interests",
+                            style: TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textMain,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          const Text(
+                            "Select multiple options to personalize your Riyadh experience.",
+                            style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 48),
+                          
+                          // --- THE GRID ---
+                          // ConstrainedBox prevents the grid from stretching infinitely on ultra-wide monitors
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 600), 
+                            child: GridView.builder(
+                              shrinkWrap: true, // Forces the GridView to size itself to its children
+                              physics: const NeverScrollableScrollPhysics(), // Let the parent SingleChildScrollView handle scrolling
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2, // 2 columns
+                                crossAxisSpacing: 20, // Horizontal gap
+                                mainAxisSpacing: 20, // Vertical gap
+                                mainAxisExtent: 70, // FIXED HEIGHT: Stops buttons from becoming massive vertically
+                              ),
+                              itemCount: categories.length,
+                              itemBuilder: (context, index) {
+                                final item = categories[index];
+                                final isSelected = _selectedIds.contains(item.id);
+                                return _buildModernCard(item, isSelected);
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 60),
+                          
+                          // --- ACTION BUTTON ---
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 600), // Aligns perfectly with the grid above
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 56, // Fixed UI height for the button
+                              child: ElevatedButton(
+                                // Disable the button (returns null) if no interests are selected
+                                onPressed: _selectedIds.isNotEmpty 
+                                    ? () => _finishAccountCreation(loc) 
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.white,
+                                  disabledBackgroundColor: Colors.grey.shade200, 
+                                  disabledForegroundColor: Colors.grey.shade500, 
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: Text(
+                                  loc.continueToHome,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
           ),
@@ -230,6 +274,10 @@ class _InterestsScreenState extends State<InterestsScreen> {
     );
   }
 
+  /// Builds the individual selectable interest cards.
+  /// 
+  /// Uses an [AnimatedContainer] to provide smooth, premium color transitions 
+  /// when the user taps on a card to select or deselect it.
   Widget _buildModernCard(InterestItem item, bool isSelected) {
     return GestureDetector(
       onTap: () => _toggleInterest(item.id),

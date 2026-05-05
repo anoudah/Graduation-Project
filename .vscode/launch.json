@@ -2,9 +2,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Flutter Web",
+            "name": "Wasel (Custom Domain)",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": [
+                "-d",
+                "chrome",
+                "--web-hostname=wasel.local",
+                "--web-port=8080"
+            ]
         }
     ]
 }
