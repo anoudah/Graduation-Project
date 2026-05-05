@@ -30,7 +30,15 @@ class SmartTourScreen extends StatelessWidget {
     }
 
     // Remove all non-numeric characters except the decimal point
-    final numericOnly = priceString.replaceAll(RegExp(r'[^0-9.]'), '');
+    String numericOnly = priceString.replaceAll(RegExp(r'[^0-9.]'), '');
+    // Ensure only one decimal point is present
+    int firstDot = numericOnly.indexOf('.');
+    if (firstDot != -1) {
+      // Remove any additional dots after the first one
+      numericOnly =
+          numericOnly.substring(0, firstDot + 1) +
+          numericOnly.substring(firstDot + 1).replaceAll('.', '');
+    }
     return double.tryParse(numericOnly) ?? 0.0;
   }
 
@@ -240,59 +248,99 @@ class SmartTourScreen extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 25),
                               child: isTransit
                                   ? _buildTransitCard(context, stop)
-                                  : EventCard(
-                                      // 1. تمرير البيانات كاملة كما هي مخزنة في stop
-                                      eventData: stop,
+                                  : (() {
+                                      // تجهيز البيانات وتوحيد المسميات (Keys) لضمان عدم ظهور "Unknown"
+                                      final Map<String, dynamic> formattedData =
+                                          {
+                                            ...stop,
+                                            'Title':
+                                                stop['Title'] ??
+                                                stop['title'] ??
+                                                stop['Name'] ??
+                                                'Event',
+                                            'About':
+                                                stop['About'] ??
+                                                stop['about'] ??
+                                                stop['description'] ??
+                                                '',
+                                            'Image_Url':
+                                                stop['Image_Url'] ??
+                                                stop['image_url'] ??
+                                                stop['image'] ??
+                                                '',
+                                            'Price':
+                                                stop['Price'] ??
+                                                stop['price'] ??
+                                                '0',
+                                            'Category_ID':
+                                                stop['Category_ID'] ??
+                                                stop['category'] ??
+                                                'CONF',
+                                            'id':
+                                                stop['id'] ?? stop['ID'] ?? '',
+                                          };
 
-                                      // 2. وظيفة الانتقال لصفحة الديتلز (هذا بديل لكل الأزرار المحذوفة)
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                EventDetailsScreen(
-                                                  eventData:
-                                                      stop, // تأكدي أن شاشة الديتلز تستقبل eventData
-                                                ),
-                                          ),
-                                        );
-                                      },
+                                      return EventCard(
+                                        // تمرير البيانات المعدلة للكرت
+                                        eventData: formattedData,
 
-                                      // 3. كود الخريطة (نفس منطقك القديم لكن بطريقة أنظف)
-                                      onSuggestRoute: () async {
-                                        final rawLat =
-                                            stop['latitude'] ??
-                                            stop['lat'] ??
-                                            stop['Latitude'] ??
-                                            (stop['location'] != null
-                                                ? stop['location']['lat']
-                                                : null);
-                                        final rawLng =
-                                            stop['longitude'] ??
-                                            stop['lng'] ??
-                                            stop['Longitude'] ??
-                                            (stop['location'] != null
-                                                ? stop['location']['lng']
-                                                : null);
+                                        // وظيفة الانتقال لشاشة التفاصيل ببيانات مكتملة
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  EventDetailsScreen(
+                                                    eventData: formattedData,
+                                                  ),
+                                            ),
+                                          );
+                                        },
 
-                                        final double lat =
-                                            double.tryParse(
-                                              rawLat?.toString() ?? '0.0',
-                                            ) ??
-                                            0.0;
-                                        final double lng =
-                                            double.tryParse(
-                                              rawLng?.toString() ?? '0.0',
-                                            ) ??
-                                            0.0;
+                                        // كود الخريطة المحسن
+                                        onSuggestRoute: () async {
+                                          final rawLat =
+                                              formattedData['latitude'] ??
+                                              formattedData['lat'] ??
+                                              formattedData['Latitude'];
+                                          final rawLng =
+                                              formattedData['longitude'] ??
+                                              formattedData['lng'] ??
+                                              formattedData['Longitude'];
 
-                                        if (lat != 0.0 && lng != 0.0) {
-                                          try {
-                                            await LocationService.openMapRoute(
-                                              lat,
-                                              lng,
-                                            );
-                                          } catch (e) {
+                                          final double lat =
+                                              double.tryParse(
+                                                rawLat?.toString() ?? '0.0',
+                                              ) ??
+                                              0.0;
+                                          final double lng =
+                                              double.tryParse(
+                                                rawLng?.toString() ?? '0.0',
+                                              ) ??
+                                              0.0;
+
+                                          if (lat != 0.0 && lng != 0.0) {
+                                            try {
+                                              await LocationService.openMapRoute(
+                                                lat,
+                                                lng,
+                                              );
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      context
+                                                          .loc
+                                                          .couldNotOpenMaps,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          } else {
                                             if (context.mounted) {
                                               ScaffoldMessenger.of(
                                                 context,
@@ -301,27 +349,15 @@ class SmartTourScreen extends StatelessWidget {
                                                   content: Text(
                                                     context
                                                         .loc
-                                                        .couldNotOpenMaps,
+                                                        .coordinatesNotAvailable,
                                                   ),
                                                 ),
                                               );
                                             }
                                           }
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                context
-                                                    .loc
-                                                    .coordinatesNotAvailable,
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    ),
+                                        },
+                                      );
+                                    })(),
                             ),
                           ),
                         ],
