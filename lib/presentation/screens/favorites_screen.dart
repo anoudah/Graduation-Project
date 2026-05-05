@@ -3,11 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../widgets/event_card.dart';
 import '../../core/theme.dart';
-import '../../core/localization/app_localizations.dart'; 
-import '../../core/utils/bilingual_helper.dart'; // Import for language support
+import '../../core/localization/app_localizations.dart';
+import '../../core/utils/bilingual_helper.dart';
+import 'event_details_screen.dart'; // Import for language support
 
 /// A screen that displays events the user has marked as favorites.
-/// 
+///
 /// This screen listens to real-time updates from 'User_Interactions' and
 /// fetches full event details from the 'Events' collection.
 class FavoritesScreen extends StatelessWidget {
@@ -23,7 +24,10 @@ class FavoritesScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           localizations.myFavorites,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: AppColors.primary,
         centerTitle: true,
@@ -52,7 +56,7 @@ class FavoritesScreen extends StatelessWidget {
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     var interaction = snapshot.data!.docs[index];
-                    
+
                     // --- Defensive check for empty IDs ---
                     // This prevents the "document path must be a non-empty string" error.
                     String eventId = interaction['id'] ?? '';
@@ -67,50 +71,50 @@ class FavoritesScreen extends StatelessWidget {
                           .doc(eventId)
                           .get(),
                       builder: (context, eventSnapshot) {
-                        if (!eventSnapshot.hasData || !eventSnapshot.data!.exists) {
+                        if (!eventSnapshot.hasData ||
+                            !eventSnapshot.data!.exists) {
                           return const SizedBox();
                         }
 
-                        var eventData = eventSnapshot.data!.data() as Map<String, dynamic>;
+                        var eventData =
+                            eventSnapshot.data!.data() as Map<String, dynamic>;
 
                         // Resolve bilingual text based on current language
-                        String title = BilingualHelper.getText(eventData['Title'], context);
-                        String about = BilingualHelper.getText(eventData['About'] ?? eventData['Description'], context);
-                        String schedule = BilingualHelper.getText(eventData['Schedule'], context);
-                        
+                        BilingualHelper.getText(eventData['Title'], context);
+                        BilingualHelper.getText(
+                          eventData['About'] ?? eventData['Description'],
+                          context,
+                        );
+                        BilingualHelper.getText(eventData['Schedule'], context);
+
                         // Handle Price with Custom Riyal Symbol Image
-                        String rawPrice = BilingualHelper.getText(eventData['Price'] ?? eventData['price'], context);
-                        bool isFree = rawPrice.isEmpty || rawPrice == "0";
-                        
-                        Widget priceWidget = isFree 
-                          ? Text(Directionality.of(context) == TextDirection.rtl ? 'مجاني' : 'Free', 
-                              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))
-                          : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(rawPrice, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                                const SizedBox(width: 4),
-                                Image.asset(
-                                  'assets/images/riyal_symbol.png',
-                                  height: 12,
-                                  color: AppColors.primary,
-                                  errorBuilder: (context, error, stackTrace) => const Text(' SAR', 
-                                    style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            );
+                        BilingualHelper.getText(
+                          eventData['Price'] ?? eventData['price'],
+                          context,
+                        );
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: EventCard(
-                            title: title.isEmpty ? 'No Title' : title,
-                            imagePath: eventData['Image_Url'] ?? eventData['Image'] ?? '',
-                            description: about,
-                            schedule: schedule,
-                            price: priceWidget, // Now passing the custom Widget
-                            crowdStatus: eventData['Crowd prediction'] ?? 'Normal',
+                            // 1. مرري بيانات الفعالية كاملة (eventData)
+                            eventData: eventData,
+
+                            // 2. وظيفة الانتقال لصفحة التفاصيل عند الضغط (See More)
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EventDetailsScreen(
+                                    eventData:
+                                        eventData, // تأكدي أن صفحة التفاصيل تستقبل البيانات
+                                  ),
+                                ),
+                              );
+                            },
+
+                            // 3. أي وظيفة إضافية للخريطة
                             onSuggestRoute: () {
-                              // Logic for opening maps can be added here
+                              // يمكنك وضع منطق فتح الخرائط هنا
                             },
                           ),
                         );

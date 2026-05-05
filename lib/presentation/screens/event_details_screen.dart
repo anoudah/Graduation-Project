@@ -344,6 +344,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     child: ChoiceChip(
                       label: Text(label),
                       selected: selectedCrowd == level,
+                      // ignore: deprecated_member_use
                       selectedColor: AppColors.primary.withOpacity(0.2),
                       onSelected: (bool selected) {
                         if (selected) {
