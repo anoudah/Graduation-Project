@@ -244,6 +244,11 @@ class AppLocalizations {
       ? 'يرجى تسجيل الدخول للتفاعل'
       : 'Please log in to interact';
   String get about => locale.languageCode == 'ar' ? 'حول' : 'About';
+  String get details => locale.languageCode == 'ar' ? 'التفاصيل' : 'Details';
+  String get schedule => locale.languageCode == 'ar' ? 'الجدول' : 'Schedule';
+  String get price => locale.languageCode == 'ar' ? 'السعر' : 'Price';
+  String get suggestRoute =>
+      locale.languageCode == 'ar' ? 'اقتراح مسار' : 'Suggest a route';
   String get writeAReview =>
       locale.languageCode == 'ar' ? 'اكتب مراجعة' : 'Write a Review';
   String get shareYourExperience => locale.languageCode == 'ar'

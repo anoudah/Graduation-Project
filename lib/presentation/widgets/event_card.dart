@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/localization/localization_extension.dart';
 import '../../core/theme.dart'; // Imports the centralized theme for consistent styling across the app.
 
 /// A highly reusable UI component that displays detailed information about a specific event or stop.
@@ -19,16 +20,16 @@ class EventCard extends StatelessWidget {
   /// The formatted time/duration string (e.g., "60 Mins" or "9:00 AM - 10:00 AM").
   final String schedule;
 
-  /// The price display component. 
-  /// Passed as a [Widget] rather than a String to support complex layouts, 
+  /// The price display component.
+  /// Passed as a [Widget] rather than a String to support complex layouts,
   /// such as inline custom image assets (e.g., the Saudi Riyal symbol).
-  final Widget price; 
+  final Widget price;
 
   /// The current AI-estimated crowd level ("LOW", "MEDIUM", or "HIGH").
   final String crowdStatus;
 
   // --- INTERACTIVE CALLBACKS ---
-  
+
   /// Triggered when the user taps the heart icon.
   final VoidCallback? onLike;
 
@@ -59,6 +60,8 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.loc;
+
     return Container(
       // Margin to separate multiple cards in a list
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -100,18 +103,21 @@ class EventCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Row of small interactive icons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildIconButton(Icons.favorite_border, onLike),
-                      _buildIconButton(Icons.notifications_none, onNotification),
+                      _buildIconButton(
+                        Icons.notifications_none,
+                        onNotification,
+                      ),
                       _buildIconButton(Icons.comment_outlined, onComment),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Primary Call-to-Action Button
                   SizedBox(
                     width: double.infinity,
@@ -123,9 +129,12 @@ class EventCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
-                        "I'm attending",
-                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      child: Text(
+                        loc.imAttending,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -154,17 +163,17 @@ class EventCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 10),
-                  
+
                   // About Section Header
-                  const Text(
-                    "About",
-                    style: TextStyle(
+                  Text(
+                    loc.about,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
                   ),
-                  
+
                   // Description / Reasoning Text
                   Text(
                     description,
@@ -176,47 +185,47 @@ class EventCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 15),
-                  
+
                   // Details Section Header
-                  const Text(
-                    "Details",
-                    style: TextStyle(
+                  Text(
+                    loc.details,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
                   ),
-                  
+
                   // Schedule Information
-                  _buildDetailRow("Schedule:", schedule),
-                  
+                  _buildDetailRow("${loc.schedule}:", schedule),
+
                   // Price Information (Handles the custom Widget row)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
-                          "Price: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold, 
-                            fontSize: 13, 
-                            color: AppColors.textMain
+                        Text(
+                          "${loc.price}: ",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: AppColors.textMain,
                           ),
                         ),
-                        price, 
+                        price,
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 8),
-                  
+
                   // AI Crowd Estimation Chip
-                  _buildCrowdRow(crowdStatus),
-                  
+                  _buildCrowdRow(context, crowdStatus),
+
                   // Spacer pushes the map icon to the very bottom right of the column
-                  const Spacer(), 
-                  
+                  const Spacer(),
+
                   // Route Suggestion Button
                   Align(
                     alignment: Alignment.bottomRight,
@@ -226,7 +235,7 @@ class EventCard extends StatelessWidget {
                         Icons.map_outlined,
                         color: AppColors.primary,
                       ),
-                      tooltip: "Suggest a route",
+                      tooltip: loc.suggestRoute,
                     ),
                   ),
                 ],
@@ -254,10 +263,19 @@ class EventCard extends StatelessWidget {
   /// - LOW: Green
   /// - MEDIUM: Orange
   /// - HIGH (or any other value): Red
-  Widget _buildCrowdRow(String status) {
-    Color statusColor = status == "LOW"
+  Widget _buildCrowdRow(BuildContext context, String status) {
+    final normalizedStatus = status.trim().toUpperCase();
+    final isLow = normalizedStatus == "LOW" || status.contains('منخفض');
+    final isMedium = normalizedStatus == "MEDIUM" || status.contains('متوسط');
+    final isHigh = normalizedStatus == "HIGH" || status.contains('عال');
+    final statusColor = isLow
         ? Colors.green
-        : (status == "MEDIUM" ? Colors.orange : Colors.red);
+        : (isMedium ? Colors.orange : Colors.red);
+    final localizedStatus = isLow
+        ? context.loc.low
+        : (isMedium || isHigh
+              ? (isMedium ? context.loc.medium : context.loc.high)
+              : status);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -272,7 +290,7 @@ class EventCard extends StatelessWidget {
           const Icon(Icons.people_outline, size: 14, color: AppColors.textMain),
           const SizedBox(width: 4),
           Text(
-            status,
+            localizedStatus,
             style: TextStyle(
               color: statusColor,
               fontWeight: FontWeight.bold,
