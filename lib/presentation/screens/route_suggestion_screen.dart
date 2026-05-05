@@ -18,7 +18,7 @@ import 'smart_tour_screen.dart';
 /// 3. Communicates with [LocationService] to append exact GPS coordinates to the request.
 /// 4. Delegates the final rendering of the generated data to [SmartTourScreen].
 class RouteSuggestionScreen extends StatefulWidget {
-  const RouteSuggestionScreen({super.key});
+  const RouteSuggestionScreen({super.key, String? filterCategoryId});
 
   @override
   State<RouteSuggestionScreen> createState() => _RouteSuggestionScreenState();
