@@ -77,21 +77,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   bool get _isHeritageCategory {
-    final categoryIds = [
-      widget.sourceCategoryId,
-      widget.eventData['Category_ID'],
-      widget.eventData['Category_Id'],
-      widget.eventData['categoryId'],
-      widget.eventData['category_id'],
-    ]
-        .where((value) => value != null)
-        .map((value) => value.toString().trim().toUpperCase());
+    final categoryIds =
+        [
+              widget.sourceCategoryId,
+              widget.eventData['Category_ID'],
+              widget.eventData['Category_Id'],
+              widget.eventData['categoryId'],
+              widget.eventData['category_id'],
+            ]
+            .where((value) => value != null)
+            .map((value) => value.toString().trim().toUpperCase());
 
     if (categoryIds.any((value) => value == 'HER')) return true;
 
     return _textValues(widget.eventData['Category']).any((value) {
       final normalized = _normalizeForMatch(value);
-      return normalized.contains('heritage') && normalized.contains('tradition');
+      return normalized.contains('heritage') &&
+          normalized.contains('tradition');
     });
   }
 
@@ -588,13 +590,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     debugPrint("Book Now button tapped!");
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            PaymentScreen(eventData: widget.eventData),
-                      ),
-                    );
+                    if (_checkLoginAndShowMessage()) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              PaymentScreen(eventData: widget.eventData),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,

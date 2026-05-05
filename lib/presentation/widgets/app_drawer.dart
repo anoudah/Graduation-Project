@@ -7,6 +7,7 @@ import '../../core/localization/app_localizations.dart';
 
 // --- Screen Imports ---
 import '../screens/profile.dart';
+import '../screens/bookings_screen.dart';
 import '../screens/favorites_screen.dart';
 import '../screens/reminders.dart';
 import '../screens/faq.dart';
@@ -28,9 +29,7 @@ class AppDrawer extends StatelessWidget {
             children: [
               // The top colored part of the drawer
               DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                ),
+                decoration: const BoxDecoration(color: AppColors.primary),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -38,35 +37,45 @@ class AppDrawer extends StatelessWidget {
                     const CircleAvatar(
                       radius: 30,
                       backgroundColor: AppColors.white,
-                      child: Icon(Icons.person, size: 35, color: AppColors.primary),
+                      child: Icon(
+                        Icons.person,
+                        size: 35,
+                        color: AppColors.primary,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       localizations.welcome,
                       style: const TextStyle(
-                        color: AppColors.white, 
-                        fontSize: 18, 
-                        fontWeight: FontWeight.bold
+                        color: AppColors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               // --- Navigation Menu Items ---
-              
+
               // 1. SECURED PROFILE BUTTON
               ListTile(
-                leading: const Icon(Icons.person_outline, color: AppColors.textMain),
+                leading: const Icon(
+                  Icons.person_outline,
+                  color: AppColors.textMain,
+                ),
                 title: Text(
                   localizations.profile,
-                  style: const TextStyle(color: AppColors.textMain, fontSize: 16)
+                  style: const TextStyle(
+                    color: AppColors.textMain,
+                    fontSize: 16,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(context); // Closes the drawer first
-                  
+
                   final user = FirebaseAuth.instance.currentUser;
-                  
+
                   if (user == null) {
                     // SCENARIO A: Logged Out -> Show warning and go to Login
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -76,32 +85,60 @@ class AppDrawer extends StatelessWidget {
                       ),
                     );
                     Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => const LoginScreen())
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
                     );
                   } else {
                     // SCENARIO B: Logged In -> Go to Profile with their unique ID
                     Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => ProfilePage(uid: user.uid))
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfilePage(uid: user.uid),
+                      ),
                     );
                   }
                 },
               ),
 
+              _buildSecuredDrawerTile(
+                context,
+                Icons.confirmation_number_outlined,
+                'Bookings',
+                const BookingsScreen(),
+                'Please log in to view your bookings',
+              ),
+
               // 2. STANDARD MENU BUTTONS
-              _buildDrawerTile(context, Icons.favorite_border, localizations.favorites, const FavoritesScreen()),
-// In AppDrawer.dart
-_buildDrawerTile(
-  context, 
-  Icons.notifications_none, 
-  localizations.yourReminders, // Use 'yourReminders', not 'reminders'
-  const RemindersScreen()
-),              
-              const Divider(), 
-              
-              _buildDrawerTile(context, Icons.help_outline, localizations.faq, const FAQPage()),
-              _buildDrawerTile(context, Icons.mail_outline, localizations.contactUs, const ContactUsScreen()),
+              _buildDrawerTile(
+                context,
+                Icons.favorite_border,
+                localizations.favorites,
+                const FavoritesScreen(),
+              ),
+              // In AppDrawer.dart
+              _buildDrawerTile(
+                context,
+                Icons.notifications_none,
+                localizations
+                    .yourReminders, // Use 'yourReminders', not 'reminders'
+                const RemindersScreen(),
+              ),
+              const Divider(),
+
+              _buildDrawerTile(
+                context,
+                Icons.help_outline,
+                localizations.faq,
+                const FAQPage(),
+              ),
+              _buildDrawerTile(
+                context,
+                Icons.mail_outline,
+                localizations.contactUs,
+                const ContactUsScreen(),
+              ),
             ],
           ),
         );
@@ -110,18 +147,62 @@ _buildDrawerTile(
   }
 
   /// Helper method to build a drawer button quickly
-  Widget _buildDrawerTile(BuildContext context, IconData icon, String title, Widget destination) {
+  Widget _buildDrawerTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Widget destination,
+  ) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textMain),
       title: Text(
-        title, 
-        style: const TextStyle(color: AppColors.textMain, fontSize: 16)
+        title,
+        style: const TextStyle(color: AppColors.textMain, fontSize: 16),
       ),
       onTap: () {
-        Navigator.pop(context); 
+        Navigator.pop(context);
         Navigator.push(
-          context, 
-          MaterialPageRoute(builder: (context) => destination)
+          context,
+          MaterialPageRoute(builder: (context) => destination),
+        );
+      },
+    );
+  }
+
+  Widget _buildSecuredDrawerTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Widget destination,
+    String loginMessage,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.textMain),
+      title: Text(
+        title,
+        style: const TextStyle(color: AppColors.textMain, fontSize: 16),
+      ),
+      onTap: () {
+        Navigator.pop(context);
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(loginMessage),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+          return;
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => destination),
         );
       },
     );
