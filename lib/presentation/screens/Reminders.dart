@@ -114,21 +114,25 @@ class RemindersScreen extends StatelessWidget {
 
                         // ... سطر 113 (نهاية تعريف scheduleFromDb)
 
-                        // 2. إذا كان فارغاً، نبحث عن تاريخ البداية start_time
-                        String subtitle = scheduleFromDb.isNotEmpty
-                            ? scheduleFromDb
-                            : (eventData['start_time'] is Timestamp
-                                  ? (eventData['start_time'] as Timestamp)
-                                        .toDate()
-                                        .toString()
-                                        .split(' ')
-                                        .first
-                                  : eventData['start_time']
-                                            ?.toString()
-                                            .split('T')
-                                            .first ??
-                                        localizations.scheduleNotSet);
+                        // 2. إذا كان فارغاً، نتحقق من نوع البيانات ونعرض التاريخ فقط
+                        String subtitle = scheduleFromDb;
 
+                        if (subtitle.isEmpty) {
+                          final rawDate = eventData['start_time'];
+                          if (rawDate is Timestamp) {
+                            // إذا كان Timestamp نحوله لتاريخ ونأخذ الجزء الأول منه
+                            subtitle = rawDate
+                                .toDate()
+                                .toString()
+                                .split(' ')
+                                .first;
+                          } else if (rawDate != null) {
+                            // إذا كان نصاً عادياً
+                            subtitle = rawDate.toString().split('T').first;
+                          } else {
+                            subtitle = localizations.scheduleNotSet;
+                          }
+                        }
                         // --- ORIGINAL LIST TILE UI --- (هذا السطر سيكون هو السطر التالي مباشرة)
                         // --- ORIGINAL LIST TILE UI ---
                         return Card(
