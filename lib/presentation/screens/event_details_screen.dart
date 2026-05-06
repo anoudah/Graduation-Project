@@ -40,17 +40,27 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool isFavorite = false;
   bool isReminder = false;
   bool isAttending = false;
-
+  bool isLoading = true;
   // State for the review/comment bottom sheet.
   double userRating = 5.0;
   String selectedCrowd = 'Low';
   TextEditingController commentController = TextEditingController();
 
-  // أضف هذه الدالة تحت المتغيرات (isFavorite, isReminder...)
+  @override
+  void initState() {
+    super.initState();
+    // أول ما تفتح الصفحة نطلب البيانات فوراً
+    _loadUserInteractions();
+  }
+
   Future<void> _loadUserInteractions() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      if (mounted) setState(() => isLoading = false);
+      return;
+    }
 
+    // تأكدي أن الـ ID هو نفسه المستخدم في الحفظ
     String eventId = widget.eventData['id'] ?? '';
     if (eventId.isEmpty) return;
 
@@ -64,26 +74,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       if (doc.exists && mounted) {
         setState(() {
-          // نقرأ القيم من الفايربيس ونحدث الواجهة
+          // ملاحظة مهمة: تأكدي أن الحروف (F, R, I) كبيرة كما في الفايربيس
           isFavorite = doc['Favorite'] ?? false;
           isReminder = doc['Reminder'] ?? false;
           isAttending = doc['Is_Attending'] ?? false;
+          isLoading = false;
         });
+      } else {
+        if (mounted) setState(() => isLoading = false);
       }
     } catch (e) {
-      debugPrint("Error loading interactions: $e");
+      debugPrint("خطأ في جلب البيانات: $e");
+      if (mounted) setState(() => isLoading = false);
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // استدعاء جلب البيانات هنا
-    _loadUserInteractions();
-
-    debugPrint(
-      "EventDetailsScreen: sourceCategoryId = ${widget.sourceCategoryId}",
-    );
   }
 
   String _normalizeForMatch(String value) {
