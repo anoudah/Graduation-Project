@@ -495,4 +495,16 @@ class AppLocalizations {
       locale.languageCode == 'ar' ? 'مراجعتك' : 'Your Review';
   String get submitReview =>
       locale.languageCode == 'ar' ? 'إرسال التقييم' : 'Submit Review';
+  String get aiDriveTo => locale.languageCode == 'ar' ? 'القيادة إلى' : 'Drive to';
+  String get aiUserLocation => locale.languageCode == 'ar' ? 'موقعك الحالي' : 'User Location';
+  String get aiStartAt => locale.languageCode == 'ar' ? 'البدء من' : 'Start at'; // NEW
+  String get aiBackToStartingPoint => locale.languageCode == 'ar' ? 'العودة إلى نقطة البداية' : 'Back to Starting Point';
+  String get aiBackToCityHall => locale.languageCode == 'ar' ? 'العودة إلى أمانة منطقة الرياض' : 'Back to Riyadh City Hall';
+  String get aiStartingPointDesc => locale.languageCode == 'ar' ? 'نقطة انطلاق الجولة' : 'Starting point of the tour';
+  String get aiApprox => locale.languageCode == 'ar' ? 'حوالي' : 'Approx.';
+  String get aiMinDrive => locale.languageCode == 'ar' ? 'دقيقة بالسيارة' : 'min drive based on distance';
+  String get aiLibraryTransit => locale.languageCode == 'ar' ? 'التنقل للمكتبة' : 'Library transit';
+  String get aiRiyadhCulturalTour => locale.languageCode == 'ar' ? 'جولة الرياض الثقافية' : 'Riyadh Cultural Tour';
+  String get aiMuseumTour => locale.languageCode == 'ar' ? 'جولة متاحف الرياض الثقافية' : 'Riyadh Cultural Museum Tour'; // NEW
+  String get aiCulturalTour => locale.languageCode == 'ar' ? 'جولة ثقافية' : 'Cultural Tour';
 }
