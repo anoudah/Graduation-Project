@@ -40,7 +40,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool isFavorite = false;
   bool isReminder = false;
   bool isAttending = false;
-
+  bool isLoading = true;
   // State for the review/comment bottom sheet.
   double userRating = 5.0;
   String selectedCrowd = 'Low';
@@ -49,9 +49,44 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint(
-      "EventDetailsScreen: sourceCategoryId = ${widget.sourceCategoryId}",
-    );
+    // أول ما تفتح الصفحة نطلب البيانات فوراً
+    _loadUserInteractions();
+  }
+
+  Future<void> _loadUserInteractions() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => isLoading = false);
+      return;
+    }
+
+    // تأكدي أن الـ ID هو نفسه المستخدم في الحفظ
+    String eventId = widget.eventData['id'] ?? '';
+    if (eventId.isEmpty) return;
+
+    String docId = "${user.uid}_$eventId";
+
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('User_Interactions')
+          .doc(docId)
+          .get();
+
+      if (doc.exists && mounted) {
+        setState(() {
+          // ملاحظة مهمة: تأكدي أن الحروف (F, R, I) كبيرة كما في الفايربيس
+          isFavorite = doc['Favorite'] ?? false;
+          isReminder = doc['Reminder'] ?? false;
+          isAttending = doc['Is_Attending'] ?? false;
+          isLoading = false;
+        });
+      } else {
+        if (mounted) setState(() => isLoading = false);
+      }
+    } catch (e) {
+      debugPrint("خطأ في جلب البيانات: $e");
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   String _normalizeForMatch(String value) {
@@ -358,7 +393,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
               // 3. إضافة عنوان "التقييم" فوق النجوم
               const Text(
-                "Rate the Event", 
+                "Rate the Event",
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMain,
@@ -385,7 +420,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               // 4. زر الإرسال
               ElevatedButton(
                 onPressed: () async {
-                  await _submitComment(); 
+                  await _submitComment();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -469,7 +504,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       body: SingleChildScrollView(
         // =====================================================================
         // THE RESPONSIVE WEB FIX
-        // Center the content and restrict it to an 800px max width so it 
+        // Center the content and restrict it to an 800px max width so it
         // doesn't stretch infinitely on large web browser windows!
         // =====================================================================
         child: Center(
