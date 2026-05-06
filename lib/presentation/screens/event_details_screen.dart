@@ -516,14 +516,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       imageUrl = 'https://placehold.co/400x300/png?text=Culture+Event';
     }
 
-    return Container(
-      height: 250,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.avatarBg,
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
+    return Padding(
+      // Adds space so the image doesn't touch the very edges of the screen
+      padding: const EdgeInsets.all(16.0), 
+      child: Container(
+        height: 250,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.avatarBg,
+          // THE KEY CHANGE: Rounded corners for a softer look
+          borderRadius: BorderRadius.circular(20), 
+          // Optional: A shadow makes the image "pop" off the page
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          image: DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );
