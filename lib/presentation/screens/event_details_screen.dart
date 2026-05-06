@@ -46,9 +46,41 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   String selectedCrowd = 'Low';
   TextEditingController commentController = TextEditingController();
 
+  // أضف هذه الدالة تحت المتغيرات (isFavorite, isReminder...)
+  Future<void> _loadUserInteractions() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String eventId = widget.eventData['id'] ?? '';
+    if (eventId.isEmpty) return;
+
+    String docId = "${user.uid}_$eventId";
+
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('User_Interactions')
+          .doc(docId)
+          .get();
+
+      if (doc.exists && mounted) {
+        setState(() {
+          // نقرأ القيم من الفايربيس ونحدث الواجهة
+          isFavorite = doc['Favorite'] ?? false;
+          isReminder = doc['Reminder'] ?? false;
+          isAttending = doc['Is_Attending'] ?? false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading interactions: $e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    // استدعاء جلب البيانات هنا
+    _loadUserInteractions();
+
     debugPrint(
       "EventDetailsScreen: sourceCategoryId = ${widget.sourceCategoryId}",
     );
@@ -358,7 +390,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
               // 3. إضافة عنوان "التقييم" فوق النجوم
               const Text(
-                "Rate the Event", 
+                "Rate the Event",
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMain,
@@ -385,7 +417,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               // 4. زر الإرسال
               ElevatedButton(
                 onPressed: () async {
-                  await _submitComment(); 
+                  await _submitComment();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -469,7 +501,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       body: SingleChildScrollView(
         // =====================================================================
         // THE RESPONSIVE WEB FIX
-        // Center the content and restrict it to an 800px max width so it 
+        // Center the content and restrict it to an 800px max width so it
         // doesn't stretch infinitely on large web browser windows!
         // =====================================================================
         child: Center(
